@@ -5,7 +5,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h2 class="text-h5 font-weight-bold">Vehicle Service Requests</h2>
+            <h2 class="text-h5 font-weight-bold">Service Requests</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
               Track and manage corrective maintenance requests
             </p>
@@ -78,7 +78,7 @@
       <v-card-text>
         <!-- Filters -->
         <v-row class="mb-2">
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
@@ -87,6 +87,16 @@
               density="compact"
               hide-details
               clearable
+            />
+          </v-col>
+          <v-col cols="12" sm="3">
+            <v-select
+              v-model="assetTypeFilter"
+              :items="['All', 'Vehicle', 'Non-Vehicular']"
+              label="Asset Type"
+              variant="outlined"
+              density="compact"
+              hide-details
             />
           </v-col>
           <v-col cols="12" sm="3">
@@ -102,8 +112,8 @@
           <v-col cols="12" sm="3">
             <v-select
               v-model="vehicleFilter"
-              :items="vehicleOptions"
-              label="Vehicle"
+              :items="assetOptions"
+              label="Asset"
               variant="outlined"
               density="compact"
               hide-details
@@ -121,21 +131,32 @@
           items-per-page="10"
           rounded="lg"
         >
-          <!-- Request No Column -->
+          <!-- Request No -->
           <template v-slot:item.request_no="{ item }">
             <span class="font-weight-bold text-primary">
               {{ item.request_no }}
             </span>
           </template>
 
-          <!-- Status Column -->
+          <!-- Asset Type chip -->
+          <template v-slot:item.asset_type="{ item }">
+            <v-chip
+              :color="item.asset_type === 'Vehicle' ? 'info' : 'warning'"
+              size="small"
+              variant="tonal"
+            >
+              {{ item.asset_type }}
+            </v-chip>
+          </template>
+
+          <!-- Status -->
           <template v-slot:item.status="{ item }">
             <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
               {{ item.status }}
             </v-chip>
           </template>
 
-          <!-- Actions Column -->
+          <!-- Actions -->
           <template v-slot:item.actions="{ item }">
             <v-btn
               icon="mdi-eye"
@@ -174,7 +195,7 @@
 
         <v-card-text class="pa-4">
           <v-row>
-            <!-- Request No - auto generated, read only -->
+            <!-- Request No -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.request_no"
@@ -200,17 +221,19 @@
               />
             </v-col>
 
-            <!-- Vehicle -->
-            <v-col cols="12" sm="6">
+            <!-- Asset (grouped dropdown) -->
+            <v-col cols="12">
               <v-select
                 v-model="form.vehicle_id"
-                :items="vehicleList"
-                item-title="unit_name"
-                item-value="id"
-                label="Vehicle *"
+                :items="groupedAssetItems"
+                item-title="title"
+                item-value="value"
+                label="Asset *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle_id"
+                :item-props="itemProps"
+                @update:modelValue="onAssetSelected"
               />
             </v-col>
 
@@ -222,6 +245,17 @@
                 variant="outlined"
                 density="comfortable"
                 placeholder="Name of person requesting"
+              />
+            </v-col>
+
+            <!-- Conducted By -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.conducted_by"
+                label="Conducted By"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Technician name"
               />
             </v-col>
 
@@ -250,19 +284,8 @@
               />
             </v-col>
 
-            <!-- Conducted By -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.conducted_by"
-                label="Conducted By"
-                variant="outlined"
-                density="comfortable"
-                placeholder="Technician name"
-              />
-            </v-col>
-
-            <!-- Mileage -->
-            <v-col cols="12" sm="6">
+            <!-- Mileage — Vehicle only -->
+            <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
               <v-text-field
                 v-model="form.mileage"
                 label="Mileage (km)"
@@ -270,6 +293,18 @@
                 density="comfortable"
                 type="number"
                 placeholder="e.g. 43117"
+              />
+            </v-col>
+
+            <!-- Hours of Operation — Non-Vehicular only -->
+            <v-col cols="12" sm="6" v-if="selectedAssetType === 'Non-Vehicular'">
+              <v-text-field
+                v-model="form.hours_of_operation"
+                label="Hours of Operation"
+                variant="outlined"
+                density="comfortable"
+                type="number"
+                placeholder="e.g. 250"
               />
             </v-col>
 
@@ -317,18 +352,19 @@
         </v-card-title>
 
         <v-card-text class="pa-4" v-if="selectedRequest">
-          <!-- Request No Badge -->
-          <div class="mb-4">
+          <div class="mb-4 d-flex ga-2 flex-wrap">
             <v-chip color="primary" size="large" variant="tonal">
               <v-icon start>mdi-file-document</v-icon>
               {{ selectedRequest.request_no }}
             </v-chip>
             <v-chip
-              :color="statusColor(selectedRequest.status)"
+              :color="selectedRequest.asset_type === 'Vehicle' ? 'info' : 'warning'"
               size="large"
               variant="tonal"
-              class="ml-2"
             >
+              {{ selectedRequest.asset_type }}
+            </v-chip>
+            <v-chip :color="statusColor(selectedRequest.status)" size="large" variant="tonal">
               {{ selectedRequest.status }}
             </v-chip>
           </div>
@@ -338,7 +374,7 @@
               subtitle="Date of Request"
               :title="selectedRequest.date_of_request || '—'"
             />
-            <v-list-item subtitle="Vehicle" :title="getVehicleName(selectedRequest.vehicle_id)" />
+            <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
             <v-list-item subtitle="Requisitioner" :title="selectedRequest.requisitioner || '—'" />
             <v-list-item
               subtitle="Problem / Details"
@@ -347,8 +383,18 @@
             <v-list-item subtitle="Work Done" :title="selectedRequest.work_details || '—'" />
             <v-list-item subtitle="Conducted By" :title="selectedRequest.conducted_by || '—'" />
             <v-list-item
+              v-if="selectedRequest.asset_type === 'Vehicle'"
               subtitle="Mileage"
               :title="selectedRequest.mileage ? selectedRequest.mileage + ' km' : '—'"
+            />
+            <v-list-item
+              v-if="selectedRequest.asset_type === 'Non-Vehicular'"
+              subtitle="Hours of Operation"
+              :title="
+                selectedRequest.hours_of_operation
+                  ? selectedRequest.hours_of_operation + ' hrs'
+                  : '—'
+              "
             />
             <v-list-item
               subtitle="Cost"
@@ -361,7 +407,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- Delete Confirmation Dialog -->
+    <!-- Delete Dialog -->
     <v-dialog v-model="deleteDialog" max-width="400">
       <v-card rounded="lg">
         <v-card-text class="pa-4 text-center">
@@ -370,7 +416,7 @@
           <p class="text-medium-emphasis">
             Are you sure you want to delete request
             <strong>{{ selectedRequest?.request_no }}</strong
-            >? This action cannot be undone.
+            >? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
@@ -401,13 +447,15 @@ import { supabase } from '../supabase'
 
 // ---- DATA ----
 const requests = ref([])
-const vehicleList = ref([])
+const assetList = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
 const vehicleFilter = ref('All')
+const assetTypeFilter = ref('All')
+const selectedAssetType = ref('Vehicle')
 
 // ---- DIALOGS ----
 const formDialog = ref(false)
@@ -421,11 +469,13 @@ const defaultForm = {
   request_no: '',
   date_of_request: '',
   vehicle_id: null,
+  asset_type: 'Vehicle',
   requisitioner: '',
   problem_details: '',
   work_details: '',
   conducted_by: '',
   mileage: null,
+  hours_of_operation: null,
   cost: null,
   status: 'In Progress',
 }
@@ -439,10 +489,10 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 const headers = [
   { title: 'Request No.', key: 'request_no', sortable: true },
   { title: 'Date', key: 'date_of_request', sortable: true },
-  { title: 'Vehicle', key: 'vehicle_name', sortable: true },
+  { title: 'Asset Type', key: 'asset_type', sortable: true },
+  { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
   { title: 'Problem', key: 'problem_details', sortable: false },
-  { title: 'Conducted By', key: 'conducted_by', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
 ]
@@ -454,19 +504,68 @@ const inProgressCount = computed(
 const completedCount = computed(() => requests.value.filter((r) => r.status === 'Completed').length)
 const cancelledCount = computed(() => requests.value.filter((r) => r.status === 'Cancelled').length)
 
-const vehicleOptions = computed(() => ['All', ...vehicleList.value.map((v) => v.unit_name)])
+// Grouped asset items for dropdown
+const groupedAssetItems = computed(() => {
+  const vehicles = assetList.value.filter(a => a.asset_type === 'Vehicle')
+  const nonVehicles = assetList.value.filter(a => a.asset_type === 'Non-Vehicular')
+  const items = []
+
+  if (vehicles.length > 0) {
+    items.push({
+      title: '── VEHICLE ──',
+      value: '__header_vehicle__',
+      assetType: null,
+      isHeader: true,
+    })
+    vehicles.forEach(v => items.push({
+      title: v.asset_name,
+      value: v.id,
+      assetType: v.asset_type,
+      isHeader: false,
+    }))
+  }
+
+  if (nonVehicles.length > 0) {
+    items.push({
+      title: '── NON-VEHICULAR ──',
+      value: '__header_nonvehicle__',
+      assetType: null,
+      isHeader: true,
+    })
+    nonVehicles.forEach(v => items.push({
+      title: v.asset_name,
+      value: v.id,
+      assetType: v.asset_type,
+      isHeader: false,
+    }))
+  }
+
+  return items
+})
+
+// Item props — disable header items so they can't be selected
+function itemProps(item) {
+  return {
+    disabled: item.isHeader,
+    class: item.isHeader
+      ? 'text-primary font-weight-bold text-caption' : '',
+  }
+}
+
+const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
 
 const filteredRequests = computed(() => {
   let result = requests.value
 
+  if (assetTypeFilter.value !== 'All') {
+    result = result.filter((r) => r.asset_type === assetTypeFilter.value)
+  }
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
-
   if (vehicleFilter.value !== 'All') {
-    result = result.filter((r) => r.vehicle_name === vehicleFilter.value)
+    result = result.filter((r) => r.asset_name === vehicleFilter.value)
   }
-
   if (search.value) {
     const s = search.value.toLowerCase()
     result = result.filter(
@@ -474,7 +573,7 @@ const filteredRequests = computed(() => {
         r.request_no?.toLowerCase().includes(s) ||
         r.requisitioner?.toLowerCase().includes(s) ||
         r.problem_details?.toLowerCase().includes(s) ||
-        r.vehicle_name?.toLowerCase().includes(s),
+        r.asset_name?.toLowerCase().includes(s),
     )
   }
 
@@ -491,15 +590,30 @@ function statusColor(status) {
   return colors[status] || 'grey'
 }
 
-function getVehicleName(vehicleId) {
-  const vehicle = vehicleList.value.find((v) => v.id === vehicleId)
-  return vehicle ? vehicle.unit_name : '—'
+function getAssetName(assetId) {
+  const asset = assetList.value.find((a) => a.id === assetId)
+  return asset ? asset.asset_name : '—'
 }
 
-// Auto-generate request number: YYYY-001 format
+function onAssetSelected(assetId) {
+  // Ignore header items
+  if (!assetId ||
+    assetId === '__header_vehicle__' ||
+    assetId === '__header_nonvehicle__') {
+    form.value.vehicle_id = null
+    return
+  }
+  const asset = assetList.value.find(a => a.id === assetId)
+  if (asset) {
+    selectedAssetType.value = asset.asset_type
+    form.value.asset_type = asset.asset_type
+    form.value.mileage = null
+    form.value.hours_of_operation = null
+  }
+}
+
 async function generateRequestNo() {
   const year = new Date().getFullYear()
-
   const { data, error } = await supabase
     .from('vehicle_service_requests')
     .select('request_no')
@@ -507,9 +621,7 @@ async function generateRequestNo() {
     .order('request_no', { ascending: false })
     .limit(1)
 
-  if (error || !data || data.length === 0) {
-    return `${year}-001`
-  }
+  if (error || !data || data.length === 0) return `${year}-001`
 
   const lastNo = data[0].request_no
   const lastSequence = parseInt(lastNo.split('-')[1])
@@ -520,7 +632,6 @@ async function generateRequestNo() {
 // ---- METHODS ----
 async function fetchRequests() {
   loading.value = true
-
   const { data, error } = await supabase
     .from('vehicle_service_requests')
     .select('*')
@@ -529,31 +640,28 @@ async function fetchRequests() {
   if (error) {
     showSnackbar('Failed to load requests', 'error')
   } else {
-    // Attach vehicle name to each request
     requests.value = data.map((r) => ({
       ...r,
-      vehicle_name: getVehicleName(r.vehicle_id),
+      asset_name: getAssetName(r.vehicle_id),
     }))
   }
-
   loading.value = false
 }
 
-async function fetchVehicles() {
+async function fetchAssets() {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('id, unit_name')
+    .select('id, asset_name, asset_type')
     .eq('status', 'Active')
-    .order('unit_name')
+    .order('asset_type')
 
-  if (!error) {
-    vehicleList.value = data
-  }
+  if (!error) assetList.value = data
 }
 
 async function openAddDialog() {
   isEditing.value = false
   errors.value = {}
+  selectedAssetType.value = 'Vehicle'
   const requestNo = await generateRequestNo()
   form.value = {
     ...defaultForm,
@@ -567,6 +675,7 @@ function openEditDialog(request) {
   isEditing.value = true
   selectedRequest.value = request
   form.value = { ...request }
+  selectedAssetType.value = request.asset_type || 'Vehicle'
   errors.value = {}
   formDialog.value = true
 }
@@ -584,13 +693,14 @@ function openDeleteDialog(request) {
 function closeFormDialog() {
   formDialog.value = false
   form.value = { ...defaultForm }
+  selectedAssetType.value = 'Vehicle'
   errors.value = {}
 }
 
 function validateForm() {
   errors.value = {}
   if (!form.value.date_of_request) errors.value.date_of_request = 'Date is required'
-  if (!form.value.vehicle_id) errors.value.vehicle_id = 'Vehicle is required'
+  if (!form.value.vehicle_id) errors.value.vehicle_id = 'Asset is required'
   if (!form.value.problem_details?.trim())
     errors.value.problem_details = 'Problem details are required'
   return Object.keys(errors.value).length === 0
@@ -604,11 +714,14 @@ async function saveRequest() {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
     vehicle_id: form.value.vehicle_id,
+    asset_type: form.value.asset_type,
     requisitioner: form.value.requisitioner,
     problem_details: form.value.problem_details,
     work_details: form.value.work_details,
     conducted_by: form.value.conducted_by,
-    mileage: form.value.mileage || null,
+    mileage: selectedAssetType.value === 'Vehicle' ? form.value.mileage || null : null,
+    hours_of_operation:
+      selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
   }
@@ -620,7 +733,6 @@ async function saveRequest() {
       .eq('id', form.value.id)
 
     if (error) {
-      //console.log('UPDATE ERROR:', error) // 👈 Add this(for debugging)
       showSnackbar('Failed to update request', 'error')
     } else {
       showSnackbar('Request updated successfully', 'success')
@@ -631,7 +743,6 @@ async function saveRequest() {
     const { error } = await supabase.from('vehicle_service_requests').insert(payload)
 
     if (error) {
-      //console.log('INSERT ERROR:', error) // 👈 Add this(for debugging)
       showSnackbar('Failed to submit request', 'error')
     } else {
       showSnackbar('Request submitted successfully', 'success')
@@ -645,7 +756,6 @@ async function saveRequest() {
 
 async function deleteRequest() {
   deleting.value = true
-
   const { error } = await supabase
     .from('vehicle_service_requests')
     .delete()
@@ -658,7 +768,6 @@ async function deleteRequest() {
     deleteDialog.value = false
     await fetchRequests()
   }
-
   deleting.value = false
 }
 
@@ -668,7 +777,7 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
-  await fetchVehicles()
+  await fetchAssets()
   await fetchRequests()
 })
 </script>

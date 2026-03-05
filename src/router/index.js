@@ -29,6 +29,11 @@ const router = createRouter({
           component: () => import('../views/VehiclePMView.vue'),
         },
         {
+          path: 'pm-program',
+          name: 'PMProgram',
+          component: () => import('../views/PMProgramView.vue'),
+        },
+        {
           path: 'ac-units',
           name: 'ac-units',
           component: () => import('../views/ACUnitsView.vue'),

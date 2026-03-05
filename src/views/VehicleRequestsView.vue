@@ -506,8 +506,8 @@ const cancelledCount = computed(() => requests.value.filter((r) => r.status === 
 
 // Grouped asset items for dropdown
 const groupedAssetItems = computed(() => {
-  const vehicles = assetList.value.filter(a => a.asset_type === 'Vehicle')
-  const nonVehicles = assetList.value.filter(a => a.asset_type === 'Non-Vehicular')
+  const vehicles = assetList.value.filter((a) => a.asset_type === 'Vehicle')
+  const nonVehicles = assetList.value.filter((a) => a.asset_type === 'Non-Vehicular')
   const items = []
 
   if (vehicles.length > 0) {
@@ -517,12 +517,14 @@ const groupedAssetItems = computed(() => {
       assetType: null,
       isHeader: true,
     })
-    vehicles.forEach(v => items.push({
-      title: v.asset_name,
-      value: v.id,
-      assetType: v.asset_type,
-      isHeader: false,
-    }))
+    vehicles.forEach((v) =>
+      items.push({
+        title: v.asset_name,
+        value: v.id,
+        assetType: v.asset_type,
+        isHeader: false,
+      }),
+    )
   }
 
   if (nonVehicles.length > 0) {
@@ -532,12 +534,14 @@ const groupedAssetItems = computed(() => {
       assetType: null,
       isHeader: true,
     })
-    nonVehicles.forEach(v => items.push({
-      title: v.asset_name,
-      value: v.id,
-      assetType: v.asset_type,
-      isHeader: false,
-    }))
+    nonVehicles.forEach((v) =>
+      items.push({
+        title: v.asset_name,
+        value: v.id,
+        assetType: v.asset_type,
+        isHeader: false,
+      }),
+    )
   }
 
   return items
@@ -547,8 +551,7 @@ const groupedAssetItems = computed(() => {
 function itemProps(item) {
   return {
     disabled: item.isHeader,
-    class: item.isHeader
-      ? 'text-primary font-weight-bold text-caption' : '',
+    class: item.isHeader ? 'text-primary font-weight-bold text-caption' : '',
   }
 }
 
@@ -597,13 +600,11 @@ function getAssetName(assetId) {
 
 function onAssetSelected(assetId) {
   // Ignore header items
-  if (!assetId ||
-    assetId === '__header_vehicle__' ||
-    assetId === '__header_nonvehicle__') {
+  if (!assetId || assetId === '__header_vehicle__' || assetId === '__header_nonvehicle__') {
     form.value.vehicle_id = null
     return
   }
-  const asset = assetList.value.find(a => a.id === assetId)
+  const asset = assetList.value.find((a) => a.id === assetId)
   if (asset) {
     selectedAssetType.value = asset.asset_type
     form.value.asset_type = asset.asset_type

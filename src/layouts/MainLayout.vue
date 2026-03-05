@@ -30,6 +30,12 @@
           to="/vehicle-pm"
           rounded="lg"
         />
+        <v-list-item
+          prepend-icon="mdi-clipboard-text-clock"
+          title="PM Program"
+          to="/pm-program"
+          rounded="lg"
+        />
 
         <v-list-subheader>AIR CONDITIONER</v-list-subheader>
 

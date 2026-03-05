@@ -17,7 +17,7 @@
 
         <v-list-subheader>MOTOR POOL</v-list-subheader>
 
-        <v-list-item prepend-icon="mdi-car" title="Vehicles" to="/vehicles" rounded="lg" />
+        <v-list-item prepend-icon="mdi-car" title="Assets" to="/vehicles" rounded="lg" />
         <v-list-item
           prepend-icon="mdi-wrench"
           title="Service Requests"

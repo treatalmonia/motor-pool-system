@@ -33,6 +33,12 @@ const router = createRouter({
           name: 'PMProgram',
           component: () => import('../views/PMProgramView.vue'),
         },
+
+        {
+          path: 'annual-pm',
+          name: 'AnnualPM',
+          component: () => import('../views/AnnualPMView.vue'),
+        },
         {
           path: 'ac-units',
           name: 'ac-units',

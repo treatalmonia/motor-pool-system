@@ -36,6 +36,12 @@
           to="/pm-program"
           rounded="lg"
         />
+        <v-list-item
+          prepend-icon="mdi-file-document-edit"
+          title="Annual PM Program"
+          to="/annual-pm"
+          rounded="lg"
+        />
 
         <v-list-subheader>AIR CONDITIONER</v-list-subheader>
 

@@ -64,6 +64,13 @@
           rounded="lg"
         />
       </v-list>
+      <v-list-subheader>FUEL MANAGEMENT</v-list-subheader>
+      <v-list-item
+        prepend-icon="mdi-file-document-multiple"
+        title="Fuel Contracts"
+        to="/fuel-contracts"
+        rounded="lg"
+      />
     </v-navigation-drawer>
 
     <!-- Top Bar -->

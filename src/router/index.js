@@ -54,6 +54,7 @@ const router = createRouter({
           name: 'ac-cleaning',
           component: () => import('../views/ACCleaningView.vue'),
         },
+        { path: '/fuel-contracts', component: () => import('../views/FuelContractsView.vue') },
       ],
     },
   ],

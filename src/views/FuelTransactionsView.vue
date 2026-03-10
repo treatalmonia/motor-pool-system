@@ -693,8 +693,6 @@ const headers = [
 ]
 
 // ── BILLING PERIODS (24 per year) ──
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
                      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
 

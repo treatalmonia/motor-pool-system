@@ -1,6 +1,5 @@
 <template>
   <v-container fluid>
-
     <!-- Page Header -->
     <v-row class="mb-4">
       <v-col>
@@ -12,6 +11,14 @@
             </p>
           </div>
           <div class="d-flex ga-2 flex-wrap align-center">
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              prepend-icon="mdi-content-copy"
+              @click="openCopyYearDialog"
+            >
+              Copy to New Year
+            </v-btn>
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Transaction
             </v-btn>
@@ -87,7 +94,7 @@
           density="compact"
           hide-details
           clearable
-          style="min-width:260px"
+          style="min-width: 260px"
         />
         <v-select
           v-model="filterYear"
@@ -96,7 +103,7 @@
           variant="outlined"
           density="compact"
           hide-details
-          style="min-width:100px"
+          style="min-width: 100px"
           @update:modelValue="fetchTransactions"
         />
         <v-select
@@ -106,7 +113,7 @@
           variant="outlined"
           density="compact"
           hide-details
-          style="min-width:200px"
+          style="min-width: 200px"
         />
         <v-select
           v-model="filterFuel"
@@ -115,7 +122,7 @@
           variant="outlined"
           density="compact"
           hide-details
-          style="min-width:130px"
+          style="min-width: 130px"
         />
         <v-select
           v-model="filterFund"
@@ -124,7 +131,7 @@
           variant="outlined"
           density="compact"
           hide-details
-          style="min-width:120px"
+          style="min-width: 120px"
         />
         <v-spacer />
         <p class="text-medium-emphasis text-body-2 text-no-wrap">
@@ -148,7 +155,7 @@
             variant="outlined"
             density="compact"
             hide-details
-            style="min-width:100px"
+            style="min-width: 100px"
           />
           <v-text-field
             v-model="lookupSearch"
@@ -158,7 +165,7 @@
             density="compact"
             hide-details
             clearable
-            style="min-width:240px"
+            style="min-width: 240px"
           />
         </div>
         <div v-if="vehicleSummary.length === 0" class="text-medium-emphasis text-body-2 pa-2">
@@ -221,20 +228,19 @@
         <template #item.fuel_type="{ item }">
           <v-chip
             :color="item.fuel_type === 'Diesel' ? 'blue-darken-2' : 'green-darken-2'"
-            variant="tonal" size="small" class="font-weight-bold">
+            variant="tonal"
+            size="small"
+            class="font-weight-bold"
+          >
             {{ item.fuel_type }}
           </v-chip>
         </template>
 
         <!-- Quantity -->
-        <template #item.quantity="{ item }">
-          {{ formatNumber(item.quantity) }} L
-        </template>
+        <template #item.quantity="{ item }"> {{ formatNumber(item.quantity) }} L </template>
 
         <!-- Unit Price -->
-        <template #item.unit_price="{ item }">
-          ₱{{ formatNumber(item.unit_price) }}
-        </template>
+        <template #item.unit_price="{ item }"> ₱{{ formatNumber(item.unit_price) }} </template>
 
         <!-- Total Amount -->
         <template #item.total_amount="{ item }">
@@ -243,8 +249,12 @@
 
         <!-- Fund -->
         <template #item.fund_cluster="{ item }">
-          <v-chip :color="fundColor(item.fund_cluster)"
-            variant="tonal" size="small" class="font-weight-bold">
+          <v-chip
+            :color="fundColor(item.fund_cluster)"
+            variant="tonal"
+            size="small"
+            class="font-weight-bold"
+          >
             {{ item.fund_cluster }}
           </v-chip>
         </template>
@@ -256,12 +266,27 @@
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <v-btn icon="mdi-eye" size="x-small" variant="text"
-            color="info" @click="openViewDialog(item)" />
-          <v-btn icon="mdi-pencil" size="x-small" variant="text"
-            color="primary" @click="openEditDialog(item)" />
-          <v-btn icon="mdi-delete" size="x-small" variant="text"
-            color="error" @click="openDeleteDialog(item)" />
+          <v-btn
+            icon="mdi-eye"
+            size="x-small"
+            variant="text"
+            color="info"
+            @click="openViewDialog(item)"
+          />
+          <v-btn
+            icon="mdi-pencil"
+            size="x-small"
+            variant="text"
+            color="primary"
+            @click="openEditDialog(item)"
+          />
+          <v-btn
+            icon="mdi-delete"
+            size="x-small"
+            variant="text"
+            color="error"
+            @click="openDeleteDialog(item)"
+          />
         </template>
 
         <template #no-data>
@@ -483,8 +508,7 @@
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn variant="text" @click="closeFormDialog">Cancel</v-btn>
-          <v-btn color="primary" variant="flat"
-            :loading="saving" @click="saveTransaction">
+          <v-btn color="primary" variant="flat" :loading="saving" @click="saveTransaction">
             {{ isEditing ? 'Save Changes' : 'Add Transaction' }}
           </v-btn>
         </v-card-actions>
@@ -498,7 +522,10 @@
           <span>Transaction Details</span>
           <v-chip
             :color="selectedTx.fuel_type === 'Diesel' ? 'blue-darken-2' : 'green-darken-2'"
-            variant="tonal" size="small" class="font-weight-bold">
+            variant="tonal"
+            size="small"
+            class="font-weight-bold"
+          >
             {{ selectedTx.fuel_type }}
           </v-chip>
         </v-card-title>
@@ -562,8 +589,12 @@
             <v-row dense>
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Fund</p>
-                <v-chip :color="fundColor(selectedTx.fund_cluster)"
-                  variant="tonal" size="small" class="font-weight-bold">
+                <v-chip
+                  :color="fundColor(selectedTx.fund_cluster)"
+                  variant="tonal"
+                  size="small"
+                  class="font-weight-bold"
+                >
                   {{ selectedTx.fund_cluster }}
                 </v-chip>
               </v-col>
@@ -585,8 +616,16 @@
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="viewDialog = false">Close</v-btn>
-          <v-btn color="primary" variant="flat"
-            @click="() => { viewDialog = false; openEditDialog(selectedTx) }">
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="
+              () => {
+                viewDialog = false
+                openEditDialog(selectedTx)
+              }
+            "
+          >
             Edit
           </v-btn>
         </v-card-actions>
@@ -600,25 +639,70 @@
           <v-icon color="error" size="56" class="mb-3">mdi-alert-circle</v-icon>
           <h3 class="text-h6 mb-2">Delete Transaction?</h3>
           <p class="text-medium-emphasis">
-            Delete OR# <strong>{{ selectedTx?.or_number }}</strong>?
-            This cannot be undone.
+            Delete OR# <strong>{{ selectedTx?.or_number }}</strong
+            >? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat"
-            :loading="deleting" @click="deleteTx">Delete</v-btn>
+          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteTx">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color"
-      location="bottom right" :timeout="3000">
+    <!-- ── COPY YEAR DIALOG ── -->
+    <v-dialog v-model="copyYearDialog" max-width="420">
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <v-icon start>mdi-content-copy</v-icon>
+          Copy Transactions to New Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            All transactions from <strong>{{ copyFromYear }}</strong> will be copied to a new year.
+            OR numbers will be preserved with a <strong>-COPY</strong> suffix.
+          </p>
+          <v-row>
+            <v-col cols="6">
+              <v-select
+                v-model="copyFromYear"
+                :items="availableYears"
+                label="Copy From"
+                variant="outlined"
+                density="comfortable"
+              />
+            </v-col>
+            <v-col cols="6">
+              <v-text-field
+                v-model="copyToYear"
+                label="Copy To (Year)"
+                variant="outlined"
+                density="comfortable"
+                type="number"
+                placeholder="e.g. 2026"
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="copyYearDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" :loading="copying" @click="copyToNewYear">
+            Copy Transactions
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      location="bottom right"
+      :timeout="3000"
+    >
       {{ snackbar.message }}
     </v-snackbar>
-
   </v-container>
 </template>
 
@@ -648,7 +732,10 @@ const viewDialog = ref(false)
 const deleteDialog = ref(false)
 const isEditing = ref(false)
 const selectedTx = ref(null)
-
+const copyYearDialog = ref(false)
+const copyFromYear = ref(new Date().getFullYear())
+const copyToYear = ref(new Date().getFullYear() + 1)
+const copying = ref(false)
 // ── FORM ──
 const defaultForm = {
   date: '',
@@ -693,8 +780,20 @@ const headers = [
 ]
 
 // ── BILLING PERIODS (24 per year) ──
-const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-                     'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+const MONTH_NAMES = [
+  'JANUARY',
+  'FEBRUARY',
+  'MARCH',
+  'APRIL',
+  'MAY',
+  'JUNE',
+  'JULY',
+  'AUGUST',
+  'SEPTEMBER',
+  'OCTOBER',
+  'NOVEMBER',
+  'DECEMBER',
+]
 
 function getBillingPeriod(dateStr) {
   if (!dateStr) return ''
@@ -708,46 +807,50 @@ function getBillingPeriod(dateStr) {
 }
 
 const billingPeriods = computed(() => {
-  const set = new Set(transactions.value.map(t => t.billing_period).filter(Boolean))
+  const set = new Set(transactions.value.map((t) => t.billing_period).filter(Boolean))
   return [...set].sort()
 })
 
 // ── COMPUTED ──
 const filteredTransactions = computed(() => {
-  return transactions.value.filter(t => {
-    const matchSearch = !search.value ||
-      [t.or_number, t.vehicle, t.utilized_by, t.account_code]
-        .some(f => f?.toLowerCase().includes(search.value.toLowerCase()))
-    const matchPeriod = filterPeriod.value === 'All Periods' ||
-      t.billing_period === filterPeriod.value
-    const matchFuel = filterFuel.value === 'All Types' ||
-      t.fuel_type === filterFuel.value
-    const matchFund = filterFund.value === 'All Funds' ||
-      t.fund_cluster === filterFund.value
+  return transactions.value.filter((t) => {
+    const matchSearch =
+      !search.value ||
+      [t.or_number, t.vehicle, t.utilized_by, t.account_code].some((f) =>
+        f?.toLowerCase().includes(search.value.toLowerCase()),
+      )
+    const matchPeriod =
+      filterPeriod.value === 'All Periods' || t.billing_period === filterPeriod.value
+    const matchFuel = filterFuel.value === 'All Types' || t.fuel_type === filterFuel.value
+    const matchFund = filterFund.value === 'All Funds' || t.fund_cluster === filterFund.value
     return matchSearch && matchPeriod && matchFuel && matchFund
   })
 })
 
 const totalDiesel = computed(() =>
   filteredTransactions.value
-    .filter(t => t.fuel_type === 'Diesel')
-    .reduce((s, t) => s + (t.quantity || 0), 0))
+    .filter((t) => t.fuel_type === 'Diesel')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
 
 const totalGasoline = computed(() =>
   filteredTransactions.value
-    .filter(t => t.fuel_type === 'Gasoline')
-    .reduce((s, t) => s + (t.quantity || 0), 0))
+    .filter((t) => t.fuel_type === 'Gasoline')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
 
 const totalAmount = computed(() =>
-  filteredTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0))
+  filteredTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
+)
 
 const availableFunds = computed(() =>
-  [...new Set(contracts.value.map(c => c.fund_cluster).filter(Boolean))].sort())
+  [...new Set(contracts.value.map((c) => c.fund_cluster).filter(Boolean))].sort(),
+)
 
 const filteredContractOptions = computed(() => {
   return contracts.value
-    .filter(c => !form.value.fund_cluster || c.fund_cluster === form.value.fund_cluster)
-    .map(c => ({
+    .filter((c) => !form.value.fund_cluster || c.fund_cluster === form.value.fund_cluster)
+    .map((c) => ({
       id: c.id,
       label: `[${c.fund_cluster}] ${c.account_code} — ${c.po_number}`,
       po_number: c.po_number,
@@ -758,22 +861,23 @@ const filteredContractOptions = computed(() => {
 
 // Vehicle / Equipment options from assets + past transactions
 const vehicleOptions = computed(() => {
-  const fromAssets = assets.value.map(a => a.asset_name)
-  const fromTx = [...new Set(transactions.value.map(t => t.vehicle).filter(Boolean))]
+  const fromAssets = assets.value.map((a) => a.asset_name)
+  const fromTx = [...new Set(transactions.value.map((t) => t.vehicle).filter(Boolean))]
   return [...new Set([...fromAssets, ...fromTx])].sort()
 })
 
 const utilizedByOptions = computed(() =>
-  [...new Set(transactions.value.map(t => t.utilized_by).filter(Boolean))].sort())
+  [...new Set(transactions.value.map((t) => t.utilized_by).filter(Boolean))].sort(),
+)
 
 // ── VEHICLE SUMMARY (quick lookup) ──
 const vehicleSummary = computed(() => {
-  const yearTx = transactions.value.filter(t => {
+  const yearTx = transactions.value.filter((t) => {
     const d = new Date(t.date + 'T00:00:00')
     return d.getFullYear() === Number(lookupYear.value)
   })
   const map = new Map()
-  yearTx.forEach(t => {
+  yearTx.forEach((t) => {
     const key = t.vehicle || 'Unknown'
     if (!map.has(key)) {
       map.set(key, {
@@ -782,8 +886,8 @@ const vehicleSummary = computed(() => {
         diesel: 0,
         gasoline: 0,
         amount: 0,
-        is_vehicle: assets.value.find(
-          a => a.asset_name === key && a.asset_type === 'Vehicle') != null,
+        is_vehicle:
+          assets.value.find((a) => a.asset_name === key && a.asset_type === 'Vehicle') != null,
       })
     }
     const entry = map.get(key)
@@ -797,16 +901,16 @@ const vehicleSummary = computed(() => {
 
 const filteredVehicleSummary = computed(() => {
   if (!lookupSearch.value) return vehicleSummary.value
-  return vehicleSummary.value.filter(v =>
-    v.name.toLowerCase().includes(lookupSearch.value.toLowerCase()))
+  return vehicleSummary.value.filter((v) =>
+    v.name.toLowerCase().includes(lookupSearch.value.toLowerCase()),
+  )
 })
 
 // ── FETCH ──
 async function fetchAvailableYears() {
-  const { data } = await supabase
-    .from('fuel_transactions').select('date').order('date')
+  const { data } = await supabase.from('fuel_transactions').select('date').order('date')
   if (data && data.length > 0) {
-    const years = [...new Set(data.map(r => new Date(r.date).getFullYear()))]
+    const years = [...new Set(data.map((r) => new Date(r.date).getFullYear()))]
     const allYears = [...new Set([...years, new Date().getFullYear()])].sort()
     availableYears.value = allYears
   }
@@ -906,7 +1010,7 @@ function onFundChange() {
 }
 
 function onContractSelected(id) {
-  const contract = filteredContractOptions.value.find(c => c.id === id)
+  const contract = filteredContractOptions.value.find((c) => c.id === id)
   if (contract) {
     form.value.po_number = contract.po_number
     form.value.fund_cluster = contract.fund_cluster
@@ -929,8 +1033,7 @@ function onQuantityInput(e) {
   }
 }
 function onQuantityBlur() {
-  form.value.quantity_display = form.value.quantity
-    ? formatNumber(form.value.quantity) : ''
+  form.value.quantity_display = form.value.quantity ? formatNumber(form.value.quantity) : ''
 }
 
 function onUnitPriceInput(e) {
@@ -941,8 +1044,7 @@ function onUnitPriceInput(e) {
   }
 }
 function onUnitPriceBlur() {
-  form.value.unit_price_display = form.value.unit_price
-    ? formatNumber(form.value.unit_price) : ''
+  form.value.unit_price_display = form.value.unit_price ? formatNumber(form.value.unit_price) : ''
 }
 
 // ── VALIDATION ──
@@ -984,7 +1086,9 @@ async function saveTransaction() {
   }
   if (isEditing.value) {
     const { error } = await supabase
-      .from('fuel_transactions').update(payload).eq('id', form.value.id)
+      .from('fuel_transactions')
+      .update(payload)
+      .eq('id', form.value.id)
     if (error) showSnackbar('Failed to update transaction', 'error')
     else {
       showSnackbar('Transaction updated', 'success')
@@ -992,8 +1096,7 @@ async function saveTransaction() {
       await fetchTransactions()
     }
   } else {
-    const { error } = await supabase
-      .from('fuel_transactions').insert(payload)
+    const { error } = await supabase.from('fuel_transactions').insert(payload)
     if (error) showSnackbar('Failed to add transaction', 'error')
     else {
       showSnackbar('Transaction added', 'success')
@@ -1007,8 +1110,7 @@ async function saveTransaction() {
 // ── DELETE ──
 async function deleteTx() {
   deleting.value = true
-  const { error } = await supabase
-    .from('fuel_transactions').delete().eq('id', selectedTx.value.id)
+  const { error } = await supabase.from('fuel_transactions').delete().eq('id', selectedTx.value.id)
   if (error) showSnackbar('Failed to delete transaction', 'error')
   else {
     showSnackbar('Transaction deleted', 'success')
@@ -1045,6 +1147,77 @@ function showSnackbar(message, color = 'success') {
 
 // Re-fetch when year filter changes
 watch(filterYear, fetchTransactions)
+function openCopyYearDialog() {
+  copyFromYear.value = filterYear.value
+  copyToYear.value = filterYear.value + 1
+  copyYearDialog.value = true
+}
+
+async function copyToNewYear() {
+  if (!copyToYear.value) return
+  copying.value = true
+
+  const startDate = `${copyFromYear.value}-01-01`
+  const endDate = `${copyFromYear.value}-12-31`
+  const { data, error } = await supabase
+    .from('fuel_transactions')
+    .select('*')
+    .gte('date', startDate)
+    .lte('date', endDate)
+
+  if (error || !data || data.length === 0) {
+    showSnackbar('No transactions found for selected year', 'error')
+    copying.value = false
+    return
+  }
+
+  // Check if destination year already has data
+  const { data: existing } = await supabase
+    .from('fuel_transactions')
+    .select('id')
+    .gte('date', `${copyToYear.value}-01-01`)
+    .lte('date', `${copyToYear.value}-12-31`)
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    showSnackbar(`Year ${copyToYear.value} already has transactions`, 'error')
+    copying.value = false
+    return
+  }
+
+  const yearDiff = Number(copyToYear.value) - Number(copyFromYear.value)
+  const newRows = data.map((row) => {
+    // eslint-disable-next-line no-unused-vars
+    const { id, created_at, ...rest } = row
+    // Shift date by year difference
+    const newDate = new Date(rest.date + 'T00:00:00')
+    newDate.setFullYear(newDate.getFullYear() + yearDiff)
+    const newDateStr = newDate.toISOString().split('T')[0]
+    // Update billing period year
+    const newPeriod = rest.billing_period.replace(
+      String(copyFromYear.value),
+      String(copyToYear.value),
+    )
+    return {
+      ...rest,
+      date: newDateStr,
+      billing_period: newPeriod,
+      or_number: rest.or_number + '-COPY',
+    }
+  })
+
+  const { error: insertError } = await supabase.from('fuel_transactions').insert(newRows)
+
+  if (insertError) showSnackbar('Failed to copy transactions', 'error')
+  else {
+    showSnackbar(`${newRows.length} transactions copied to ${copyToYear.value}`, 'success')
+    await fetchAvailableYears()
+    filterYear.value = Number(copyToYear.value)
+    await fetchTransactions()
+    copyYearDialog.value = false
+  }
+  copying.value = false
+}
 
 onMounted(async () => {
   await Promise.all([fetchContracts(), fetchAssets()])

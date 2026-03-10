@@ -71,6 +71,12 @@
         to="/fuel-contracts"
         rounded="lg"
       />
+      <v-list-item
+        prepend-icon="mdi-receipt-text"
+        title="Fuel Transactions"
+        to="/fuel-transactions"
+        rounded="lg"
+      />
     </v-navigation-drawer>
 
     <!-- Top Bar -->

@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <!-- Sidebar Navigation -->
-    <v-navigation-drawer v-model="drawer" permanent color="white">
+    <v-navigation-drawer v-model="drawer" permanent>
       <v-list-item
         title="Maintenance Fleet Manager"
         subtitle="CSU General Services"
@@ -89,6 +89,12 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>{{ currentPageTitle }}</v-app-bar-title>
       <template v-slot:append>
+        <v-btn
+          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          variant="text"
+          class="mr-1"
+          @click="toggleTheme"
+        />
         <v-chip color="primary" class="mr-3">
           <v-icon start>mdi-account</v-icon>
           Admin
@@ -106,9 +112,16 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useTheme } from 'vuetify'
 
 const drawer = ref(true)
 const route = useRoute()
+const theme = useTheme()
+const isDark = computed(() => theme.global.name.value === 'dark')
+
+function toggleTheme() {
+  theme.global.name.value = isDark.value ? 'light' : 'dark'
+}
 
 const pageTitles = {
   '/': 'Dashboard',

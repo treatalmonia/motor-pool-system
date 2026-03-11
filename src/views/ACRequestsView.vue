@@ -200,35 +200,30 @@
               />
             </v-col>
 
-            <!-- Building (auto-filled from AC unit) -->
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="selectedBuilding"
-                :items="buildings"
-                label="Building *"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="errors.building"
-                @update:modelValue="onBuildingChange"
-              />
-            </v-col>
+            <v-combobox
+              v-model="selectedBuilding"
+              :items="buildings"
+              label="Building *"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="errors.building"
+              hint="Select or type a new building"
+              persistent-hint
+              @update:modelValue="onBuildingChange"
+            />
 
             <!-- AC Unit (filtered by building) -->
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.ac_unit_id"
-                :items="filteredAcUnits"
-                item-title="display_name"
-                item-value="id"
-                label="AC Unit / Room *"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="errors.ac_unit_id"
-                :disabled="!selectedBuilding"
-                hint="Select building first"
-                persistent-hint
-              />
-            </v-col>
+            <v-combobox
+              v-model="form.area_room"
+              :items="filteredAcUnits.map((u) => u.display_name)"
+              label="AC Unit / Room *"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="errors.ac_unit_id"
+              :disabled="!selectedBuilding"
+              hint="Select or type a room name"
+              persistent-hint
+            />
 
             <!-- Details of Request -->
             <v-col cols="12">
@@ -365,14 +360,7 @@ const buildingFilter = ref('All')
 const selectedBuilding = ref('')
 
 // ---- BUILDINGS ----
-const buildings = [
-  'Administration Building',
-  'Farm Mechanization Building',
-  'Hero Learning Commons Building',
-  'Kinaadman Building',
-  'Old CAS Building',
-  'S&T Building',
-]
+const buildings = ref([])
 
 // ---- DIALOGS ----
 const formDialog = ref(false)
@@ -491,6 +479,11 @@ async function generateRequestNo() {
 }
 
 // ---- METHODS ----
+async function fetchBuildings() {
+  const { data, error } = await supabase.from('buildings').select('name').order('name')
+  if (!error) buildings.value = data.map((b) => b.name)
+}
+
 async function fetchRequests() {
   loading.value = true
 
@@ -566,7 +559,7 @@ function validateForm() {
   errors.value = {}
   if (!form.value.date_received) errors.value.date_received = 'Date is required'
   if (!selectedBuilding.value) errors.value.building = 'Building is required'
-  if (!form.value.ac_unit_id) errors.value.ac_unit_id = 'AC unit is required'
+  if (!form.value.area_room?.trim()) errors.value.ac_unit_id = 'AC Unit / Room is required'
   if (!form.value.details_of_request?.trim())
     errors.value.details_of_request = 'Details of request are required'
   return Object.keys(errors.value).length === 0
@@ -576,15 +569,14 @@ async function saveRequest() {
   if (!validateForm()) return
   saving.value = true
 
-  // Get area_room from selected AC unit
-  const selectedUnit = acUnitList.value.find((u) => u.id === form.value.ac_unit_id)
-
   const payload = {
     request_no: form.value.request_no,
     date_received: form.value.date_received,
-    ac_unit_id: form.value.ac_unit_id,
+
+    ac_unit_id: null,
     building: selectedBuilding.value,
-    area_room: selectedUnit?.area_room || '',
+    area_room: form.value.area_room || '',
+
     details_of_request: form.value.details_of_request,
     remarks: form.value.remarks,
     status: form.value.status,
@@ -643,6 +635,7 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
+  await fetchBuildings()
   await fetchAcUnits()
   await fetchRequests()
 })

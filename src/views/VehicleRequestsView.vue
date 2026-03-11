@@ -257,6 +257,18 @@
               />
             </v-col>
 
+            <!-- Work Details -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.work_details"
+                label="Work Details"
+                variant="outlined"
+                density="comfortable"
+                rows="3"
+                placeholder="Describe the work done"
+              />
+            </v-col>
+
             <!-- Problem Details -->
             <v-col cols="12">
               <v-textarea
@@ -267,18 +279,6 @@
                 rows="3"
                 :error-messages="errors.problem_details"
                 placeholder="Describe the problem or service needed"
-              />
-            </v-col>
-
-            <!-- Work Details -->
-            <v-col cols="12">
-              <v-textarea
-                v-model="form.work_details"
-                label="Work Details"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                placeholder="Describe the work done"
               />
             </v-col>
 

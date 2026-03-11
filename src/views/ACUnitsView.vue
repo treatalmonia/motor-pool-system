@@ -17,24 +17,24 @@
       </v-col>
     </v-row>
 
-
     <!-- Total Summary Row -->
     <v-row class="mb-4">
       <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border color="primary">
+        <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="white" variant="tonal" size="48">
-              <v-icon color="primary">mdi-air-conditioner</v-icon>
+            <v-avatar color="primary" variant="tonal" size="48">
+              <v-icon>mdi-air-conditioner</v-icon>
             </v-avatar>
             <div>
-              <p class="text-body-2 text-white">Total AC Units</p>
-              <p class="text-h5 font-weight-bold text-white">
+              <p class="text-medium-emphasis text-body-2">Total AC Units</p>
+              <p class="text-h5 font-weight-bold">
                 {{ acUnits.length }}
               </p>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
+
       <v-col cols="12" sm="3">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
@@ -502,7 +502,6 @@ const transferredCount = computed(
 const decommissionedCount = computed(
   () => acUnits.value.filter((u) => u.status === 'Decommissioned').length,
 )
-
 
 const filteredUnits = computed(() => {
   let result = acUnits.value

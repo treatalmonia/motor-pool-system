@@ -224,32 +224,32 @@
           <v-row>
             <!-- Building -->
             <v-col cols="12" sm="6">
-              <v-select
+              <v-combobox
                 v-model="selectedBuilding"
                 :items="buildings"
                 label="Building *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.building"
+                hint="Select or type a new building"
+                persistent-hint
                 @update:modelValue="onBuildingChange"
               />
             </v-col>
 
             <!-- AC Unit -->
+
             <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.ac_unit_id"
-                :items="filteredAcUnits"
-                item-title="display_name"
-                item-value="id"
+              <v-combobox
+                v-model="form.area_room"
+                :items="filteredAcUnits.map((u) => u.display_name)"
                 label="AC Unit / Room *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.ac_unit_id"
                 :disabled="!selectedBuilding"
-                hint="Select building first"
+                hint="Select or type a room name"
                 persistent-hint
-                @update:modelValue="onAcUnitChange"
               />
             </v-col>
 
@@ -428,14 +428,7 @@ const selectedBuilding = ref('')
 const today = new Date().toISOString().split('T')[0]
 
 // ---- BUILDINGS ----
-const buildings = [
-  'Administration Building',
-  'Farm Mechanization Building',
-  'Hero Learning Commons Building',
-  'Kinaadman Building',
-  'Old CAS Building',
-  'S&T Building',
-]
+const buildings = ref([])
 
 // ---- DIALOGS ----
 const formDialog = ref(false)
@@ -568,15 +561,12 @@ function onBuildingChange() {
   form.value.area_room = ''
 }
 
-function onAcUnitChange(unitId) {
-  const unit = acUnitList.value.find((u) => u.id === unitId)
-  if (unit) {
-    form.value.area_room = unit.area_room
-    form.value.building = selectedBuilding.value
-  }
+// ---- METHODS ----
+async function fetchBuildings() {
+  const { data, error } = await supabase.from('buildings').select('name').order('name')
+  if (!error) buildings.value = data.map((b) => b.name)
 }
 
-// ---- METHODS ----
 async function fetchRecords() {
   loading.value = true
 
@@ -647,7 +637,7 @@ function closeFormDialog() {
 function validateForm() {
   errors.value = {}
   if (!selectedBuilding.value) errors.value.building = 'Building is required'
-  if (!form.value.ac_unit_id) errors.value.ac_unit_id = 'AC unit is required'
+  if (!form.value.area_room?.trim()) errors.value.ac_unit_id = 'AC Unit / Room is required'
   if (!form.value.last_cleaning_date)
     errors.value.last_cleaning_date = 'Last cleaning date is required'
   return Object.keys(errors.value).length === 0
@@ -655,6 +645,11 @@ function validateForm() {
 
 async function saveRecord() {
   if (!validateForm()) return
+  // Save new building to DB if it doesn't exist yet
+  if (selectedBuilding.value && !buildings.value.includes(selectedBuilding.value)) {
+    await supabase.from('buildings').insert({ name: selectedBuilding.value })
+    await fetchBuildings()
+  }
   saving.value = true
 
   const payload = {
@@ -719,6 +714,7 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
+  await fetchBuildings()
   await fetchAcUnits()
   await fetchRecords()
 })

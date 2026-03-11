@@ -202,9 +202,7 @@
                 label="Request No."
                 variant="outlined"
                 density="comfortable"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-generated"
+                hint="Auto-generated. You can change it."
                 persistent-hint
               />
             </v-col>

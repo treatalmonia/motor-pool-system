@@ -17,50 +17,24 @@
       </v-col>
     </v-row>
 
-    <!-- Building Summary Cards -->
-    <v-row class="mb-4">
-      <v-col v-for="building in buildingSummary" :key="building.name" cols="12" sm="6" md="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="48">
-              <v-icon>mdi-office-building</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">{{ building.name }}</p>
-              <p class="text-h5 font-weight-bold">
-                {{ building.total }}
-                <span class="text-body-2 font-weight-regular text-medium-emphasis"> units </span>
-              </p>
-            </div>
-            <v-spacer />
-            <div class="text-right">
-              <p class="text-caption text-success">{{ building.active }} active</p>
-              <p class="text-caption text-error" v-if="building.inactive > 0">
-                {{ building.inactive }} inactive
-              </p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
     <!-- Total Summary Row -->
     <v-row class="mb-4">
       <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border color="primary">
+        <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="white" variant="tonal" size="48">
-              <v-icon color="primary">mdi-air-conditioner</v-icon>
+            <v-avatar color="primary" variant="tonal" size="48">
+              <v-icon>mdi-air-conditioner</v-icon>
             </v-avatar>
             <div>
-              <p class="text-body-2 text-white">Total AC Units</p>
-              <p class="text-h5 font-weight-bold text-white">
+              <p class="text-medium-emphasis text-body-2">Total AC Units</p>
+              <p class="text-h5 font-weight-bold">
                 {{ acUnits.length }}
               </p>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
+
       <v-col cols="12" sm="3">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
@@ -106,7 +80,7 @@
     <v-card rounded="lg" elevation="0" border>
       <v-card-text>
         <!-- Filters -->
-        <v-row class="mb-2">
+        <v-row class="mb-2" align="center">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
@@ -128,16 +102,7 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" sm="3">
-            <v-select
-              v-model="unitTypeFilter"
-              :items="['All', ...unitTypes]"
-              label="Unit Type"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
+
           <v-col cols="12" sm="3">
             <v-select
               v-model="statusFilter"
@@ -147,6 +112,11 @@
               density="compact"
               hide-details
             />
+          </v-col>
+          <v-col cols="12" sm="3" class="d-flex justify-end align-center">
+            <span class="text-caption text-medium-emphasis">
+              Showing {{ filteredUnits.length }} of {{ acUnits.length }} units
+            </span>
           </v-col>
         </v-row>
 
@@ -226,13 +196,15 @@
           <v-row>
             <!-- Building -->
             <v-col cols="12" sm="6">
-              <v-select
+              <v-combobox
                 v-model="form.building"
                 :items="buildings"
                 label="Building *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.building"
+                hint="Select or type a new building"
+                persistent-hint
               />
             </v-col>
 
@@ -447,20 +419,13 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const buildingFilter = ref('All')
-const unitTypeFilter = ref('All')
+
 const statusFilter = ref('All')
 
 // ---- DROPDOWN OPTIONS ----
-const buildings = [
-  'Administration Building',
-  'Farm Mechanization Building',
-  'Hero Learning Commons Building',
-  'Kinaadman Building',
-  'Old CAS Building',
-  'S&T Building',
-]
+const buildings = ref([])
 
-const floors = ['Ground Floor', '2nd Floor', '3rd Floor', 'Mezzanine']
+const floors = ref([])
 
 const unitTypes = ['Floor-Mounted', 'Wall-Mounted', 'Window Type', 'Ceiling Type']
 
@@ -529,29 +494,13 @@ const decommissionedCount = computed(
   () => acUnits.value.filter((u) => u.status === 'Decommissioned').length,
 )
 
-const buildingSummary = computed(() => {
-  return buildings.map((name) => {
-    const units = acUnits.value.filter((u) => u.building === name)
-    const totalUnits = units.reduce((sum, u) => sum + (u.num_units || 0), 0)
-    const active = units
-      .filter((u) => u.status === 'Active')
-      .reduce((sum, u) => sum + (u.num_units || 0), 0)
-    const inactive = units
-      .filter((u) => u.status !== 'Active')
-      .reduce((sum, u) => sum + (u.num_units || 0), 0)
-    return { name, total: totalUnits, active, inactive }
-  })
-})
-
 const filteredUnits = computed(() => {
   let result = acUnits.value
 
   if (buildingFilter.value !== 'All') {
     result = result.filter((u) => u.building === buildingFilter.value)
   }
-  if (unitTypeFilter.value !== 'All') {
-    result = result.filter((u) => u.unit_type === unitTypeFilter.value)
-  }
+
   if (statusFilter.value !== 'All') {
     result = result.filter((u) => u.status === statusFilter.value)
   }
@@ -592,6 +541,16 @@ function unitTypeColor(type) {
 }
 
 // ---- METHODS ----
+async function fetchBuildings() {
+  const { data, error } = await supabase.from('buildings').select('name').order('name')
+  if (!error) buildings.value = data.map((b) => b.name)
+}
+
+async function fetchFloors() {
+  const { data, error } = await supabase.from('floors').select('name').order('name')
+  if (!error) floors.value = data.map((f) => f.name)
+}
+
 async function fetchUnits() {
   loading.value = true
   const { data, error } = await supabase
@@ -651,6 +610,19 @@ function validateForm() {
 
 async function saveUnit() {
   if (!validateForm()) return
+
+  // Save new building to DB if it doesn't exist yet
+  if (!buildings.value.includes(form.value.building)) {
+    await supabase.from('buildings').insert({ name: form.value.building })
+    await fetchBuildings()
+  }
+
+  // Save new floor to DB if it doesn't exist yet
+  if (!floors.value.includes(form.value.floor)) {
+    await supabase.from('floors').insert({ name: form.value.floor })
+    await fetchFloors()
+  }
+
   saving.value = true
 
   const payload = {
@@ -712,7 +684,9 @@ function showSnackbar(message, color = 'success') {
 }
 
 // ---- LIFECYCLE ----
-onMounted(() => {
-  fetchUnits()
+onMounted(async () => {
+  await fetchBuildings()
+  await fetchFloors()
+  await fetchUnits()
 })
 </script>

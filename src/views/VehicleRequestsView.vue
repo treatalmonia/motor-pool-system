@@ -77,7 +77,7 @@
     <v-card rounded="lg" elevation="0" border>
       <v-card-text>
         <!-- Filters -->
-        <v-row class="mb-2">
+        <v-row class="mb-2" align="center">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
@@ -120,6 +120,11 @@
             />
           </v-col>
         </v-row>
+        <div class="d-flex justify-end mb-2">
+          <span class="text-caption text-medium-emphasis">
+            Showing {{ filteredRequests.length }} of {{ requests.length }} requests
+          </span>
+        </div>
 
         <!-- Data Table -->
         <v-data-table
@@ -202,9 +207,7 @@
                 label="Request No."
                 variant="outlined"
                 density="comfortable"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-generated"
+                hint="Auto-generated. You can change it."
                 persistent-hint
               />
             </v-col>
@@ -259,6 +262,18 @@
               />
             </v-col>
 
+            <!-- Work Details -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.work_details"
+                label="Work Details"
+                variant="outlined"
+                density="comfortable"
+                rows="3"
+                placeholder="Describe the work done"
+              />
+            </v-col>
+
             <!-- Problem Details -->
             <v-col cols="12">
               <v-textarea
@@ -269,18 +284,6 @@
                 rows="3"
                 :error-messages="errors.problem_details"
                 placeholder="Describe the problem or service needed"
-              />
-            </v-col>
-
-            <!-- Work Details -->
-            <v-col cols="12">
-              <v-textarea
-                v-model="form.work_details"
-                label="Work Details"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                placeholder="Describe the work done"
               />
             </v-col>
 

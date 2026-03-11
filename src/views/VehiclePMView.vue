@@ -142,20 +142,29 @@
                 </v-chip>
               </td>
               <td>{{ item.service_type }}</td>
+
+              <!-- Last Date Performed -->
               <td>{{ formatDate(item.date_performed) }}</td>
+
+              <!-- Odometer at Service -->
               <td>
                 <span v-if="item.asset_type === 'Vehicle'">
                   {{ item.odometer ? Number(item.odometer).toLocaleString() + ' km' : '—' }}
                 </span>
-                <span v-else>
-                  {{ item.hours_of_operation ? item.hours_of_operation + ' hrs' : '—' }}
-                </span>
+                <span v-else class="text-medium-emphasis">—</span>
               </td>
+
+              <!-- Date Completed -->
+              <td>{{ formatDate(item.date_accomplished) || '—' }}</td>
+
+              <!-- Next Due Date -->
               <td>
                 <span :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
                   {{ formatDate(item.next_due_date) || '—' }}
                 </span>
               </td>
+
+              <!-- Next Due Odo -->
               <td>
                 <span v-if="item.asset_type === 'Vehicle'">
                   {{
@@ -166,6 +175,7 @@
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
               </td>
+
               <td>
                 <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
                   {{ item.status }}
@@ -244,7 +254,7 @@
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.date_performed_display"
-                label="Date Performed * (MM/DD/YY)"
+                label="Last Date Performed * (MM/DD/YY)"
                 variant="outlined"
                 density="comfortable"
                 placeholder="e.g. 03/05/26"
@@ -357,9 +367,34 @@
                 label="Status"
                 variant="outlined"
                 density="comfortable"
+                @update:modelValue="onStatusChange"
               />
             </v-col>
 
+            <!-- Date Completed -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_accomplished"
+                label="Date Completed"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-fills when status is set to Completed. You can change it."
+                persistent-hint
+              />
+            </v-col>
+            <!-- Current Odometer -->
+            <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
+              <v-text-field
+                v-model="form.current_odometer_display"
+                label="Current Odometer (km)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 45,000"
+                @input="onCurrentOdometerInput"
+                @blur="onCurrentOdometerBlur"
+              />
+            </v-col>
             <!-- Remarks -->
             <v-col cols="12">
               <v-textarea
@@ -453,7 +488,7 @@
             <v-card-text class="pa-3">
               <v-row dense>
                 <v-col cols="6">
-                  <p class="text-caption text-medium-emphasis">Date Performed</p>
+                  <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
                     {{ formatDate(selectedRecord.date_performed) || '—' }}
                   </p>
@@ -623,7 +658,10 @@ const defaultForm = {
   cost: null,
   cost_display: '',
   status: 'Scheduled',
+  current_odometer: null,
+  current_odometer_display: '',
   remarks: '',
+  date_accomplished: null,
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -636,8 +674,9 @@ const headers = [
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Type', key: 'asset_type', sortable: true },
   { title: 'Service Type', key: 'service_type', sortable: true },
-  { title: 'Date Performed', key: 'date_performed', sortable: true },
-  { title: 'Odo / Hours', key: 'odometer', sortable: false },
+  { title: 'Last Date Performed', key: 'date_performed', sortable: true },
+  { title: 'Odometer at Service', key: 'odometer', sortable: false },
+  { title: 'Date Completed', key: 'date_accomplished', sortable: true },
   { title: 'Next Due Date', key: 'next_due_date', sortable: true },
   { title: 'Next Due Odo.', key: 'next_due_odometer', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
@@ -747,6 +786,18 @@ function onOdometerBlur() {
   form.value.odometer_display = form.value.odometer ? formatNumber(form.value.odometer) : ''
 }
 
+function onCurrentOdometerInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (!isNaN(raw) && raw !== '') {
+    form.value.current_odometer = Number(raw)
+  }
+}
+function onCurrentOdometerBlur() {
+  form.value.current_odometer_display = form.value.current_odometer
+    ? formatNumber(form.value.current_odometer)
+    : ''
+}
+
 function onDatePerformedInput(e) {
   const val = e.target.value
   form.value.date_performed_display = val
@@ -802,6 +853,11 @@ function onNextDueOdometerBlur() {
 }
 
 // ---- HELPERS ----
+function onStatusChange(newStatus) {
+  if (newStatus === 'Completed' && !form.value.date_accomplished) {
+    form.value.date_accomplished = today
+  }
+}
 function itemProps(item) {
   return {
     disabled: item.isHeader,
@@ -988,6 +1044,7 @@ async function saveRecord() {
   saving.value = true
 
   const payload = {
+    date_accomplished: form.value.date_accomplished || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,
     service_type: form.value.service_type,
@@ -1004,6 +1061,8 @@ async function saveRecord() {
     conducted_by: form.value.conducted_by,
     cost: form.value.cost || null,
     status: form.value.status,
+    current_odometer:
+      selectedAssetType.value === 'Vehicle' ? form.value.current_odometer || null : null,
     remarks: form.value.remarks,
   }
 

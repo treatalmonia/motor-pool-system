@@ -331,8 +331,36 @@
                 label="Status"
                 variant="outlined"
                 density="comfortable"
+                @update:modelValue="onStatusChange"
               />
             </v-col>
+
+            <!-- Date End -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_end"
+                label="Date End"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Date repair was finished"
+                persistent-hint
+              />
+            </v-col>
+
+            <!-- Date Completed -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_completed"
+                label="Date Completed"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-filled when status = Completed"
+                persistent-hint
+              />
+            </v-col>
+            />
           </v-row>
         </v-card-text>
 
@@ -377,6 +405,9 @@
               subtitle="Date of Request"
               :title="selectedRequest.date_of_request || '—'"
             />
+            <v-list-item subtitle="Date End" :title="selectedRequest.date_end || '—'" />
+            <v-list-item subtitle="Date Completed" :title="selectedRequest.date_completed || '—'" />
+
             <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
             <v-list-item subtitle="Requisitioner" :title="selectedRequest.requisitioner || '—'" />
             <v-list-item
@@ -471,6 +502,8 @@ const selectedRequest = ref(null)
 const defaultForm = {
   request_no: '',
   date_of_request: '',
+  date_end: '',
+  date_completed: '',
   vehicle_id: null,
   asset_type: 'Vehicle',
   requisitioner: '',
@@ -491,7 +524,8 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 // ---- TABLE HEADERS ----
 const headers = [
   { title: 'Request No.', key: 'request_no', sortable: true },
-  { title: 'Date', key: 'date_of_request', sortable: true },
+  { title: 'Date Start', key: 'date_of_request', sortable: true },
+  { title: 'Date End', key: 'date_end', sortable: true },
   { title: 'Asset Type', key: 'asset_type', sortable: true },
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
@@ -632,7 +666,14 @@ async function generateRequestNo() {
   const nextSequence = String(lastSequence + 1).padStart(3, '0')
   return `${year}-${nextSequence}`
 }
-
+function onStatusChange(status) {
+  if (status === 'Completed' && !form.value.date_completed) {
+    form.value.date_completed = new Date().toISOString().split('T')[0]
+    if (!form.value.date_end) {
+      form.value.date_end = new Date().toISOString().split('T')[0]
+    }
+  }
+}
 // ---- METHODS ----
 async function fetchRequests() {
   loading.value = true
@@ -717,6 +758,8 @@ async function saveRequest() {
   const payload = {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
+    date_end: form.value.date_end || null,
+    date_completed: form.value.date_completed || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,
     requisitioner: form.value.requisitioner,

@@ -17,32 +17,6 @@
       </v-col>
     </v-row>
 
-    <!-- Building Summary Cards -->
-    <v-row class="mb-4">
-      <v-col v-for="building in buildingSummary" :key="building.name" cols="12" sm="6" md="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="48">
-              <v-icon>mdi-office-building</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">{{ building.name }}</p>
-              <p class="text-h5 font-weight-bold">
-                {{ building.total }}
-                <span class="text-body-2 font-weight-regular text-medium-emphasis"> units </span>
-              </p>
-            </div>
-            <v-spacer />
-            <div class="text-right">
-              <p class="text-caption text-success">{{ building.active }} active</p>
-              <p class="text-caption text-error" v-if="building.inactive > 0">
-                {{ building.inactive }} inactive
-              </p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
 
     <!-- Total Summary Row -->
     <v-row class="mb-4">
@@ -529,19 +503,6 @@ const decommissionedCount = computed(
   () => acUnits.value.filter((u) => u.status === 'Decommissioned').length,
 )
 
-const buildingSummary = computed(() => {
-  return buildings.map((name) => {
-    const units = acUnits.value.filter((u) => u.building === name)
-    const totalUnits = units.reduce((sum, u) => sum + (u.num_units || 0), 0)
-    const active = units
-      .filter((u) => u.status === 'Active')
-      .reduce((sum, u) => sum + (u.num_units || 0), 0)
-    const inactive = units
-      .filter((u) => u.status !== 'Active')
-      .reduce((sum, u) => sum + (u.num_units || 0), 0)
-    return { name, total: totalUnits, active, inactive }
-  })
-})
 
 const filteredUnits = computed(() => {
   let result = acUnits.value

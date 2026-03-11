@@ -118,7 +118,7 @@
               Showing {{ filteredUnits.length }} of {{ acUnits.length }} units
             </span>
           </v-col>
-        </v-row>  
+        </v-row>
 
         <!-- Data Table -->
         <v-data-table
@@ -196,13 +196,15 @@
           <v-row>
             <!-- Building -->
             <v-col cols="12" sm="6">
-              <v-select
+              <v-combobox
                 v-model="form.building"
                 :items="buildings"
                 label="Building *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.building"
+                hint="Select or type a new building"
+                persistent-hint
               />
             </v-col>
 
@@ -421,16 +423,9 @@ const buildingFilter = ref('All')
 const statusFilter = ref('All')
 
 // ---- DROPDOWN OPTIONS ----
-const buildings = [
-  'Administration Building',
-  'Farm Mechanization Building',
-  'Hero Learning Commons Building',
-  'Kinaadman Building',
-  'Old CAS Building',
-  'S&T Building',
-]
+const buildings = ref([])
 
-const floors = ['Ground Floor', '2nd Floor', '3rd Floor', 'Mezzanine']
+const floors = ref([])
 
 const unitTypes = ['Floor-Mounted', 'Wall-Mounted', 'Window Type', 'Ceiling Type']
 
@@ -546,6 +541,16 @@ function unitTypeColor(type) {
 }
 
 // ---- METHODS ----
+async function fetchBuildings() {
+  const { data, error } = await supabase.from('buildings').select('name').order('name')
+  if (!error) buildings.value = data.map((b) => b.name)
+}
+
+async function fetchFloors() {
+  const { data, error } = await supabase.from('floors').select('name').order('name')
+  if (!error) floors.value = data.map((f) => f.name)
+}
+
 async function fetchUnits() {
   loading.value = true
   const { data, error } = await supabase
@@ -605,6 +610,19 @@ function validateForm() {
 
 async function saveUnit() {
   if (!validateForm()) return
+
+  // Save new building to DB if it doesn't exist yet
+  if (!buildings.value.includes(form.value.building)) {
+    await supabase.from('buildings').insert({ name: form.value.building })
+    await fetchBuildings()
+  }
+
+  // Save new floor to DB if it doesn't exist yet
+  if (!floors.value.includes(form.value.floor)) {
+    await supabase.from('floors').insert({ name: form.value.floor })
+    await fetchFloors()
+  }
+
   saving.value = true
 
   const payload = {
@@ -666,7 +684,9 @@ function showSnackbar(message, color = 'success') {
 }
 
 // ---- LIFECYCLE ----
-onMounted(() => {
-  fetchUnits()
+onMounted(async () => {
+  await fetchBuildings()
+  await fetchFloors()
+  await fetchUnits()
 })
 </script>

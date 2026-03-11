@@ -266,7 +266,7 @@
             <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
               <v-text-field
                 v-model="form.odometer_display"
-                label="Odometer at Service (km)"
+                label="Previous Odometer (km)"
                 variant="outlined"
                 density="comfortable"
                 placeholder="e.g. 43,117"
@@ -675,7 +675,7 @@ const headers = [
   { title: 'Type', key: 'asset_type', sortable: true },
   { title: 'Service Type', key: 'service_type', sortable: true },
   { title: 'Last Date Performed', key: 'date_performed', sortable: true },
-  { title: 'Odometer at Service', key: 'odometer', sortable: false },
+  { title: 'Previous Odometer', key: 'odometer', sortable: false },
   { title: 'Date Completed', key: 'date_accomplished', sortable: true },
   { title: 'Next Due Date', key: 'next_due_date', sortable: true },
   { title: 'Next Due Odo.', key: 'next_due_odometer', sortable: false },

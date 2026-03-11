@@ -2,7 +2,12 @@
   <v-app>
     <!-- Sidebar Navigation -->
     <v-navigation-drawer v-model="drawer" permanent color="white">
-      <v-list-item title="Motor Pool System" subtitle="Management System" nav class="py-4">
+      <v-list-item
+        title="Maintenance Fleet Manager"
+        subtitle="CSU General Services"
+        nav
+        class="py-4"
+      >
         <template v-slot:prepend>
           <v-icon color="primary" size="32">mdi-car-wrench</v-icon>
         </template>

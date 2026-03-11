@@ -244,7 +244,7 @@
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.date_performed_display"
-                label="Date Performed * (MM/DD/YY)"
+                label="Last Date Performed * (MM/DD/YY)"
                 variant="outlined"
                 density="comfortable"
                 placeholder="e.g. 03/05/26"
@@ -359,7 +359,18 @@
                 density="comfortable"
               />
             </v-col>
-
+            <!-- Current Odometer -->
+            <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
+              <v-text-field
+                v-model="form.current_odometer_display"
+                label="Current Odometer (km)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 45,000"
+                @input="onCurrentOdometerInput"
+                @blur="onCurrentOdometerBlur"
+              />
+            </v-col>
             <!-- Remarks -->
             <v-col cols="12">
               <v-textarea
@@ -453,7 +464,7 @@
             <v-card-text class="pa-3">
               <v-row dense>
                 <v-col cols="6">
-                  <p class="text-caption text-medium-emphasis">Date Performed</p>
+                  <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
                     {{ formatDate(selectedRecord.date_performed) || '—' }}
                   </p>
@@ -623,6 +634,8 @@ const defaultForm = {
   cost: null,
   cost_display: '',
   status: 'Scheduled',
+  current_odometer: null,
+  current_odometer_display: '',
   remarks: '',
 }
 const form = ref({ ...defaultForm })
@@ -636,7 +649,7 @@ const headers = [
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Type', key: 'asset_type', sortable: true },
   { title: 'Service Type', key: 'service_type', sortable: true },
-  { title: 'Date Performed', key: 'date_performed', sortable: true },
+  { title: 'Last Date Performed', key: 'date_performed', sortable: true },
   { title: 'Odo / Hours', key: 'odometer', sortable: false },
   { title: 'Next Due Date', key: 'next_due_date', sortable: true },
   { title: 'Next Due Odo.', key: 'next_due_odometer', sortable: false },
@@ -745,6 +758,18 @@ function onOdometerInput(e) {
 }
 function onOdometerBlur() {
   form.value.odometer_display = form.value.odometer ? formatNumber(form.value.odometer) : ''
+}
+
+function onCurrentOdometerInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (!isNaN(raw) && raw !== '') {
+    form.value.current_odometer = Number(raw)
+  }
+}
+function onCurrentOdometerBlur() {
+  form.value.current_odometer_display = form.value.current_odometer
+    ? formatNumber(form.value.current_odometer)
+    : ''
 }
 
 function onDatePerformedInput(e) {
@@ -1004,6 +1029,8 @@ async function saveRecord() {
     conducted_by: form.value.conducted_by,
     cost: form.value.cost || null,
     status: form.value.status,
+    current_odometer:
+      selectedAssetType.value === 'Vehicle' ? form.value.current_odometer || null : null,
     remarks: form.value.remarks,
   }
 

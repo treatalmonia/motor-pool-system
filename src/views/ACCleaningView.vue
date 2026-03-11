@@ -122,7 +122,7 @@
               density="compact"
               hide-details
             />
-</v-col>
+          </v-col>
           <v-col cols="12" sm="3" class="d-flex justify-end align-center">
             <span class="text-caption text-medium-emphasis">
               Showing {{ filteredRecords.length }} of {{ cleaningRecords.length }} records
@@ -150,12 +150,15 @@
               <td>{{ item.area_room }}</td>
 
               <!-- Last Cleaning -->
-              <td>{{ item.last_cleaning_date || '—' }}</td>
+              <td>{{ formatDate(item.last_cleaning_date) }}</td>
+
+              <!-- Date Completed -->
+              <td>{{ formatDate(item.date_accomplished) }}</td>
 
               <!-- Next Cleaning -->
               <td>
                 <span :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
-                  {{ item.next_cleaning_date || '—' }}
+                  {{ formatDate(item.next_cleaning_date) }}
                 </span>
               </td>
 
@@ -295,6 +298,20 @@
                 label="Status"
                 variant="outlined"
                 density="comfortable"
+                @update:modelValue="onStatusChange"
+              />
+            </v-col>
+
+            <!-- Date Completed -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_accomplished"
+                label="Date Completed"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-fills when status is set to Completed. You can change it."
+                persistent-hint
               />
             </v-col>
 
@@ -437,6 +454,7 @@ const defaultForm = {
   conducted_by: '',
   status: 'Pending',
   remarks: '',
+  date_accomplished: null,
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -449,6 +467,7 @@ const headers = [
   { title: 'Building', key: 'building', sortable: true },
   { title: 'Area / Room', key: 'area_room', sortable: true },
   { title: 'Last Cleaning', key: 'last_cleaning_date', sortable: true },
+  { title: 'Date Completed', key: 'date_accomplished', sortable: true },
   { title: 'Next Cleaning', key: 'next_cleaning_date', sortable: true },
   { title: 'Conducted By', key: 'conducted_by', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
@@ -501,6 +520,20 @@ const filteredRecords = computed(() => {
 })
 
 // ---- HELPERS ----
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr + 'T00:00:00')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  return `${mm}/${dd}/${yy}`
+}
+
+function onStatusChange(newStatus) {
+  if (newStatus === 'Completed' && !form.value.date_accomplished) {
+    form.value.date_accomplished = today
+  }
+}
 function isOverdue(record) {
   if (record.status === 'Completed') return false
   if (!record.next_cleaning_date) return false
@@ -625,6 +658,7 @@ async function saveRecord() {
   saving.value = true
 
   const payload = {
+    date_accomplished: form.value.date_accomplished || null,
     ac_unit_id: form.value.ac_unit_id,
     building: selectedBuilding.value,
     area_room: form.value.area_room,

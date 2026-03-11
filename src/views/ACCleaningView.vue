@@ -91,7 +91,7 @@
     <v-card rounded="lg" elevation="0" border>
       <v-card-text>
         <!-- Filters -->
-        <v-row class="mb-2">
+        <v-row class="mb-2" align="center">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
@@ -122,6 +122,11 @@
               density="compact"
               hide-details
             />
+</v-col>
+          <v-col cols="12" sm="3" class="d-flex justify-end align-center">
+            <span class="text-caption text-medium-emphasis">
+              Showing {{ filteredRecords.length }} of {{ cleaningRecords.length }} records
+            </span>
           </v-col>
         </v-row>
 

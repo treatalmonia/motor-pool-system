@@ -77,7 +77,7 @@
     <v-card rounded="lg" elevation="0" border>
       <v-card-text>
         <!-- Filters -->
-        <v-row class="mb-2">
+        <v-row class="mb-2" align="center">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
@@ -120,6 +120,11 @@
             />
           </v-col>
         </v-row>
+        <div class="d-flex justify-end mb-2">
+          <span class="text-caption text-medium-emphasis">
+            Showing {{ filteredRequests.length }} of {{ requests.length }} requests
+          </span>
+        </div>
 
         <!-- Data Table -->
         <v-data-table

@@ -80,7 +80,7 @@
     <v-card rounded="lg" elevation="0" border>
       <v-card-text>
         <!-- Filters -->
-        <v-row class="mb-2">
+        <v-row class="mb-2" align="center">
           <v-col cols="12" sm="3">
             <v-text-field
               v-model="search"
@@ -102,16 +102,7 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" sm="3">
-            <v-select
-              v-model="unitTypeFilter"
-              :items="['All', ...unitTypes]"
-              label="Unit Type"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
+
           <v-col cols="12" sm="3">
             <v-select
               v-model="statusFilter"
@@ -122,7 +113,12 @@
               hide-details
             />
           </v-col>
-        </v-row>
+          <v-col cols="12" sm="3" class="d-flex justify-end align-center">
+            <span class="text-caption text-medium-emphasis">
+              Showing {{ filteredUnits.length }} of {{ acUnits.length }} units
+            </span>
+          </v-col>
+        </v-row>  
 
         <!-- Data Table -->
         <v-data-table
@@ -421,7 +417,7 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const buildingFilter = ref('All')
-const unitTypeFilter = ref('All')
+
 const statusFilter = ref('All')
 
 // ---- DROPDOWN OPTIONS ----
@@ -509,9 +505,7 @@ const filteredUnits = computed(() => {
   if (buildingFilter.value !== 'All') {
     result = result.filter((u) => u.building === buildingFilter.value)
   }
-  if (unitTypeFilter.value !== 'All') {
-    result = result.filter((u) => u.unit_type === unitTypeFilter.value)
-  }
+
   if (statusFilter.value !== 'All') {
     result = result.filter((u) => u.status === statusFilter.value)
   }

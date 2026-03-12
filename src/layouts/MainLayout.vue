@@ -37,8 +37,8 @@
         />
         <v-list-item
           prepend-icon="mdi-clipboard-text-clock"
-          title="PM Program"
-          to="/pm-program"
+          title="Schedule of Maintenance"
+          to="/schedule-of-maintenance"
           rounded="lg"
         />
         <v-list-item
@@ -49,8 +49,8 @@
         />
         <v-list-item
           prepend-icon="mdi-table-eye"
-          title="Maintenance Overview"
-          to="/maintenance-overview"
+          title="Maintenance Log"
+          to="/maintenance-log"
           rounded="lg"
         />
 
@@ -134,7 +134,8 @@ const pageTitles = {
   '/vehicles': 'Vehicle Registry',
   '/vehicle-requests': 'Vehicle Service Requests',
   '/vehicle-pm': 'Preventive Maintenance',
-  '/maintenance-overview': 'Maintenance Overview',
+  '/schedule-of-maintenance': 'Schedule of Maintenance',
+  '/maintenance-log': 'Maintenance Log',
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
   '/ac-cleaning': 'AC Cleaning Log',

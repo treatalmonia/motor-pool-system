@@ -1,4 +1,3 @@
-
 <template>
   <v-container fluid>
     <!-- Header -->
@@ -156,10 +155,30 @@
           </template>
 
           <!-- Status -->
+          <!-- Status -->
           <template v-slot:item.status="{ item }">
-            <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
-              {{ item.status }}
-            </v-chip>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  :color="statusColor(item.status)"
+                  size="small"
+                  variant="tonal"
+                  v-bind="props"
+                  style="cursor: pointer"
+                  append-icon="mdi-chevron-down"
+                >
+                  {{ item.status }}
+                </v-chip>
+              </template>
+              <v-list density="compact" min-width="150">
+                <v-list-item
+                  v-for="s in ['In Progress', 'Completed', 'Cancelled']"
+                  :key="s"
+                  :title="s"
+                  @click="quickUpdateStatus(item, s)"
+                />
+              </v-list>
+            </v-menu>
           </template>
 
           <!-- Actions -->
@@ -348,19 +367,6 @@
               />
             </v-col>
 
-            <!-- Date End -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.date_end"
-                label="Date End"
-                variant="outlined"
-                density="comfortable"
-                type="date"
-                hint="Date repair was finished"
-                persistent-hint
-              />
-            </v-col>
-
             <!-- Date Completed -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -373,7 +379,6 @@
                 persistent-hint
               />
             </v-col>
-            />
           </v-row>
         </v-card-text>
 
@@ -418,7 +423,7 @@
               subtitle="Date of Request"
               :title="selectedRequest.date_of_request || '—'"
             />
-            <v-list-item subtitle="Date End" :title="selectedRequest.date_end || '—'" />
+
             <v-list-item subtitle="Date Completed" :title="selectedRequest.date_completed || '—'" />
 
             <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
@@ -496,6 +501,25 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 
+async function quickUpdateStatus(item, newStatus) {
+  const payload = { status: newStatus }
+  if (newStatus === 'Completed' && !item.date_completed) {
+    payload.date_completed = new Date().toISOString().split('T')[0]
+  }
+  const { error } = await supabase
+    .from('vehicle_service_requests')
+    .update(payload)
+    .eq('id', item.id)
+
+  if (error) {
+    showSnackbar('Failed to update status', 'error')
+  } else {
+    item.status = newStatus
+    if (payload.date_completed) item.date_completed = payload.date_completed
+    showSnackbar('Status updated', 'success')
+  }
+}
+
 // ---- DATA ----
 const requests = ref([])
 const assetList = ref([])
@@ -519,7 +543,7 @@ const selectedRequest = ref(null)
 const defaultForm = {
   request_no: '',
   date_of_request: '',
-  date_end: '',
+
   date_completed: '',
   vehicle_id: null,
   asset_type: 'Vehicle',
@@ -543,7 +567,7 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 const headers = [
   { title: 'Request No.', key: 'request_no', sortable: true },
   { title: 'Date Start', key: 'date_of_request', sortable: true },
-  { title: 'Date End', key: 'date_end', sortable: true },
+
   { title: 'Asset Type', key: 'asset_type', sortable: true },
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
@@ -687,9 +711,6 @@ async function generateRequestNo() {
 function onStatusChange(status) {
   if (status === 'Completed' && !form.value.date_completed) {
     form.value.date_completed = new Date().toISOString().split('T')[0]
-    if (!form.value.date_end) {
-      form.value.date_end = new Date().toISOString().split('T')[0]
-    }
   }
 }
 // ---- METHODS ----
@@ -776,7 +797,7 @@ async function saveRequest() {
   const payload = {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
-    date_end: form.value.date_end || null,
+
     date_completed: form.value.date_completed || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,

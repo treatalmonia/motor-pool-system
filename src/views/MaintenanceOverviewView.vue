@@ -132,7 +132,12 @@
                     v-if="row.monthCells[m.value]"
                     class="ml-cell-done"
                     @click="
-                      openDetail(row.monthCells[m.value], group.vehicleName, row.service_type)
+                      openDetail(
+                        row.monthCells[m.value],
+                        group.vehicleName,
+                        row.service_type,
+                        group.currentOdometer,
+                      )
                     "
                     :title="
                       'View details for ' + formatDate(row.monthCells[m.value].date_performed)
@@ -182,16 +187,21 @@
           <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
           <h3 class="ml-detail__title">Service Record</h3>
           <div class="ml-detail__grid">
+            
             <div class="ml-detail__item">
               <span class="ml-detail__key">Date Conducted</span>
-              <span class="ml-detail__val">{{
-                formatDate(detailRecord?.date_performed) || '—'
-              }}</span>
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Current Odometer</span>
+                <span class="ml-detail__val">
+                  {{
+                    detailRecord?.current_odometer
+                      ? Number(detailRecord.current_odometer).toLocaleString() + ' km'
+                      : '—'
+                  }}
+                </span>
+              </div>
             </div>
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Reference No.</span>
-              <span class="ml-detail__val">{{ detailRecord?.reference_no || '—' }}</span>
-            </div>
+
             <div class="ml-detail__item">
               <span class="ml-detail__key">Odometer Reading</span>
               <span class="ml-detail__val">
@@ -259,8 +269,8 @@ const detailRecord = ref(null)
 const detailVehicle = ref('')
 const detailTask = ref('')
 
-function openDetail(record, vehicleName, taskName) {
-  detailRecord.value = record
+function openDetail(record, vehicleName, taskName, vehicleOdometer) {
+  detailRecord.value = { ...record, current_odometer: vehicleOdometer }
   detailVehicle.value = vehicleName
   detailTask.value = taskName
   detailOpen.value = true
@@ -336,6 +346,7 @@ const matrixGroups = computed(() => {
       vehicleId: vehicle.id,
       vehicleName: vehicle.asset_name,
       plate: vehicle.plate_number,
+
       rows,
     }
   })
@@ -967,4 +978,4 @@ thead .ml-sticky-l2 {
   opacity: 0;
   transform: scale(0.97);
 }
-</style>    
+</style>

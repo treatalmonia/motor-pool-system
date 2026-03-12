@@ -5,7 +5,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h2 class="text-h5 font-weight-bold">PM Program</h2>
+            <h2 class="text-h5 font-weight-bold">Schedule of Maintenance</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
               Annual Preventive Maintenance Program — service type intervals and settings
             </p>
@@ -342,7 +342,11 @@ function openAddDialog() {
 function openEditDialog(serviceType) {
   isEditing.value = true
   selectedServiceType.value = serviceType
-  form.value = { ...serviceType }
+  form.value = {
+    ...serviceType,
+    km_between_service: serviceType.km_between_service ?? null,
+    months_between_service: serviceType.months_between_service ?? null,
+  }
   errors.value = {}
   formDialog.value = true
 }
@@ -370,8 +374,14 @@ async function saveServiceType() {
 
   const payload = {
     service_type: form.value.service_type,
-    km_between_service: form.value.km_between_service || null,
-    months_between_service: form.value.months_between_service || null,
+    km_between_service:
+      form.value.km_between_service !== '' && form.value.km_between_service !== undefined
+        ? Number(form.value.km_between_service)
+        : null,
+    months_between_service:
+      form.value.months_between_service !== '' && form.value.months_between_service !== undefined
+        ? Number(form.value.months_between_service)
+        : null,
     remarks: form.value.remarks,
   }
 

@@ -29,8 +29,8 @@ const router = createRouter({
           component: () => import('../views/VehiclePMView.vue'),
         },
         {
-          path: 'pm-program',
-          name: 'PMProgram',
+          path: 'schedule-of-maintenance',
+          name: 'ScheduleOfMaintenance',
           component: () => import('../views/PMProgramView.vue'),
         },
 
@@ -40,8 +40,8 @@ const router = createRouter({
           component: () => import('../views/AnnualPMView.vue'),
         },
         {
-          path: 'maintenance-overview',
-          name: 'MaintenanceOverview',
+          path: 'maintenance-log',
+          name: 'MaintenanceLog',
           component: () => import('../views/MaintenanceOverviewView.vue'),
         },
 

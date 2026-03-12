@@ -19,17 +19,37 @@
 
     <!-- Total Summary Row -->
     <v-row class="mb-4">
+      <!-- Total AC Units — with per-type breakdown -->
       <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="48">
-              <v-icon>mdi-air-conditioner</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total AC Units</p>
-              <p class="text-h5 font-weight-bold">
-                {{ acUnits.length }}
-              </p>
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center ga-3 mb-3">
+              <v-avatar color="primary" variant="tonal" size="40">
+                <v-icon size="20">mdi-air-conditioner</v-icon>
+              </v-avatar>
+              <div>
+                <p class="text-medium-emphasis text-body-2" style="line-height:1.2">Total AC Units</p>
+                <p class="text-h5 font-weight-bold" style="line-height:1.2">{{ buildingFilteredUnits.length }}</p>
+              </div>
+            </div>
+            <!-- 2×2 breakdown grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;">
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Floor-Mntd</span>
+                <span class="text-caption font-weight-bold text-primary">{{ typeCount('Floor-Mounted') }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Wall-Mntd</span>
+                <span class="text-caption font-weight-bold text-info">{{ typeCount('Wall-Mounted') }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Window</span>
+                <span class="text-caption font-weight-bold text-warning">{{ typeCount('Window Type') }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Ceiling</span>
+                <span class="text-caption font-weight-bold" style="color:#7c3aed">{{ typeCount('Ceiling Type') }}</span>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -205,7 +225,6 @@
 
         <v-card-text class="pa-4">
           <v-row>
-            <!-- Building -->
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.building"
@@ -218,8 +237,6 @@
                 persistent-hint
               />
             </v-col>
-
-            <!-- Floor -->
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.floor"
@@ -232,8 +249,6 @@
                 persistent-hint
               />
             </v-col>
-
-            <!-- Area / Room -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.area_room"
@@ -244,8 +259,6 @@
                 :error-messages="errors.area_room"
               />
             </v-col>
-
-            <!-- Unit Type -->
             <v-col cols="12" sm="6">
               <v-select
                 v-model="form.unit_type"
@@ -256,8 +269,6 @@
                 :error-messages="errors.unit_type"
               />
             </v-col>
-
-            <!-- AC Identification Code -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.ac_identification_code"
@@ -267,8 +278,6 @@
                 placeholder="e.g. AC-001"
               />
             </v-col>
-
-            <!-- Brand -->
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.brand"
@@ -280,8 +289,6 @@
                 persistent-hint
               />
             </v-col>
-
-            <!-- Capacity -->
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.capacity"
@@ -293,8 +300,6 @@
                 persistent-hint
               />
             </v-col>
-
-            <!-- Technology -->
             <v-col cols="12" sm="6">
               <v-select
                 v-model="form.technology"
@@ -304,8 +309,6 @@
                 density="comfortable"
               />
             </v-col>
-
-            <!-- Serial No. Indoor -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.serial_no_indoor"
@@ -315,8 +318,6 @@
                 placeholder="Indoor unit serial number"
               />
             </v-col>
-
-            <!-- Serial No. Outdoor -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.serial_no_outdoor"
@@ -326,8 +327,6 @@
                 placeholder="Outdoor unit serial number"
               />
             </v-col>
-
-            <!-- Status -->
             <v-col cols="12" sm="6">
               <v-select
                 v-model="form.status"
@@ -337,8 +336,6 @@
                 density="comfortable"
               />
             </v-col>
-
-            <!-- Remarks -->
             <v-col cols="12">
               <v-textarea
                 v-model="form.remarks"
@@ -371,7 +368,6 @@
         </v-card-title>
 
         <v-card-text class="pa-4" v-if="selectedUnit">
-          <!-- Badges -->
           <div class="mb-4 d-flex ga-2 flex-wrap">
             <v-chip :color="unitTypeColor(selectedUnit.unit_type)" variant="tonal">
               {{ selectedUnit.unit_type }}
@@ -392,21 +388,12 @@
             <v-list-item subtitle="Floor" :title="selectedUnit.floor || '—'" />
             <v-list-item subtitle="Area / Room" :title="selectedUnit.area_room || '—'" />
             <v-list-item subtitle="Unit Type" :title="selectedUnit.unit_type || '—'" />
-            <v-list-item
-              subtitle="AC Identification Code"
-              :title="selectedUnit.ac_identification_code || '—'"
-            />
+            <v-list-item subtitle="AC Identification Code" :title="selectedUnit.ac_identification_code || '—'" />
             <v-list-item subtitle="Brand / Make" :title="selectedUnit.brand || '—'" />
             <v-list-item subtitle="Capacity" :title="selectedUnit.capacity || '—'" />
             <v-list-item subtitle="Technology" :title="selectedUnit.technology || '—'" />
-            <v-list-item
-              subtitle="Serial No. (Indoor)"
-              :title="selectedUnit.serial_no_indoor || '—'"
-            />
-            <v-list-item
-              subtitle="Serial No. (Outdoor)"
-              :title="selectedUnit.serial_no_outdoor || '—'"
-            />
+            <v-list-item subtitle="Serial No. (Indoor)" :title="selectedUnit.serial_no_indoor || '—'" />
+            <v-list-item subtitle="Serial No. (Outdoor)" :title="selectedUnit.serial_no_outdoor || '—'" />
             <v-list-item subtitle="Remarks" :title="selectedUnit.remarks || '—'" />
           </v-list>
         </v-card-text>
@@ -421,8 +408,7 @@
           <h3 class="text-h6 mb-2">Delete AC Unit?</h3>
           <p class="text-medium-emphasis">
             Are you sure you want to delete the AC unit in
-            <strong>{{ selectedUnit?.area_room }}</strong
-            >? This cannot be undone.
+            <strong>{{ selectedUnit?.area_room }}</strong>? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
@@ -458,31 +444,17 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const buildingFilter = ref('All')
-
 const statusFilter = ref('All')
 const unitTypeFilter = ref('All')
 
 // ---- DROPDOWN OPTIONS ----
 const buildings = ref([])
-
 const floors = ref([])
-
 const unitTypes = ['Floor-Mounted', 'Wall-Mounted', 'Window Type', 'Ceiling Type']
-
 const brands = [
-  'Midea',
-  'Koppel',
-  'Matrix',
-  'Gen. Royal',
-  'Daikin',
-  'Samsung',
-  'Kolin',
-  'Carrier',
-  'Sharp',
-  'LG',
-  'Condura',
+  'Midea', 'Koppel', 'Matrix', 'Gen. Royal', 'Daikin',
+  'Samsung', 'Kolin', 'Carrier', 'Sharp', 'LG', 'Condura',
 ]
-
 const capacities = ['1.0 HP', '1.5 HP', '2.0 HP', '2.5 HP', '3.0 TR', '3.0 HP', '5.0 TR']
 
 // ---- DIALOGS ----
@@ -494,18 +466,10 @@ const selectedUnit = ref(null)
 
 // ---- FORM ----
 const defaultForm = {
-  building: '',
-  floor: '',
-  area_room: '',
-  unit_type: '',
-  ac_identification_code: '',
-  brand: '',
-  capacity: '',
-  technology: 'Inverter',
-  serial_no_indoor: '',
-  serial_no_outdoor: '',
-  status: 'Active',
-  remarks: '',
+  building: '', floor: '', area_room: '', unit_type: '',
+  ac_identification_code: '', brand: '', capacity: '',
+  technology: 'Inverter', serial_no_indoor: '', serial_no_outdoor: '',
+  status: 'Active', remarks: '',
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -528,19 +492,33 @@ const headers = [
 ]
 
 // ---- COMPUTED ----
-const activeCount = computed(() => acUnits.value.filter((u) => u.status === 'Active').length)
+
+// Filtered only by building — used for summary card counts
+const buildingFilteredUnits = computed(() => {
+  if (buildingFilter.value === 'All') return acUnits.value
+  return acUnits.value.filter((u) => u.building === buildingFilter.value)
+})
+
+// Per-type count helper (reacts to building filter)
+function typeCount(type) {
+  return buildingFilteredUnits.value.filter((u) => u.unit_type === type).length
+}
+
+const activeCount = computed(
+  () => buildingFilteredUnits.value.filter((u) => u.status === 'Active').length
+)
 const windowCount = computed(
-  () => acUnits.value.filter((u) => u.unit_type === 'Window Type').length,
+  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Window Type').length
 )
 const ceilingCount = computed(
-  () => acUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length,
+  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length
 )
 
+// Full filter (table)
 const filteredUnits = computed(() => {
   let result = [...acUnits.value].sort((a, b) =>
     (a.unit_type || '').localeCompare(b.unit_type || ''),
   )
-
   if (buildingFilter.value !== 'All') {
     result = result.filter((u) => u.building === buildingFilter.value)
   }
@@ -561,28 +539,17 @@ const filteredUnits = computed(() => {
         u.remarks?.toLowerCase().includes(s),
     )
   }
-
   return result
 })
 
 // ---- HELPERS ----
 function statusColor(status) {
-  const colors = {
-    Active: 'success',
-    Inactive: 'grey',
-    Transferred: 'warning',
-    Decommissioned: 'error',
-  }
+  const colors = { Active: 'success', Inactive: 'grey', Transferred: 'warning', Decommissioned: 'error' }
   return colors[status] || 'grey'
 }
 
 function unitTypeColor(type) {
-  const colors = {
-    'Floor-Mounted': 'primary',
-    'Wall-Mounted': 'info',
-    'Window Type': 'warning',
-    'Ceiling Type': 'purple',
-  }
+  const colors = { 'Floor-Mounted': 'primary', 'Wall-Mounted': 'info', 'Window Type': 'warning', 'Ceiling Type': 'purple' }
   return colors[type] || 'grey'
 }
 
@@ -599,16 +566,9 @@ async function fetchFloors() {
 
 async function fetchUnits() {
   loading.value = true
-  const { data, error } = await supabase
-    .from('ac_units')
-    .select('*')
-    .order('building', { ascending: true })
-
-  if (error) {
-    showSnackbar('Failed to load AC units', 'error')
-  } else {
-    acUnits.value = data
-  }
+  const { data, error } = await supabase.from('ac_units').select('*').order('building', { ascending: true })
+  if (error) showSnackbar('Failed to load AC units', 'error')
+  else acUnits.value = data
   loading.value = false
 }
 
@@ -649,80 +609,47 @@ function validateForm() {
   if (!form.value.floor?.trim()) errors.value.floor = 'Floor is required'
   if (!form.value.area_room?.trim()) errors.value.area_room = 'Area / Room is required'
   if (!form.value.unit_type) errors.value.unit_type = 'Unit type is required'
-
   return Object.keys(errors.value).length === 0
 }
 
 async function saveUnit() {
   if (!validateForm()) return
 
-  // Save new building to DB if it doesn't exist yet
   if (!buildings.value.includes(form.value.building)) {
     await supabase.from('buildings').insert({ name: form.value.building })
     await fetchBuildings()
   }
-
-  // Save new floor to DB if it doesn't exist yet
   if (!floors.value.includes(form.value.floor)) {
     await supabase.from('floors').insert({ name: form.value.floor })
     await fetchFloors()
   }
 
   saving.value = true
-
   const payload = {
-    building: form.value.building,
-    floor: form.value.floor,
-    area_room: form.value.area_room,
-    unit_type: form.value.unit_type,
-    ac_identification_code: form.value.ac_identification_code || null,
-    brand: form.value.brand,
-    capacity: form.value.capacity,
-    technology: form.value.technology,
-    serial_no_indoor: form.value.serial_no_indoor || null,
-    serial_no_outdoor: form.value.serial_no_outdoor || null,
-    status: form.value.status,
-    remarks: form.value.remarks,
+    building: form.value.building, floor: form.value.floor, area_room: form.value.area_room,
+    unit_type: form.value.unit_type, ac_identification_code: form.value.ac_identification_code || null,
+    brand: form.value.brand, capacity: form.value.capacity, technology: form.value.technology,
+    serial_no_indoor: form.value.serial_no_indoor || null, serial_no_outdoor: form.value.serial_no_outdoor || null,
+    status: form.value.status, remarks: form.value.remarks,
   }
 
   if (isEditing.value) {
     const { error } = await supabase.from('ac_units').update(payload).eq('id', form.value.id)
-
-    if (error) {
-      showSnackbar('Failed to update AC unit', 'error')
-    } else {
-      showSnackbar('AC unit updated successfully', 'success')
-      closeFormDialog()
-      await fetchUnits()
-    }
+    if (error) showSnackbar('Failed to update AC unit', 'error')
+    else { showSnackbar('AC unit updated successfully', 'success'); closeFormDialog(); await fetchUnits() }
   } else {
     const { error } = await supabase.from('ac_units').insert(payload)
-
-    if (error) {
-      showSnackbar('Failed to add AC unit', 'error')
-    } else {
-      showSnackbar('AC unit added successfully', 'success')
-      closeFormDialog()
-      await fetchUnits()
-    }
+    if (error) showSnackbar('Failed to add AC unit', 'error')
+    else { showSnackbar('AC unit added successfully', 'success'); closeFormDialog(); await fetchUnits() }
   }
-
   saving.value = false
 }
 
 async function deleteUnit() {
   deleting.value = true
-
   const { error } = await supabase.from('ac_units').delete().eq('id', selectedUnit.value.id)
-
-  if (error) {
-    showSnackbar('Failed to delete AC unit', 'error')
-  } else {
-    showSnackbar('AC unit deleted successfully', 'success')
-    deleteDialog.value = false
-    await fetchUnits()
-  }
-
+  if (error) showSnackbar('Failed to delete AC unit', 'error')
+  else { showSnackbar('AC unit deleted successfully', 'success'); deleteDialog.value = false; await fetchUnits() }
   deleting.value = false
 }
 

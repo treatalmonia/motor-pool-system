@@ -335,6 +335,19 @@
 
             <v-col cols="12"><v-divider /></v-col>
 
+            <!-- Reference No -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.reference_no"
+                label="Reference No. (SR)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 2025-001"
+                hint="Service Request number linked to this PM"
+                persistent-hint
+              />
+            </v-col>
+
             <!-- Conducted By -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -565,6 +578,17 @@
             </v-card-text>
           </v-card>
 
+          <!-- Reference -->
+          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REFERENCE</p>
+          <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
+            <v-card-text class="pa-3">
+              <p class="text-caption text-medium-emphasis">Service Request No.</p>
+              <p class="text-body-2 font-weight-medium">
+                {{ selectedRecord.reference_no || '—' }}
+              </p>
+            </v-card-text>
+          </v-card>
+
           <!-- Remarks -->
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REMARKS</p>
           <v-card variant="tonal" color="grey" rounded="lg">
@@ -641,12 +665,13 @@ const defaultForm = {
   vehicle_id: null,
   asset_type: 'Vehicle',
   service_type: '',
+  service_type_id: null,
+  reference_no: '',
   date_performed: today,
   date_performed_display: formatDate(today),
   next_due_date_display: '',
   odometer: null,
   odometer_display: '',
-
   hours_of_operation: null,
   km_between_service: null,
   km_between_service_display: '',
@@ -934,6 +959,7 @@ function onServiceTypeSelected(serviceTypeName) {
   if (!serviceTypeName) return
   const match = pmServiceTypes.value.find((s) => s.service_type === serviceTypeName)
   if (match) {
+    form.value.service_type_id = match.id
     if (selectedAssetType.value === 'Vehicle') {
       if (match.km_between_service) {
         form.value.km_between_service = match.km_between_service
@@ -948,6 +974,8 @@ function onServiceTypeSelected(serviceTypeName) {
     }
     recalculateNextDueDate()
     recalculateNextDueOdometer()
+  } else {
+    form.value.service_type_id = null
   }
 }
 
@@ -1049,6 +1077,7 @@ async function saveRecord() {
     asset_type: form.value.asset_type,
     service_type: form.value.service_type,
     date_performed: form.value.date_performed,
+
     odometer: selectedAssetType.value === 'Vehicle' ? form.value.odometer || null : null,
     hours_of_operation:
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,

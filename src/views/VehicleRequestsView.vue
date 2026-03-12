@@ -155,10 +155,30 @@
           </template>
 
           <!-- Status -->
+          <!-- Status -->
           <template v-slot:item.status="{ item }">
-            <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
-              {{ item.status }}
-            </v-chip>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  :color="statusColor(item.status)"
+                  size="small"
+                  variant="tonal"
+                  v-bind="props"
+                  style="cursor: pointer"
+                  append-icon="mdi-chevron-down"
+                >
+                  {{ item.status }}
+                </v-chip>
+              </template>
+              <v-list density="compact" min-width="150">
+                <v-list-item
+                  v-for="s in ['In Progress', 'Completed', 'Cancelled']"
+                  :key="s"
+                  :title="s"
+                  @click="quickUpdateStatus(item, s)"
+                />
+              </v-list>
+            </v-menu>
           </template>
 
           <!-- Actions -->
@@ -262,28 +282,40 @@
               />
             </v-col>
 
-            <!-- Work Details -->
-            <v-col cols="12">
-              <v-textarea
-                v-model="form.work_details"
-                label="Work Details"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                placeholder="Describe the work done"
-              />
-            </v-col>
-
-            <!-- Problem Details -->
+            <!-- Problem Encountered -->
             <v-col cols="12">
               <v-textarea
                 v-model="form.problem_details"
-                label="Problem / Details of Request *"
+                label="Problem Encountered *"
                 variant="outlined"
                 density="comfortable"
                 rows="3"
                 :error-messages="errors.problem_details"
-                placeholder="Describe the problem or service needed"
+                placeholder="Describe the problem encountered"
+              />
+            </v-col>
+
+            <!-- Diagnosis & Action Taken -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.work_details"
+                label="Diagnosis & Action Taken"
+                variant="outlined"
+                density="comfortable"
+                rows="3"
+                placeholder="Describe diagnosis and actions taken"
+              />
+            </v-col>
+
+            <!-- Remarks -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.remarks"
+                label="Remarks"
+                variant="outlined"
+                density="comfortable"
+                rows="2"
+                placeholder="Details of incomplete work or additional notes"
               />
             </v-col>
 
@@ -331,6 +363,20 @@
                 label="Status"
                 variant="outlined"
                 density="comfortable"
+                @update:modelValue="onStatusChange"
+              />
+            </v-col>
+
+            <!-- Date Completed -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_completed"
+                label="Date Completed"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-filled when status = Completed"
+                persistent-hint
               />
             </v-col>
           </v-row>
@@ -377,13 +423,20 @@
               subtitle="Date of Request"
               :title="selectedRequest.date_of_request || '—'"
             />
+
+            <v-list-item subtitle="Date Completed" :title="selectedRequest.date_completed || '—'" />
+
             <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
             <v-list-item subtitle="Requisitioner" :title="selectedRequest.requisitioner || '—'" />
             <v-list-item
-              subtitle="Problem / Details"
+              subtitle="Problem Encountered"
               :title="selectedRequest.problem_details || '—'"
             />
-            <v-list-item subtitle="Work Done" :title="selectedRequest.work_details || '—'" />
+            <v-list-item
+              subtitle="Diagnosis & Action Taken"
+              :title="selectedRequest.work_details || '—'"
+            />
+            <v-list-item subtitle="Remarks" :title="selectedRequest.remarks || '—'" />
             <v-list-item subtitle="Conducted By" :title="selectedRequest.conducted_by || '—'" />
             <v-list-item
               v-if="selectedRequest.asset_type === 'Vehicle'"
@@ -448,6 +501,25 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 
+async function quickUpdateStatus(item, newStatus) {
+  const payload = { status: newStatus }
+  if (newStatus === 'Completed' && !item.date_completed) {
+    payload.date_completed = new Date().toISOString().split('T')[0]
+  }
+  const { error } = await supabase
+    .from('vehicle_service_requests')
+    .update(payload)
+    .eq('id', item.id)
+
+  if (error) {
+    showSnackbar('Failed to update status', 'error')
+  } else {
+    item.status = newStatus
+    if (payload.date_completed) item.date_completed = payload.date_completed
+    showSnackbar('Status updated', 'success')
+  }
+}
+
 // ---- DATA ----
 const requests = ref([])
 const assetList = ref([])
@@ -471,6 +543,8 @@ const selectedRequest = ref(null)
 const defaultForm = {
   request_no: '',
   date_of_request: '',
+
+  date_completed: '',
   vehicle_id: null,
   asset_type: 'Vehicle',
   requisitioner: '',
@@ -481,6 +555,7 @@ const defaultForm = {
   hours_of_operation: null,
   cost: null,
   status: 'In Progress',
+  remarks: '',
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -491,7 +566,8 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 // ---- TABLE HEADERS ----
 const headers = [
   { title: 'Request No.', key: 'request_no', sortable: true },
-  { title: 'Date', key: 'date_of_request', sortable: true },
+  { title: 'Date Start', key: 'date_of_request', sortable: true },
+
   { title: 'Asset Type', key: 'asset_type', sortable: true },
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
@@ -632,7 +708,11 @@ async function generateRequestNo() {
   const nextSequence = String(lastSequence + 1).padStart(3, '0')
   return `${year}-${nextSequence}`
 }
-
+function onStatusChange(status) {
+  if (status === 'Completed' && !form.value.date_completed) {
+    form.value.date_completed = new Date().toISOString().split('T')[0]
+  }
+}
 // ---- METHODS ----
 async function fetchRequests() {
   loading.value = true
@@ -717,6 +797,8 @@ async function saveRequest() {
   const payload = {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
+
+    date_completed: form.value.date_completed || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,
     requisitioner: form.value.requisitioner,
@@ -728,6 +810,7 @@ async function saveRequest() {
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
+    remarks: form.value.remarks || null,
   }
 
   if (isEditing.value) {

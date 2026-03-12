@@ -10,15 +10,7 @@
               Encode fuel withdrawals from hard copy Petron invoices
             </p>
           </div>
-          <div class="d-flex ga-2 flex-wrap align-center">
-            <v-btn
-              color="secondary"
-              variant="outlined"
-              prepend-icon="mdi-content-copy"
-              @click="openCopyYearDialog"
-            >
-              Copy to New Year
-            </v-btn>
+         <div class="d-flex ga-2 flex-wrap align-center">
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Transaction
             </v-btn>
@@ -652,49 +644,7 @@
     </v-dialog>
 
     <!-- Snackbar -->
-    <!-- ── COPY YEAR DIALOG ── -->
-    <v-dialog v-model="copyYearDialog" max-width="420">
-      <v-card rounded="lg">
-        <v-card-title class="pa-4 pb-0">
-          <v-icon start>mdi-content-copy</v-icon>
-          Copy Transactions to New Year
-        </v-card-title>
-        <v-card-text class="pa-4">
-          <p class="text-body-2 text-medium-emphasis mb-4">
-            All transactions from <strong>{{ copyFromYear }}</strong> will be copied to a new year.
-            OR numbers will be preserved with a <strong>-COPY</strong> suffix.
-          </p>
-          <v-row>
-            <v-col cols="6">
-              <v-select
-                v-model="copyFromYear"
-                :items="availableYears"
-                label="Copy From"
-                variant="outlined"
-                density="comfortable"
-              />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
-                v-model="copyToYear"
-                label="Copy To (Year)"
-                variant="outlined"
-                density="comfortable"
-                type="number"
-                placeholder="e.g. 2026"
-              />
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
-          <v-spacer />
-          <v-btn variant="text" @click="copyYearDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" :loading="copying" @click="copyToNewYear">
-            Copy Transactions
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -732,10 +682,7 @@ const viewDialog = ref(false)
 const deleteDialog = ref(false)
 const isEditing = ref(false)
 const selectedTx = ref(null)
-const copyYearDialog = ref(false)
-const copyFromYear = ref(new Date().getFullYear())
-const copyToYear = ref(new Date().getFullYear() + 1)
-const copying = ref(false)
+
 // ── FORM ──
 const defaultForm = {
   date: '',
@@ -1147,77 +1094,6 @@ function showSnackbar(message, color = 'success') {
 
 // Re-fetch when year filter changes
 watch(filterYear, fetchTransactions)
-function openCopyYearDialog() {
-  copyFromYear.value = filterYear.value
-  copyToYear.value = filterYear.value + 1
-  copyYearDialog.value = true
-}
-
-async function copyToNewYear() {
-  if (!copyToYear.value) return
-  copying.value = true
-
-  const startDate = `${copyFromYear.value}-01-01`
-  const endDate = `${copyFromYear.value}-12-31`
-  const { data, error } = await supabase
-    .from('fuel_transactions')
-    .select('*')
-    .gte('date', startDate)
-    .lte('date', endDate)
-
-  if (error || !data || data.length === 0) {
-    showSnackbar('No transactions found for selected year', 'error')
-    copying.value = false
-    return
-  }
-
-  // Check if destination year already has data
-  const { data: existing } = await supabase
-    .from('fuel_transactions')
-    .select('id')
-    .gte('date', `${copyToYear.value}-01-01`)
-    .lte('date', `${copyToYear.value}-12-31`)
-    .limit(1)
-
-  if (existing && existing.length > 0) {
-    showSnackbar(`Year ${copyToYear.value} already has transactions`, 'error')
-    copying.value = false
-    return
-  }
-
-  const yearDiff = Number(copyToYear.value) - Number(copyFromYear.value)
-  const newRows = data.map((row) => {
-    // eslint-disable-next-line no-unused-vars
-    const { id, created_at, ...rest } = row
-    // Shift date by year difference
-    const newDate = new Date(rest.date + 'T00:00:00')
-    newDate.setFullYear(newDate.getFullYear() + yearDiff)
-    const newDateStr = newDate.toISOString().split('T')[0]
-    // Update billing period year
-    const newPeriod = rest.billing_period.replace(
-      String(copyFromYear.value),
-      String(copyToYear.value),
-    )
-    return {
-      ...rest,
-      date: newDateStr,
-      billing_period: newPeriod,
-      or_number: rest.or_number + '-COPY',
-    }
-  })
-
-  const { error: insertError } = await supabase.from('fuel_transactions').insert(newRows)
-
-  if (insertError) showSnackbar('Failed to copy transactions', 'error')
-  else {
-    showSnackbar(`${newRows.length} transactions copied to ${copyToYear.value}`, 'success')
-    await fetchAvailableYears()
-    filterYear.value = Number(copyToYear.value)
-    await fetchTransactions()
-    copyYearDialog.value = false
-  }
-  copying.value = false
-}
 
 onMounted(async () => {
   await Promise.all([fetchContracts(), fetchAssets()])

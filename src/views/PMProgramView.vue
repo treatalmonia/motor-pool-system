@@ -5,7 +5,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h2 class="text-h5 font-weight-bold">Schedule of Maintenance</h2>
+            <h2 class="text-h5 font-weight-bold">Preventive Maintenance Program</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
               Annual Preventive Maintenance Program — service type intervals and settings
             </p>

@@ -1,13 +1,8 @@
 <template>
   <v-app>
     <!-- Sidebar Navigation -->
-    <v-navigation-drawer v-model="drawer" permanent>
-      <v-list-item
-        title="Maintenance Fleet Manager"
-        subtitle="CSU General Services"
-        nav
-        class="py-4"
-      >
+    <v-navigation-drawer v-model="drawer" permanent width="300">
+      <v-list-item title="Fleet Manager System" subtitle="CSU General Services" nav class="py-4">
         <template v-slot:prepend>
           <v-icon color="primary" size="32">mdi-car-wrench</v-icon>
         </template>
@@ -22,22 +17,52 @@
 
         <v-list-subheader>MOTOR POOL</v-list-subheader>
 
-        <v-list-item prepend-icon="mdi-car" title="Assets" to="/vehicles" rounded="lg" />
+        <v-list-subheader>MOTOR POOL</v-list-subheader>
+
+        <v-list-item prepend-icon="mdi-car" title="Asset Registry" to="/vehicles" rounded="lg" />
         <v-list-item
           prepend-icon="mdi-wrench"
           title="Service Requests"
           to="/vehicle-requests"
           rounded="lg"
         />
-        <v-list-item
-          prepend-icon="mdi-calendar-check"
-          title="Preventive Maintenance"
-          to="/vehicle-pm"
-          rounded="lg"
-        />
+
+        <v-list-group value="preventive-maintenance">
+          <template v-slot:activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-calendar-check"
+              title="Preventive Maintenance"
+              rounded="lg"
+            />
+          </template>
+
+          <v-list-item
+            title="Schedule of Maintenance"
+            to="/vehicle-pm"
+            rounded="lg"
+            style="padding-left: 16px !important"
+          >
+            <template v-slot:prepend>
+              <v-icon size="18" class="mr-2">mdi-calendar-clock</v-icon>
+            </template>
+          </v-list-item>
+
+          <v-list-item
+            title="Maintenance Log"
+            to="/maintenance-log"
+            rounded="lg"
+            style="padding-left: 16px !important"
+          >
+            <template v-slot:prepend>
+              <v-icon size="18" class="mr-2">mdi-table-eye</v-icon>
+            </template>
+          </v-list-item>
+        </v-list-group>
+
         <v-list-item
           prepend-icon="mdi-clipboard-text-clock"
-          title="Schedule of Maintenance"
+          title="Preventive Maintenance Program"
           to="/schedule-of-maintenance"
           rounded="lg"
         />
@@ -45,12 +70,6 @@
           prepend-icon="mdi-file-document-edit"
           title="Annual PM Program"
           to="/annual-pm"
-          rounded="lg"
-        />
-        <v-list-item
-          prepend-icon="mdi-table-eye"
-          title="Maintenance Log"
-          to="/maintenance-log"
           rounded="lg"
         />
 
@@ -91,7 +110,7 @@
     </v-navigation-drawer>
 
     <!-- Top Bar -->
-    <v-app-bar elevation="1">
+    <v-app-bar elevation="1" :width="drawer ? 'calc(100% - 260px)' : '100%'">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>{{ currentPageTitle }}</v-app-bar-title>
       <template v-slot:append>
@@ -131,15 +150,15 @@ function toggleTheme() {
 
 const pageTitles = {
   '/': 'Dashboard',
-  '/vehicles': 'Vehicle Registry',
-  '/vehicle-requests': 'Vehicle Service Requests',
-  '/vehicle-pm': 'Preventive Maintenance',
-  '/schedule-of-maintenance': 'Schedule of Maintenance',
+  '/vehicles': 'Asset Registry',
+  '/vehicle-requests': 'Service Requests',
+  '/vehicle-pm': 'Schedule of Maintenance',
   '/maintenance-log': 'Maintenance Log',
+  '/schedule-of-maintenance': 'Preventive Maintenance Program',
+  '/annual-pm': 'Annual PM Program',
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
   '/ac-cleaning': 'AC Cleaning Log',
 }
-
 const currentPageTitle = computed(() => pageTitles[route.path] || 'Motor Pool System')
 </script>

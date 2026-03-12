@@ -130,9 +130,28 @@
 
           <!-- Status Column -->
           <template v-slot:item.status="{ item }">
-            <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
-              {{ item.status }}
-            </v-chip>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-chip
+                  :color="statusColor(item.status)"
+                  size="small"
+                  variant="tonal"
+                  v-bind="props"
+                  style="cursor: pointer;"
+                  append-icon="mdi-chevron-down"
+                >
+                  {{ item.status }}
+                </v-chip>
+              </template>
+              <v-list density="compact" min-width="180">
+                <v-list-item
+                  v-for="s in ['Pending', 'Forwarded to Tech.', 'Completed']"
+                  :key="s"
+                  :title="s"
+                  @click="quickUpdateStatus(item, s)"
+                />
+              </v-list>
+            </v-menu>
           </template>
 
           <!-- Actions Column -->
@@ -181,7 +200,7 @@
                 label="Request No."
                 variant="outlined"
                 density="comfortable"
-                hint="Auto-generated. You can change it." 
+                hint="Auto-generated. You can change it."
                 persistent-hint
               />
             </v-col>
@@ -625,6 +644,19 @@ async function deleteRequest() {
   }
 
   deleting.value = false
+}
+
+async function quickUpdateStatus(item, newStatus) {
+  const { error } = await supabase
+    .from('ac_service_requests')
+    .update({ status: newStatus })
+    .eq('id', item.id)
+  if (error) {
+    showSnackbar('Failed to update status', 'error')
+  } else {
+    item.status = newStatus
+    showSnackbar('Status updated', 'success')
+  }
 }
 
 function showSnackbar(message, color = 'success') {

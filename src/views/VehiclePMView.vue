@@ -177,9 +177,28 @@
               </td>
 
               <td>
-                <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
-                  {{ item.status }}
-                </v-chip>
+                <v-menu>
+                  <template v-slot:activator="{ props }">
+                    <v-chip
+                      :color="statusColor(item.status)"
+                      size="small"
+                      variant="tonal"
+                      v-bind="props"
+                      style="cursor: pointer;"
+                      append-icon="mdi-chevron-down"
+                    >
+                      {{ item.status }}
+                    </v-chip>
+                  </template>
+                  <v-list density="compact" min-width="150">
+                    <v-list-item
+                      v-for="s in ['Scheduled', 'Completed', 'Cancelled']"
+                      :key="s"
+                      :title="s"
+                      @click="quickUpdateStatus(item, s)"
+                    />
+                  </v-list>
+                </v-menu>
               </td>
               <td class="text-center">
                 <v-btn
@@ -1121,6 +1140,21 @@ async function deleteRecord() {
     await fetchRecords()
   }
   deleting.value = false
+}
+
+async function quickUpdateStatus(item, newStatus) {
+  const payload = { status: newStatus }
+  if (newStatus === 'Completed' && !item.date_accomplished) {
+    payload.date_accomplished = new Date().toISOString().split('T')[0]
+  }
+  const { error } = await supabase.from('vehicle_pm_log').update(payload).eq('id', item.id)
+  if (error) {
+    showSnackbar('Failed to update status', 'error')
+  } else {
+    item.status = newStatus
+    if (payload.date_accomplished) item.date_accomplished = payload.date_accomplished
+    showSnackbar('Status updated', 'success')
+  }
 }
 
 function showSnackbar(message, color = 'success') {

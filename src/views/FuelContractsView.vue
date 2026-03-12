@@ -39,55 +39,69 @@
 
     <!-- Summary Cards -->
     <v-row class="mb-4">
-      <v-col cols="6" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="44">
-              <v-icon>mdi-file-document-multiple</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Contracts</p>
-              <p class="text-h5 font-weight-bold">{{ contracts.length }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="3">
+      <!-- Total Contract Amount -->
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
             <v-avatar color="orange-darken-2" variant="tonal" size="44">
               <v-icon>mdi-cash-multiple</v-icon>
             </v-avatar>
             <div>
-              <p class="text-medium-emphasis text-body-2">Total Contract Value</p>
+              <p class="text-medium-emphasis text-body-2">Total Contract Amount</p>
               <p class="text-h5 font-weight-bold">{{ formatCurrency(totalContractAmount) }}</p>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6" sm="3">
+
+      <!-- Diesel -->
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="blue-darken-2" variant="tonal" size="44">
-              <v-icon>mdi-fuel</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Diesel (L)</p>
-              <p class="text-h5 font-weight-bold">{{ formatNumber(totalDiesel) }}</p>
+          <v-card-text class="ga-3">
+            <div class="d-flex align-center ga-3 mb-2">
+              <v-avatar color="blue-darken-2" variant="tonal" size="44">
+                <v-icon>mdi-fuel</v-icon>
+              </v-avatar>
+              <p class="text-body-2 font-weight-bold">Diesel</p>
             </div>
+            <v-row dense>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Total No. of (L)</p>
+                <p class="text-h6 font-weight-bold text-blue-darken-2">
+                  {{ formatNumber(totalDiesel) }}
+                </p>
+              </v-col>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Total Amount</p>
+                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalDieselAmount) }}</p>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6" sm="3">
+
+      <!-- Gasoline -->
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="green-darken-2" variant="tonal" size="44">
-              <v-icon>mdi-gas-station</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Gasoline (L)</p>
-              <p class="text-h5 font-weight-bold">{{ formatNumber(totalGasoline) }}</p>
+          <v-card-text class="ga-3">
+            <div class="d-flex align-center ga-3 mb-2">
+              <v-avatar color="green-darken-2" variant="tonal" size="44">
+                <v-icon>mdi-gas-station</v-icon>
+              </v-avatar>
+              <p class="text-body-2 font-weight-bold">Gasoline</p>
             </div>
+            <v-row dense>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Total No. of (L)</p>
+                <p class="text-h6 font-weight-bold text-green-darken-2">
+                  {{ formatNumber(totalGasoline) }}
+                </p>
+              </v-col>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Total Amount</p>
+                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalGasolineAmount) }}</p>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -622,6 +636,16 @@ const totalDiesel = computed(() =>
 )
 const totalGasoline = computed(() =>
   contracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+)
+const totalDieselAmount = computed(() =>
+  contracts.value
+    .filter((c) => (c.allocated_diesel || 0) > 0)
+    .reduce((s, c) => s + (c.contract_amount || 0), 0),
+)
+const totalGasolineAmount = computed(() =>
+  contracts.value
+    .filter((c) => (c.allocated_gasoline || 0) > 0)
+    .reduce((s, c) => s + (c.contract_amount || 0), 0),
 )
 
 const existingPONumbers = computed(() => [

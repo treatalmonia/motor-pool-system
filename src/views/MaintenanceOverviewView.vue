@@ -1,323 +1,239 @@
 <template>
-  <v-container fluid>
-    <!-- Header -->
-    <v-row class="mb-4">
-      <v-col>
-        <div class="d-flex align-center justify-space-between flex-wrap ga-3">
-          <div>
-            <h2 class="text-h5 font-weight-bold">Maintenance Overview</h2>
-            <p class="text-medium-emphasis text-body-2 mt-1">
-              Per-vehicle service history matrix — last performed and next due
-            </p>
-          </div>
-          <div class="d-flex ga-3 align-center flex-wrap">
-            <v-select
-              v-model="selectedYear"
-              :items="yearOptions"
-              label="Year"
-              variant="outlined"
-              density="compact"
-              hide-details
-              style="min-width: 110px"
-            />
-            <v-select
-              v-model="selectedVehicleId"
-              :items="vehicleOptions"
-              item-title="asset_name"
-              item-value="id"
-              label="Vehicle"
-              variant="outlined"
-              density="compact"
-              hide-details
-              style="min-width: 180px"
-            />
+  <div class="ml-root">
+    <!-- ── Header ── -->
+    <div class="ml-header">
+      <div class="ml-header__left">
+        <p class="ml-header__eyebrow">Fleet Management</p>
+        <h2 class="ml-header__title">Maintenance Log</h2>
+        <p class="ml-header__sub">
+          Performance tasks are auto-logged when marked <em>Completed</em> from the Schedule tab.
+        </p>
+      </div>
+      <div class="ml-header__controls">
+        <div class="ml-control-group">
+          <label class="ml-label">Year</label>
+          <select v-model="selectedYear" class="ml-select">
+            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+        <div class="ml-control-group">
+          <label class="ml-label">Filter Vehicle</label>
+          <select v-model="selectedVehicleId" class="ml-select ml-select--wide">
+            <option :value="null">All Vehicles</option>
+            <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">
+              {{ v.asset_name }}
+            </option>
+          </select>
+        </div>
+        <div class="ml-control-group">
+          <label class="ml-label">Sort By</label>
+          <select v-model="sortBy" class="ml-select">
+            <option value="vehicle">Vehicle</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Summary Bar ── -->
+    <div class="ml-summary">
+      <div class="ml-stat ml-stat--ok">
+        <span class="ml-stat__num">{{ summaryTotals.ok }}</span>
+        <span class="ml-stat__label">OK</span>
+      </div>
+      <div class="ml-stat ml-stat--soon">
+        <span class="ml-stat__num">{{ summaryTotals.soon }}</span>
+        <span class="ml-stat__label">Due Soon</span>
+      </div>
+      <div class="ml-stat ml-stat--overdue">
+        <span class="ml-stat__num">{{ summaryTotals.overdue }}</span>
+        <span class="ml-stat__label">Overdue</span>
+      </div>
+      <div class="ml-stat ml-stat--none">
+        <span class="ml-stat__num">{{ summaryTotals.none }}</span>
+        <span class="ml-stat__label">No Record</span>
+      </div>
+    </div>
+
+    <!-- ── Loading ── -->
+    <div v-if="loading" class="ml-empty">
+      <div class="ml-spinner"></div>
+      <p>Loading maintenance data…</p>
+    </div>
+
+    <!-- ── Matrix ── -->
+    <div v-else class="ml-matrix-wrap">
+      <div class="ml-matrix-scroll">
+        <table class="ml-matrix">
+          <thead>
+            <tr>
+              <th class="ml-col-vehicle ml-sticky-l">Vehicle</th>
+              <th class="ml-col-task ml-sticky-l2">Performance Task</th>
+              <th
+                v-for="m in months"
+                :key="m.value"
+                class="ml-col-month"
+                :class="{
+                  'ml-col-month--current': m.value === currentMonth && selectedYear === currentYear,
+                }"
+              >
+                {{ m.label }}
+              </th>
+              <th class="ml-col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
+              <tr
+                v-for="(row, ri) in group.rows"
+                :key="row.service_type"
+                class="ml-row"
+                :class="rowStatusClass(row)"
+              >
+                <!-- Vehicle cell — only on first row of group -->
+                <td v-if="ri === 0" :rowspan="group.rows.length" class="ml-td-vehicle ml-sticky-l">
+                  <div class="ml-vehicle-badge">
+                    <span class="ml-vehicle-badge__icon">🚗</span>
+                    <div>
+                      <p class="ml-vehicle-name">{{ group.vehicleName }}</p>
+                      <p class="ml-vehicle-plate">{{ group.plate || '—' }}</p>
+                    </div>
+                  </div>
+                </td>
+                <!-- Task name -->
+                <td class="ml-td-task ml-sticky-l2">
+                  <span class="ml-task-name">{{ row.service_type }}</span>
+                  <span
+                    class="ml-task-interval"
+                    v-if="row.km_between_service || row.months_between_service"
+                  >
+                    <template v-if="row.km_between_service"
+                      >every {{ Number(row.km_between_service).toLocaleString() }} km</template
+                    >
+                    <template v-if="row.km_between_service && row.months_between_service">
+                      ·
+                    </template>
+                    <template v-if="row.months_between_service"
+                      >{{ row.months_between_service }} mo</template
+                    >
+                  </span>
+                </td>
+                <!-- Month cells -->
+                <td
+                  v-for="m in months"
+                  :key="m.value"
+                  class="ml-td-month"
+                  :class="{
+                    'ml-td-month--current':
+                      m.value === currentMonth && selectedYear === currentYear,
+                  }"
+                >
+                  <button
+                    v-if="row.monthCells[m.value]"
+                    class="ml-cell-done"
+                    @click="
+                      openDetail(row.monthCells[m.value], group.vehicleName, row.service_type)
+                    "
+                    :title="
+                      'View details for ' + formatDate(row.monthCells[m.value].date_performed)
+                    "
+                  >
+                    <span class="ml-cell-done__date">{{
+                      formatShortDate(row.monthCells[m.value].date_performed)
+                    }}</span>
+                    <span class="ml-cell-done__dot"></span>
+                  </button>
+                  <span v-else class="ml-cell-empty">—</span>
+                </td>
+                <!-- Status -->
+                <td class="ml-td-status">
+                  <span class="ml-status-pill" :class="'ml-status-pill--' + statusKey(row)">
+                    {{ statusLabel(row) }}
+                  </span>
+                </td>
+              </tr>
+              <!-- Group separator -->
+              <tr v-if="gi < matrixGroups.length - 1" class="ml-row-sep">
+                <td :colspan="months.length + 3"></td>
+              </tr>
+            </template>
+            <tr v-if="matrixGroups.length === 0">
+              <td :colspan="months.length + 3" class="ml-empty-row">No records found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Legend ── -->
+    <div class="ml-legend">
+      <span class="ml-legend__label">Legend:</span>
+      <span class="ml-pill ml-pill--ok">OK</span>
+      <span class="ml-pill ml-pill--soon">Due Soon (30 days)</span>
+      <span class="ml-pill ml-pill--overdue">Overdue</span>
+      <span class="ml-pill ml-pill--none">No Record</span>
+    </div>
+
+    <!-- ── Detail Popup ── -->
+    <transition name="ml-fade">
+      <div v-if="detailOpen" class="ml-overlay" @click.self="detailOpen = false">
+        <div class="ml-detail">
+          <button class="ml-detail__close" @click="detailOpen = false">✕</button>
+          <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
+          <h3 class="ml-detail__title">Service Record</h3>
+          <div class="ml-detail__grid">
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Date Conducted</span>
+              <span class="ml-detail__val">{{
+                formatDate(detailRecord?.date_performed) || '—'
+              }}</span>
+            </div>
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Reference No.</span>
+              <span class="ml-detail__val">{{ detailRecord?.reference_no || '—' }}</span>
+            </div>
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Odometer Reading</span>
+              <span class="ml-detail__val">
+                {{
+                  detailRecord?.odometer_reading
+                    ? Number(detailRecord.odometer_reading).toLocaleString() + ' km'
+                    : '—'
+                }}
+              </span>
+            </div>
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Mechanic / Conducted By</span>
+              <span class="ml-detail__val">{{ detailRecord?.conducted_by || '—' }}</span>
+            </div>
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Next Due Date</span>
+              <span
+                class="ml-detail__val"
+                :class="detailRecord?.next_due_date < today ? 'ml-detail__val--overdue' : ''"
+              >
+                {{ formatDate(detailRecord?.next_due_date) || '—' }}
+              </span>
+            </div>
+            <div class="ml-detail__item">
+              <span class="ml-detail__key">Next Due Odometer</span>
+              <span class="ml-detail__val">
+                {{
+                  detailRecord?.next_due_odometer
+                    ? Number(detailRecord.next_due_odometer).toLocaleString() + ' km'
+                    : '—'
+                }}
+              </span>
+            </div>
+            <div class="ml-detail__item ml-detail__item--full" v-if="detailRecord?.remarks">
+              <span class="ml-detail__key">Remarks</span>
+              <span class="ml-detail__val">{{ detailRecord.remarks }}</span>
+            </div>
           </div>
         </div>
-      </v-col>
-    </v-row>
-
-    <!-- Loading -->
-    <v-row v-if="loading">
-      <v-col class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="48" />
-        <p class="text-medium-emphasis mt-4">Loading maintenance data...</p>
-      </v-col>
-    </v-row>
-
-    <!-- No vehicle selected -->
-    <v-row v-else-if="!selectedVehicleId">
-      <v-col class="text-center py-12">
-        <v-icon size="64" color="grey-lighten-1">mdi-car-search</v-icon>
-        <p class="text-medium-emphasis mt-4">Select a vehicle to view its maintenance matrix.</p>
-      </v-col>
-    </v-row>
-
-    <!-- Matrix Table -->
-    <template v-else>
-      <!-- Vehicle Info Card -->
-      <v-row class="mb-4">
-        <v-col>
-          <v-card rounded="lg" elevation="0" border>
-            <v-card-text class="d-flex align-center ga-4 flex-wrap">
-              <v-avatar color="primary" variant="tonal" size="48">
-                <v-icon>mdi-car</v-icon>
-              </v-avatar>
-              <div>
-                <p class="text-h6 font-weight-bold">{{ selectedVehicle?.asset_name }}</p>
-                <p class="text-medium-emphasis text-body-2">
-                  {{ selectedVehicle?.plate_number || '—' }}
-                  <span v-if="selectedVehicle?.model"> · {{ selectedVehicle.model }}</span>
-                  <span v-if="selectedVehicle?.year_model">
-                    · {{ selectedVehicle.year_model }}</span
-                  >
-                </p>
-              </div>
-              <v-spacer />
-              <div class="text-right d-flex flex-column align-end ga-2">
-                <div>
-                  <p class="text-caption text-medium-emphasis">Current Odometer</p>
-                  <p class="text-body-1 font-weight-bold">
-                    {{
-                      selectedVehicle?.current_odometer
-                        ? Number(selectedVehicle.current_odometer).toLocaleString() + ' km'
-                        : '—'
-                    }}
-                  </p>
-                </div>
-                <v-btn
-                  color="primary"
-                  variant="tonal"
-                  size="small"
-                  prepend-icon="mdi-history"
-                  @click="openEFHRDialog"
-                >
-                  Repair History
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- Summary Cards -->
-      <v-row class="mb-4">
-        <v-col cols="6" sm="3">
-          <v-card rounded="lg" elevation="0" border>
-            <v-card-text class="d-flex align-center ga-3">
-              <v-avatar color="success" variant="tonal" size="40">
-                <v-icon size="20">mdi-check-circle</v-icon>
-              </v-avatar>
-              <div>
-                <p class="text-caption text-medium-emphasis">Done This Year</p>
-                <p class="text-h6 font-weight-bold">{{ doneThisYear }}</p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3">
-          <v-card rounded="lg" elevation="0" border>
-            <v-card-text class="d-flex align-center ga-3">
-              <v-avatar color="error" variant="tonal" size="40">
-                <v-icon size="20">mdi-alert-circle</v-icon>
-              </v-avatar>
-              <div>
-                <p class="text-caption text-medium-emphasis">Overdue</p>
-                <p class="text-h6 font-weight-bold">{{ overdueCount }}</p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3">
-          <v-card rounded="lg" elevation="0" border>
-            <v-card-text class="d-flex align-center ga-3">
-              <v-avatar color="warning" variant="tonal" size="40">
-                <v-icon size="20">mdi-clock-alert</v-icon>
-              </v-avatar>
-              <div>
-                <p class="text-caption text-medium-emphasis">Due Soon</p>
-                <p class="text-h6 font-weight-bold">{{ dueSoonCount }}</p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6" sm="3">
-          <v-card rounded="lg" elevation="0" border>
-            <v-card-text class="d-flex align-center ga-3">
-              <v-avatar color="info" variant="tonal" size="40">
-                <v-icon size="20">mdi-calendar-clock</v-icon>
-              </v-avatar>
-              <div>
-                <p class="text-caption text-medium-emphasis">Scheduled</p>
-                <p class="text-h6 font-weight-bold">{{ scheduledCount }}</p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- Matrix -->
-      <v-card rounded="lg" elevation="0" border>
-        <v-card-text class="pa-0">
-          <div class="overflow-x-auto">
-            <table class="maintenance-matrix">
-              <thead>
-                <tr>
-                  <th class="col-service sticky-col">Service Type</th>
-                  <th v-for="month in months" :key="month.value" class="col-month text-center">
-                    {{ month.label }}
-                  </th>
-                  <th class="col-ref text-center">Ref No.</th>
-                  <th class="col-next text-center">Next Due</th>
-                  <th class="col-odo text-center">Next Odo</th>
-                  <th class="col-status text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in matrixRows" :key="row.service_type" :class="rowClass(row)">
-                  <td class="sticky-col cell-service">
-                    <span class="text-body-2 font-weight-medium">{{ row.service_type }}</span>
-                    <span class="text-caption text-medium-emphasis d-block">
-                      <span v-if="row.km_between_service"
-                        >every {{ Number(row.km_between_service).toLocaleString() }} km</span
-                      >
-                      <span v-if="row.km_between_service && row.months_between_service"> · </span>
-                      <span v-if="row.months_between_service"
-                        >{{ row.months_between_service }} mo</span
-                      >
-                    </span>
-                  </td>
-                  <td v-for="month in months" :key="month.value" class="text-center cell-month">
-                    <template v-if="row.monthCells[month.value]">
-                      <v-chip
-                        color="success"
-                        size="x-small"
-                        variant="tonal"
-                        class="font-weight-medium"
-                      >
-                        {{ formatShortDate(row.monthCells[month.value].date_performed) }}
-                      </v-chip>
-                    </template>
-                    <span v-else class="text-medium-emphasis text-caption">—</span>
-                  </td>
-                  <td class="text-center cell-ref">
-                    <span class="text-caption text-primary font-weight-medium">
-                      {{ row.latestRecord?.reference_no || '—' }}
-                    </span>
-                  </td>
-                  <td class="text-center cell-next">
-                    <span class="text-caption font-weight-medium" :class="nextDueDateClass(row)">
-                      {{
-                        row.latestRecord?.next_due_date
-                          ? formatDate(row.latestRecord.next_due_date)
-                          : '—'
-                      }}
-                    </span>
-                  </td>
-                  <td class="text-center cell-odo">
-                    <span class="text-caption">
-                      {{
-                        row.latestRecord?.next_due_odometer
-                          ? Number(row.latestRecord.next_due_odometer).toLocaleString() + ' km'
-                          : '—'
-                      }}
-                    </span>
-                  </td>
-                  <td class="text-center cell-status">
-                    <v-chip :color="statusColor(row)" size="x-small" variant="tonal">
-                      {{ statusLabel(row) }}
-                    </v-chip>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </v-card-text>
-      </v-card>
-
-      <!-- Legend -->
-      <v-row class="mt-3">
-        <v-col class="d-flex ga-3 flex-wrap align-center">
-          <span class="text-caption text-medium-emphasis">Legend:</span>
-          <v-chip color="error" size="x-small" variant="tonal">Overdue</v-chip>
-          <v-chip color="warning" size="x-small" variant="tonal">Due Soon (30 days)</v-chip>
-          <v-chip color="success" size="x-small" variant="tonal">OK</v-chip>
-          <v-chip color="grey" size="x-small" variant="tonal">No Record</v-chip>
-        </v-col>
-      </v-row>
-    </template>
-
-    <!-- EFHR Dialog -->
-    <v-dialog v-model="efhrDialog" max-width="900" scrollable>
-      <v-card rounded="lg">
-        <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
-          <div>
-            <span class="text-h6">Repair History</span>
-            <p class="text-body-2 text-medium-emphasis mt-1">
-              {{ selectedVehicle?.asset_name }} — Equipment Field History Record (EFHR)
-            </p>
-          </div>
-          <v-btn icon="mdi-close" variant="text" @click="efhrDialog = false" />
-        </v-card-title>
-
-        <v-card-text class="pa-4">
-          <!-- Loading -->
-          <div v-if="efhrLoading" class="text-center py-8">
-            <v-progress-circular indeterminate color="primary" />
-          </div>
-
-          <!-- No records -->
-          <div v-else-if="efhrRecords.length === 0" class="text-center py-8">
-            <v-icon size="48" color="grey-lighten-1">mdi-clipboard-off</v-icon>
-            <p class="text-medium-emphasis mt-3">No repair records found for this vehicle.</p>
-          </div>
-
-          <!-- Table -->
-          <div v-else class="overflow-x-auto">
-            <table class="efhr-table">
-              <thead>
-                <tr>
-                  <th>Ref No.</th>
-                  <th>Date Start</th>
-                  <th>Date End</th>
-                  <th>Particulars / Problem</th>
-                  <th>Work Done</th>
-                  <th>Conducted By</th>
-                  <th class="text-right">Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="r in efhrRecords" :key="r.id">
-                  <td>
-                    <span class="text-primary font-weight-medium text-body-2">
-                      {{ r.request_no || '—' }}
-                    </span>
-                  </td>
-                  <td class="text-caption">{{ formatDate(r.date_of_request) || '—' }}</td>
-                  <td class="text-caption">{{ formatDate(r.date_end) || '—' }}</td>
-                  <td class="cell-wrap text-body-2">{{ r.problem_details || '—' }}</td>
-                  <td class="cell-wrap text-body-2">{{ r.work_details || '—' }}</td>
-                  <td class="text-caption">{{ r.conducted_by || '—' }}</td>
-                  <td class="text-right text-caption font-weight-medium">
-                    {{ r.cost ? '₱' + Number(r.cost).toLocaleString() : '—' }}
-                  </td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="6" class="text-right font-weight-bold text-body-2 pt-2">
-                    Total Cost
-                  </td>
-                  <td class="text-right font-weight-bold text-body-2 pt-2">
-                    ₱{{ efhrTotalCost.toLocaleString() }}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      </div>
+    </transition>
+  </div>
 </template>
 
 <script setup>
@@ -326,23 +242,37 @@ import { supabase } from '../supabase'
 
 const today = new Date().toISOString().split('T')[0]
 const currentYear = new Date().getFullYear()
+const currentMonth = new Date().getMonth() + 1
 
-// ---- STATE ----
+// ── State ──
 const loading = ref(false)
 const vehicles = ref([])
 const pmServiceTypes = ref([])
 const pmRecords = ref([])
 const selectedVehicleId = ref(null)
 const selectedYear = ref(currentYear)
+const sortBy = ref('vehicle')
 
-// ---- YEAR OPTIONS ----
+// ── Detail popup ──
+const detailOpen = ref(false)
+const detailRecord = ref(null)
+const detailVehicle = ref('')
+const detailTask = ref('')
+
+function openDetail(record, vehicleName, taskName) {
+  detailRecord.value = record
+  detailVehicle.value = vehicleName
+  detailTask.value = taskName
+  detailOpen.value = true
+}
+
+// ── Options ──
 const yearOptions = computed(() => {
   const years = []
   for (let y = currentYear + 1; y >= currentYear - 4; y--) years.push(y)
   return years
 })
 
-// ---- MONTHS ----
 const months = [
   { label: 'Jan', value: 1 },
   { label: 'Feb', value: 2 },
@@ -358,90 +288,91 @@ const months = [
   { label: 'Dec', value: 12 },
 ]
 
-// ---- VEHICLE OPTIONS ----
 const vehicleOptions = computed(() => vehicles.value.filter((v) => v.asset_type === 'Vehicle'))
 
-const selectedVehicle = computed(
-  () => vehicles.value.find((v) => v.id === selectedVehicleId.value) || null,
-)
+const filteredVehicles = computed(() => {
+  const list = vehicleOptions.value
+  if (selectedVehicleId.value) return list.filter((v) => v.id === selectedVehicleId.value)
+  return list
+})
 
-// ---- MATRIX ROWS ----
-const matrixRows = computed(() => {
-  if (!selectedVehicleId.value || !pmServiceTypes.value.length) return []
+// ── Matrix groups (one per vehicle) ──
+const matrixGroups = computed(() => {
+  if (!pmServiceTypes.value.length) return []
 
-  const vehicleRecords = pmRecords.value.filter((r) => r.vehicle_id === selectedVehicleId.value)
+  const groups = filteredVehicles.value.map((vehicle) => {
+    const vehicleRecords = pmRecords.value.filter((r) => r.vehicle_id === vehicle.id)
 
-  return pmServiceTypes.value.map((st) => {
-    const records = vehicleRecords.filter((r) => r.service_type === st.service_type)
+    const rows = pmServiceTypes.value.map((st) => {
+      const records = vehicleRecords.filter((r) => r.service_type === st.service_type)
 
-    const yearRecords = records.filter((r) => {
-      if (!r.date_performed) return false
-      return new Date(r.date_performed).getFullYear() === selectedYear.value
-    })
+      const yearRecords = records.filter((r) => {
+        if (!r.date_performed) return false
+        return new Date(r.date_performed).getFullYear() === selectedYear.value
+      })
 
-    const monthCells = {}
-    yearRecords.forEach((r) => {
-      const month = new Date(r.date_performed + 'T00:00:00').getMonth() + 1
-      if (!monthCells[month] || r.date_performed > monthCells[month].date_performed) {
-        monthCells[month] = r
+      const monthCells = {}
+      yearRecords.forEach((r) => {
+        const month = new Date(r.date_performed + 'T00:00:00').getMonth() + 1
+        if (!monthCells[month] || r.date_performed > monthCells[month].date_performed) {
+          monthCells[month] = r
+        }
+      })
+
+      const latestRecord = records.length
+        ? records.reduce((a, b) => ((a.date_performed || '') > (b.date_performed || '') ? a : b))
+        : null
+
+      return {
+        service_type: st.service_type,
+        km_between_service: st.km_between_service,
+        months_between_service: st.months_between_service,
+        monthCells,
+        latestRecord,
       }
     })
 
-    const latestRecord = records.length
-      ? records.reduce((a, b) => ((a.date_performed || '') > (b.date_performed || '') ? a : b))
-      : null
-
     return {
-      service_type: st.service_type,
-      km_between_service: st.km_between_service,
-      months_between_service: st.months_between_service,
-      monthCells,
-      latestRecord,
+      vehicleId: vehicle.id,
+      vehicleName: vehicle.asset_name,
+      plate: vehicle.plate_number,
+      rows,
     }
   })
+
+  if (sortBy.value === 'status') {
+    return [...groups].sort((a, b) => {
+      const priority = (r) => {
+        const worst = r.rows.reduce((p, row) => {
+          const s = statusKey(row)
+          const map = { overdue: 0, soon: 1, ok: 2, none: 3 }
+          return Math.min(p, map[s] ?? 3)
+        }, 3)
+        return worst
+      }
+      return priority(a) - priority(b)
+    })
+  }
+
+  return groups
 })
 
-// ---- SUMMARY COUNTS ----
-const doneThisYear = computed(
-  () => matrixRows.value.filter((r) => Object.keys(r.monthCells).length > 0).length,
-)
-
-const overdueCount = computed(
-  () =>
-    matrixRows.value.filter((r) => {
-      if (!r.latestRecord?.next_due_date) return false
-      return r.latestRecord.next_due_date < today
-    }).length,
-)
-
-const dueSoonCount = computed(() => {
-  const soon = new Date()
-  soon.setDate(soon.getDate() + 30)
-  const soonStr = soon.toISOString().split('T')[0]
-  return matrixRows.value.filter((r) => {
-    if (!r.latestRecord?.next_due_date) return false
-    return r.latestRecord.next_due_date >= today && r.latestRecord.next_due_date <= soonStr
-  }).length
+// ── Summary totals (across all shown groups) ──
+const summaryTotals = computed(() => {
+  const counts = { ok: 0, soon: 0, overdue: 0, none: 0 }
+  matrixGroups.value.forEach((g) => {
+    g.rows.forEach((row) => {
+      counts[statusKey(row)]++
+    })
+  })
+  return counts
 })
 
-const scheduledCount = computed(
-  () =>
-    matrixRows.value.filter((r) => {
-      if (!r.latestRecord?.next_due_date) return false
-      const soon = new Date()
-      soon.setDate(soon.getDate() + 30)
-      return r.latestRecord.next_due_date > soon.toISOString().split('T')[0]
-    }).length,
-)
-
-// ---- HELPERS ----
+// ── Helpers ──
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  return `${mm}/${dd}/${yy}`
+  return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })
 }
 
 function formatShortDate(dateStr) {
@@ -452,188 +383,588 @@ function formatShortDate(dateStr) {
   return `${mm}/${dd}`
 }
 
-function statusLabel(row) {
-  if (!row.latestRecord?.next_due_date) return 'No Record'
-  if (row.latestRecord.next_due_date < today) return 'Overdue'
+function statusKey(row) {
+  if (!row.latestRecord?.next_due_date) return 'none'
+  if (row.latestRecord.next_due_date < today) return 'overdue'
   const soon = new Date()
   soon.setDate(soon.getDate() + 30)
-  if (row.latestRecord.next_due_date <= soon.toISOString().split('T')[0]) return 'Due Soon'
-  return 'OK'
+  if (row.latestRecord.next_due_date <= soon.toISOString().split('T')[0]) return 'soon'
+  return 'ok'
 }
 
-function statusColor(row) {
-  const label = statusLabel(row)
-  return { Overdue: 'error', 'Due Soon': 'warning', OK: 'success', 'No Record': 'grey' }[label]
+function statusLabel(row) {
+  return { overdue: 'Overdue', soon: 'Due Soon', ok: 'OK', none: 'No Record' }[statusKey(row)]
 }
 
-function rowClass(row) {
-  const label = statusLabel(row)
-  if (label === 'Overdue') return 'row-overdue'
-  if (label === 'Due Soon') return 'row-due-soon'
-  return ''
+function rowStatusClass(row) {
+  return {
+    'ml-row--overdue': statusKey(row) === 'overdue',
+    'ml-row--soon': statusKey(row) === 'soon',
+  }
 }
 
-function nextDueDateClass(row) {
-  const label = statusLabel(row)
-  if (label === 'Overdue') return 'text-error'
-  if (label === 'Due Soon') return 'text-warning'
-  return ''
-}
-
-// ---- FETCH ----
-async function fetchVehicles() {
-  const { data, error } = await supabase
-    .from('vehicles')
-    .select('id, asset_name, asset_type, plate_number, model, year_model, current_odometer')
-    .eq('status', 'Active')
-    .order('asset_name')
-  if (!error) vehicles.value = data
-}
-
-async function fetchServiceTypes() {
-  const { data, error } = await supabase.from('pm_service_types').select('*').order('service_type')
-  if (!error) pmServiceTypes.value = data
-}
-
-async function fetchPMRecords() {
-  if (!selectedVehicleId.value) return
+// ── Fetch ──
+async function fetchAll() {
   loading.value = true
-  const { data, error } = await supabase
-    .from('vehicle_pm_log')
-    .select('*')
-    .eq('vehicle_id', selectedVehicleId.value)
-    .order('date_performed', { ascending: false })
-  if (!error) pmRecords.value = data
+  const [vRes, stRes] = await Promise.all([
+    supabase
+      .from('vehicles')
+      .select('id,asset_name,asset_type,plate_number,model,year_model,current_odometer')
+      .eq('status', 'Active')
+      .order('asset_name'),
+    supabase.from('pm_service_types').select('*').order('service_type'),
+  ])
+  if (!vRes.error) vehicles.value = vRes.data
+  if (!stRes.error) pmServiceTypes.value = stRes.data
+
+  const vIds = vehicles.value.filter((v) => v.asset_type === 'Vehicle').map((v) => v.id)
+  if (vIds.length) {
+    const { data, error } = await supabase
+      .from('vehicle_pm_log')
+      .select('*')
+      .in('vehicle_id', vIds)
+      .order('date_performed', { ascending: false })
+    if (!error) pmRecords.value = data
+  }
   loading.value = false
 }
 
-watch(selectedVehicleId, () => fetchPMRecords())
-
-// ---- EFHR ----
-const efhrDialog = ref(false)
-const efhrLoading = ref(false)
-const efhrRecords = ref([])
-
-const efhrTotalCost = computed(() =>
-  efhrRecords.value.reduce((sum, r) => sum + (Number(r.cost) || 0), 0),
-)
-
-async function openEFHRDialog() {
-  efhrDialog.value = true
-  efhrLoading.value = true
-  efhrRecords.value = []
-
-  const { data, error } = await supabase
-    .from('vehicle_service_requests')
-    .select('*')
-    .eq('vehicle_id', selectedVehicleId.value)
-    .order('date_of_request', { ascending: false })
-
-  if (!error) efhrRecords.value = data
-  efhrLoading.value = false
-}
-
-// ---- LIFECYCLE ----
-onMounted(async () => {
-  await fetchVehicles()
-  await fetchServiceTypes()
-})
+watch(selectedYear, fetchAll)
+onMounted(fetchAll)
 </script>
 
 <style scoped>
-.maintenance-matrix {
+/* ── Root & tokens ── */
+.ml-root {
+  --c-bg: #f8f8f6;
+  --c-surface: #ffffff;
+  --c-border: #e4e2dc;
+  --c-text: #1a1a18;
+  --c-muted: #8a8880;
+  --c-accent: #2563eb;
+
+  --c-ok: #16a34a;
+  --c-ok-bg: #f0fdf4;
+  --c-soon: #d97706;
+  --c-soon-bg: #fffbeb;
+  --c-overdue: #dc2626;
+  --c-overdue-bg: #fef2f2;
+  --c-none: #9ca3af;
+  --c-none-bg: #f9fafb;
+
+  font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  color: var(--c-text);
+  background: var(--c-bg);
+  padding: 24px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.ml-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.ml-header__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  margin: 0 0 4px;
+}
+.ml-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  color: var(--c-text);
+}
+.ml-header__sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin: 0;
+}
+.ml-header__controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.ml-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ml-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-muted);
+}
+.ml-select {
+  appearance: none;
+  background: var(--c-surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8880'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  border: 1.5px solid var(--c-border);
+  border-radius: 7px;
+  padding: 7px 30px 7px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 90px;
+}
+.ml-select:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+.ml-select--wide {
+  min-width: 170px;
+}
+
+/* ── Summary Bar ── */
+.ml-summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.ml-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1.5px solid;
+  background: var(--c-surface);
+  flex: 1;
+  min-width: 100px;
+}
+.ml-stat--ok {
+  border-color: #bbf7d0;
+  background: var(--c-ok-bg);
+}
+.ml-stat--soon {
+  border-color: #fde68a;
+  background: var(--c-soon-bg);
+}
+.ml-stat--overdue {
+  border-color: #fecaca;
+  background: var(--c-overdue-bg);
+}
+.ml-stat--none {
+  border-color: var(--c-border);
+  background: var(--c-surface);
+}
+
+.ml-stat__num {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.ml-stat--ok .ml-stat__num {
+  color: var(--c-ok);
+}
+.ml-stat--soon .ml-stat__num {
+  color: var(--c-soon);
+}
+.ml-stat--overdue .ml-stat__num {
+  color: var(--c-overdue);
+}
+.ml-stat--none .ml-stat__num {
+  color: var(--c-none);
+}
+.ml-stat__label {
+  font-size: 11px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+/* ── Matrix wrap ── */
+.ml-matrix-wrap {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ml-matrix-scroll {
+  overflow-x: auto;
+}
+
+/* ── Matrix table ── */
+.ml-matrix {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-.maintenance-matrix th,
-.maintenance-matrix td {
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+.ml-matrix thead tr {
+  background: #f4f3ef;
+}
+.ml-matrix th {
+  padding: 9px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-muted);
+  border-bottom: 1.5px solid var(--c-border);
   white-space: nowrap;
 }
-
-.maintenance-matrix th {
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(128, 128, 128, 0.08);
-  color: rgba(128, 128, 128, 0.9);
+.ml-matrix td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
 }
 
-.sticky-col {
+/* Sticky columns */
+.ml-sticky-l {
   position: sticky;
   left: 0;
   z-index: 2;
   background: inherit;
-  min-width: 200px;
+}
+.ml-sticky-l2 {
+  position: sticky;
+  left: 148px;
+  z-index: 2;
+  background: inherit;
+  border-right: 1.5px solid var(--c-border);
+}
+thead .ml-sticky-l,
+thead .ml-sticky-l2 {
+  z-index: 4;
+  background: #f4f3ef;
 }
 
-.maintenance-matrix th.sticky-col {
-  z-index: 3;
-  background: rgba(128, 128, 128, 0.08);
+/* Column widths */
+.ml-col-vehicle {
+  min-width: 148px;
 }
-
-.col-month {
-  min-width: 72px;
+.ml-col-task {
+  min-width: 180px;
 }
-.col-ref {
+.ml-col-month {
+  min-width: 64px;
+  text-align: center;
+}
+.ml-col-month--current {
+  background: #eff6ff;
+  color: var(--c-accent);
+}
+.ml-col-status {
   min-width: 90px;
-}
-.col-next {
-  min-width: 90px;
-}
-.col-odo {
-  min-width: 110px;
-}
-.col-status {
-  min-width: 90px;
+  text-align: center;
 }
 
-.row-overdue td {
-  background: rgba(239, 68, 68, 0.06);
+/* Row states */
+.ml-row {
+  transition: background 0.1s;
 }
-.row-due-soon td {
-  background: rgba(245, 158, 11, 0.06);
+.ml-row:hover td {
+  background: #f8f8f6;
 }
-
-.cell-service {
-  padding: 10px 12px;
+.ml-row--overdue td {
+  background: #fff8f8;
 }
-
-.efhr-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+.ml-row--soon td {
+  background: #fffef5;
 }
 
-.efhr-table th,
-.efhr-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
-  white-space: nowrap;
-  vertical-align: top;
+.ml-row-sep td {
+  padding: 0;
+  height: 6px;
+  background: #f4f3ef;
+  border-bottom: 1.5px solid var(--c-border);
 }
 
-.efhr-table th {
+/* Vehicle cell */
+.ml-td-vehicle {
+  vertical-align: top !important;
+  padding-top: 12px !important;
+  background: #fafaf8;
+  border-right: 1.5px solid var(--c-border);
+}
+.ml-vehicle-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ml-vehicle-badge__icon {
+  font-size: 16px;
+  margin-top: 1px;
+}
+.ml-vehicle-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c-text);
+  margin: 0;
+}
+.ml-vehicle-plate {
+  font-size: 10.5px;
+  color: var(--c-muted);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+/* Task cell */
+.ml-td-task {
+  background: #fafaf8;
+}
+.ml-task-name {
+  display: block;
   font-weight: 600;
+  color: var(--c-text);
+}
+.ml-task-interval {
+  display: block;
+  font-size: 10.5px;
+  color: var(--c-muted);
+  margin-top: 1px;
+}
+
+/* Month cells */
+.ml-td-month {
+  text-align: center;
+}
+.ml-td-month--current {
+  background: #eff6ff22;
+}
+
+.ml-cell-done {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #dcfce7;
+  border: 1.5px solid #86efac;
+  border-radius: 6px;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.ml-cell-done:hover {
+  background: #bbf7d0;
+  border-color: #4ade80;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.15);
+}
+.ml-cell-done__date {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #15803d;
+  line-height: 1;
+}
+.ml-cell-done__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.ml-cell-empty {
+  color: #d1d5db;
+  font-size: 12px;
+}
+
+/* Status */
+.ml-td-status {
+  text-align: center;
+}
+.ml-status-pill {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.ml-status-pill--ok {
+  background: var(--c-ok-bg);
+  color: var(--c-ok);
+}
+.ml-status-pill--soon {
+  background: var(--c-soon-bg);
+  color: var(--c-soon);
+}
+.ml-status-pill--overdue {
+  background: var(--c-overdue-bg);
+  color: var(--c-overdue);
+}
+.ml-status-pill--none {
+  background: var(--c-none-bg);
+  color: var(--c-none);
+}
+
+/* ── Legend ── */
+.ml-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.ml-legend__label {
   font-size: 11px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+.ml-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.ml-pill--ok {
+  background: var(--c-ok-bg);
+  color: var(--c-ok);
+}
+.ml-pill--soon {
+  background: var(--c-soon-bg);
+  color: var(--c-soon);
+}
+.ml-pill--overdue {
+  background: var(--c-overdue-bg);
+  color: var(--c-overdue);
+}
+.ml-pill--none {
+  background: var(--c-none-bg);
+  color: var(--c-none);
+}
+
+/* ── Loading / Empty ── */
+.ml-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--c-muted);
+}
+.ml-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--c-border);
+  border-top-color: var(--c-accent);
+  border-radius: 50%;
+  animation: ml-spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes ml-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ml-empty-row {
+  text-align: center;
+  padding: 40px;
+  color: var(--c-muted);
+}
+
+/* ── Detail Overlay ── */
+.ml-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.ml-detail {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+.ml-detail__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f0ede8;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--c-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.ml-detail__close:hover {
+  background: #e4e0d8;
+}
+.ml-detail__eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(128, 128, 128, 0.08);
-  color: rgba(128, 128, 128, 0.9);
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+  margin: 0 0 4px;
+}
+.ml-detail__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  letter-spacing: -0.02em;
+}
+.ml-detail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ml-detail__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ml-detail__item--full {
+  grid-column: 1 / -1;
+}
+.ml-detail__key {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-muted);
+}
+.ml-detail__val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.ml-detail__val--overdue {
+  color: var(--c-overdue);
 }
 
-.efhr-table tfoot td {
-  border-top: 2px solid rgba(128, 128, 128, 0.2);
-  border-bottom: none;
+/* ── Transition ── */
+.ml-fade-enter-active,
+.ml-fade-leave-active {
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
-
-.cell-wrap {
-  white-space: normal;
-  max-width: 220px;
-  min-width: 140px;
+.ml-fade-enter-from,
+.ml-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.97);
 }
-</style>
+</style>    

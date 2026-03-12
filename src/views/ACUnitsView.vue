@@ -113,6 +113,7 @@
               hide-details
             />
           </v-col>
+
           <v-col cols="12" sm="2">
             <v-select
               v-model="statusFilter"

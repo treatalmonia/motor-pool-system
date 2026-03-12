@@ -47,6 +47,12 @@
           to="/annual-pm"
           rounded="lg"
         />
+        <v-list-item
+          prepend-icon="mdi-table-eye"
+          title="Maintenance Overview"
+          to="/maintenance-overview"
+          rounded="lg"
+        />
 
         <v-list-subheader>AIR CONDITIONER</v-list-subheader>
 
@@ -128,6 +134,7 @@ const pageTitles = {
   '/vehicles': 'Vehicle Registry',
   '/vehicle-requests': 'Vehicle Service Requests',
   '/vehicle-pm': 'Preventive Maintenance',
+  '/maintenance-overview': 'Maintenance Overview',
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
   '/ac-cleaning': 'AC Cleaning Log',

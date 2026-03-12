@@ -40,6 +40,12 @@ const router = createRouter({
           component: () => import('../views/AnnualPMView.vue'),
         },
         {
+          path: 'maintenance-overview',
+          name: 'MaintenanceOverview',
+          component: () => import('../views/MaintenanceOverviewView.vue'),
+        },
+
+        {
           path: 'ac-units',
           name: 'ac-units',
           component: () => import('../views/ACUnitsView.vue'),

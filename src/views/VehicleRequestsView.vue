@@ -262,28 +262,40 @@
               />
             </v-col>
 
-            <!-- Work Details -->
-            <v-col cols="12">
-              <v-textarea
-                v-model="form.work_details"
-                label="Work Details"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                placeholder="Describe the work done"
-              />
-            </v-col>
-
-            <!-- Problem Details -->
+            <!-- Problem Encountered -->
             <v-col cols="12">
               <v-textarea
                 v-model="form.problem_details"
-                label="Problem / Details of Request *"
+                label="Problem Encountered *"
                 variant="outlined"
                 density="comfortable"
                 rows="3"
                 :error-messages="errors.problem_details"
-                placeholder="Describe the problem or service needed"
+                placeholder="Describe the problem encountered"
+              />
+            </v-col>
+
+            <!-- Diagnosis & Action Taken -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.work_details"
+                label="Diagnosis & Action Taken"
+                variant="outlined"
+                density="comfortable"
+                rows="3"
+                placeholder="Describe diagnosis and actions taken"
+              />
+            </v-col>
+
+            <!-- Remarks -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="form.remarks"
+                label="Remarks"
+                variant="outlined"
+                density="comfortable"
+                rows="2"
+                placeholder="Details of incomplete work or additional notes"
               />
             </v-col>
 
@@ -411,10 +423,14 @@
             <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
             <v-list-item subtitle="Requisitioner" :title="selectedRequest.requisitioner || '—'" />
             <v-list-item
-              subtitle="Problem / Details"
+              subtitle="Problem Encountered"
               :title="selectedRequest.problem_details || '—'"
             />
-            <v-list-item subtitle="Work Done" :title="selectedRequest.work_details || '—'" />
+            <v-list-item
+              subtitle="Diagnosis & Action Taken"
+              :title="selectedRequest.work_details || '—'"
+            />
+            <v-list-item subtitle="Remarks" :title="selectedRequest.remarks || '—'" />
             <v-list-item subtitle="Conducted By" :title="selectedRequest.conducted_by || '—'" />
             <v-list-item
               v-if="selectedRequest.asset_type === 'Vehicle'"
@@ -514,6 +530,7 @@ const defaultForm = {
   hours_of_operation: null,
   cost: null,
   status: 'In Progress',
+  remarks: '',
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -771,6 +788,7 @@ async function saveRequest() {
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
+    remarks: form.value.remarks || null,
   }
 
   if (isEditing.value) {

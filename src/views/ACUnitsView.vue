@@ -51,12 +51,12 @@
       <v-col cols="12" sm="3">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="warning" variant="tonal" size="48">
-              <v-icon>mdi-swap-horizontal</v-icon>
+            <v-avatar color="info" variant="tonal" size="48">
+              <v-icon>mdi-window-maximize</v-icon>
             </v-avatar>
             <div>
-              <p class="text-medium-emphasis text-body-2">Transferred</p>
-              <p class="text-h5 font-weight-bold">{{ transferredCount }}</p>
+              <p class="text-medium-emphasis text-body-2">Window Type</p>
+              <p class="text-h5 font-weight-bold">{{ windowCount }}</p>
             </div>
           </v-card-text>
         </v-card>
@@ -64,12 +64,12 @@
       <v-col cols="12" sm="3">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="error" variant="tonal" size="48">
-              <v-icon>mdi-close-circle</v-icon>
+            <v-avatar color="purple" variant="tonal" size="48">
+              <v-icon>mdi-ceiling-light</v-icon>
             </v-avatar>
             <div>
-              <p class="text-medium-emphasis text-body-2">Decommissioned</p>
-              <p class="text-h5 font-weight-bold">{{ decommissionedCount }}</p>
+              <p class="text-medium-emphasis text-body-2">Ceiling Type</p>
+              <p class="text-h5 font-weight-bold">{{ ceilingCount }}</p>
             </div>
           </v-card-text>
         </v-card>
@@ -103,7 +103,17 @@
             />
           </v-col>
 
-          <v-col cols="12" sm="3">
+          <v-col cols="12" sm="2">
+            <v-select
+              v-model="unitTypeFilter"
+              :items="['All', ...unitTypes]"
+              label="Unit Type"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+          </v-col>
+          <v-col cols="12" sm="2">
             <v-select
               v-model="statusFilter"
               :items="['All', 'Active', 'Inactive', 'Transferred', 'Decommissioned']"
@@ -246,16 +256,14 @@
               />
             </v-col>
 
-            <!-- Number of Units -->
+            <!-- AC Identification Code -->
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.num_units"
-                label="Number of Units *"
+                v-model="form.ac_identification_code"
+                label="AC Identification Code"
                 variant="outlined"
                 density="comfortable"
-                type="number"
-                min="1"
-                :error-messages="errors.num_units"
+                placeholder="e.g. AC-001"
               />
             </v-col>
 
@@ -293,6 +301,28 @@
                 label="Technology"
                 variant="outlined"
                 density="comfortable"
+              />
+            </v-col>
+
+            <!-- Serial No. Indoor -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.serial_no_indoor"
+                label="Serial No. (Indoor)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Indoor unit serial number"
+              />
+            </v-col>
+
+            <!-- Serial No. Outdoor -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.serial_no_outdoor"
+                label="Serial No. (Outdoor)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Outdoor unit serial number"
               />
             </v-col>
 
@@ -362,12 +392,20 @@
             <v-list-item subtitle="Area / Room" :title="selectedUnit.area_room || '—'" />
             <v-list-item subtitle="Unit Type" :title="selectedUnit.unit_type || '—'" />
             <v-list-item
-              subtitle="Number of Units"
-              :title="String(selectedUnit.num_units) || '—'"
+              subtitle="AC Identification Code"
+              :title="selectedUnit.ac_identification_code || '—'"
             />
             <v-list-item subtitle="Brand / Make" :title="selectedUnit.brand || '—'" />
             <v-list-item subtitle="Capacity" :title="selectedUnit.capacity || '—'" />
             <v-list-item subtitle="Technology" :title="selectedUnit.technology || '—'" />
+            <v-list-item
+              subtitle="Serial No. (Indoor)"
+              :title="selectedUnit.serial_no_indoor || '—'"
+            />
+            <v-list-item
+              subtitle="Serial No. (Outdoor)"
+              :title="selectedUnit.serial_no_outdoor || '—'"
+            />
             <v-list-item subtitle="Remarks" :title="selectedUnit.remarks || '—'" />
           </v-list>
         </v-card-text>
@@ -421,6 +459,7 @@ const search = ref('')
 const buildingFilter = ref('All')
 
 const statusFilter = ref('All')
+const unitTypeFilter = ref('All')
 
 // ---- DROPDOWN OPTIONS ----
 const buildings = ref([])
@@ -458,10 +497,12 @@ const defaultForm = {
   floor: '',
   area_room: '',
   unit_type: '',
-  num_units: 1,
+  ac_identification_code: '',
   brand: '',
   capacity: '',
   technology: 'Inverter',
+  serial_no_indoor: '',
+  serial_no_outdoor: '',
   status: 'Active',
   remarks: '',
 }
@@ -487,20 +528,24 @@ const headers = [
 
 // ---- COMPUTED ----
 const activeCount = computed(() => acUnits.value.filter((u) => u.status === 'Active').length)
-const transferredCount = computed(
-  () => acUnits.value.filter((u) => u.status === 'Transferred').length,
+const windowCount = computed(
+  () => acUnits.value.filter((u) => u.unit_type === 'Window Type').length,
 )
-const decommissionedCount = computed(
-  () => acUnits.value.filter((u) => u.status === 'Decommissioned').length,
+const ceilingCount = computed(
+  () => acUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length,
 )
 
 const filteredUnits = computed(() => {
-  let result = acUnits.value
+  let result = [...acUnits.value].sort((a, b) =>
+    (a.unit_type || '').localeCompare(b.unit_type || ''),
+  )
 
   if (buildingFilter.value !== 'All') {
     result = result.filter((u) => u.building === buildingFilter.value)
   }
-
+  if (unitTypeFilter.value !== 'All') {
+    result = result.filter((u) => u.unit_type === unitTypeFilter.value)
+  }
   if (statusFilter.value !== 'All') {
     result = result.filter((u) => u.status === statusFilter.value)
   }
@@ -603,8 +648,7 @@ function validateForm() {
   if (!form.value.floor?.trim()) errors.value.floor = 'Floor is required'
   if (!form.value.area_room?.trim()) errors.value.area_room = 'Area / Room is required'
   if (!form.value.unit_type) errors.value.unit_type = 'Unit type is required'
-  if (!form.value.num_units || form.value.num_units < 1)
-    errors.value.num_units = 'Number of units must be at least 1'
+
   return Object.keys(errors.value).length === 0
 }
 
@@ -630,10 +674,12 @@ async function saveUnit() {
     floor: form.value.floor,
     area_room: form.value.area_room,
     unit_type: form.value.unit_type,
-    num_units: form.value.num_units,
+    ac_identification_code: form.value.ac_identification_code || null,
     brand: form.value.brand,
     capacity: form.value.capacity,
     technology: form.value.technology,
+    serial_no_indoor: form.value.serial_no_indoor || null,
+    serial_no_outdoor: form.value.serial_no_outdoor || null,
     status: form.value.status,
     remarks: form.value.remarks,
   }

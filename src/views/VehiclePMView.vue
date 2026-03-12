@@ -335,18 +335,7 @@
 
             <v-col cols="12"><v-divider /></v-col>
 
-            <!-- Reference No -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.reference_no"
-                label="Reference No. (SR)"
-                variant="outlined"
-                density="comfortable"
-                placeholder="e.g. 2025-001"
-                hint="Service Request number linked to this PM"
-                persistent-hint
-              />
-            </v-col>
+
 
             <!-- Conducted By -->
             <v-col cols="12" sm="6">
@@ -497,6 +486,7 @@
 
           <!-- Section: Service Details -->
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">SERVICE DETAILS</p>
+
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
               <v-row dense>
@@ -506,12 +496,22 @@
                     {{ formatDate(selectedRecord.date_performed) || '—' }}
                   </p>
                 </v-col>
-                <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
+               <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
                   <p class="text-caption text-medium-emphasis">Odometer at Service</p>
                   <p class="text-body-2 font-weight-medium">
                     {{
                       selectedRecord.odometer
                         ? Number(selectedRecord.odometer).toLocaleString() + ' km'
+                        : '—'
+                    }}
+                  </p>
+                </v-col>
+                <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
+                  <p class="text-caption text-medium-emphasis">Current Odometer</p>
+                  <p class="text-body-2 font-weight-medium">
+                    {{
+                      selectedRecord.current_odometer
+                        ? Number(selectedRecord.current_odometer).toLocaleString() + ' km'
                         : '—'
                     }}
                   </p>
@@ -578,16 +578,6 @@
             </v-card-text>
           </v-card>
 
-          <!-- Reference -->
-          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REFERENCE</p>
-          <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
-            <v-card-text class="pa-3">
-              <p class="text-caption text-medium-emphasis">Service Request No.</p>
-              <p class="text-body-2 font-weight-medium">
-                {{ selectedRecord.reference_no || '—' }}
-              </p>
-            </v-card-text>
-          </v-card>
 
           <!-- Remarks -->
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REMARKS</p>
@@ -1037,6 +1027,9 @@ function openEditDialog(record) {
       ? formatNumber(record.next_due_odometer)
       : '',
     cost_display: record.cost ? formatNumber(record.cost) : '',
+    current_odometer_display: record.current_odometer
+      ? formatNumber(record.current_odometer)
+      : '',
   }
   errors.value = {}
   formDialog.value = true

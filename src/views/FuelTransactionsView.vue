@@ -7,7 +7,7 @@
           <div>
             <h2 class="text-h5 font-weight-bold">Fuel Transactions</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
-              Encode fuel withdrawals from hard copy Petron invoices
+              Encode fuel withdrawals from hard copy invoices
             </p>
           </div>
           <div class="d-flex ga-2 flex-wrap align-center">
@@ -196,27 +196,29 @@
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <v-btn
-            icon="mdi-eye"
-            size="x-small"
-            variant="text"
-            color="info"
-            @click="openViewDialog(item)"
-          />
-          <v-btn
-            icon="mdi-pencil"
-            size="x-small"
-            variant="text"
-            color="primary"
-            @click="openEditDialog(item)"
-          />
-          <v-btn
-            icon="mdi-delete"
-            size="x-small"
-            variant="text"
-            color="error"
-            @click="openDeleteDialog(item)"
-          />
+          <div class="d-flex align-center">
+            <v-btn
+              icon="mdi-eye"
+              size="x-small"
+              variant="text"
+              color="info"
+              @click="openViewDialog(item)"
+            />
+            <v-btn
+              icon="mdi-pencil"
+              size="x-small"
+              variant="text"
+              color="primary"
+              @click="openEditDialog(item)"
+            />
+            <v-btn
+              icon="mdi-delete"
+              size="x-small"
+              variant="text"
+              color="error"
+              @click="openDeleteDialog(item)"
+            />
+          </div>
         </template>
 
         <template #no-data>
@@ -676,17 +678,17 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 
 // ── TABLE HEADERS ──
 const headers = [
-  { title: 'Date', key: 'date', width: '100px' },
-  { title: 'OR #', key: 'or_number', width: '90px' },
-  { title: 'Billing Period', key: 'billing_period', width: '160px' },
-  { title: 'Type', key: 'fuel_type', width: '90px' },
-  { title: 'Qty (L)', key: 'quantity', align: 'end', width: '90px' },
-  { title: 'Unit Price', key: 'unit_price', align: 'end', width: '100px' },
-  { title: 'Total Amt.', key: 'total_amount', align: 'end', width: '110px' },
-  { title: 'Vehicle / Equip.', key: 'vehicle' },
-  { title: 'Utilized By', key: 'utilized_by' },
-  { title: 'Fund', key: 'fund_cluster', width: '80px' },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'center', width: '100px' },
+  { title: 'Date', key: 'date', width: '90px' },
+  { title: 'OR #', key: 'or_number', width: '80px' },
+  { title: 'Billing Period', key: 'billing_period', width: '150px' },
+  { title: 'Type', key: 'fuel_type', width: '80px' },
+  { title: 'Qty (L)', key: 'quantity', align: 'end', width: '80px' },
+  { title: 'Unit Price', key: 'unit_price', align: 'end', width: '90px' },
+  { title: 'Total Amt.', key: 'total_amount', align: 'end', width: '100px' },
+  { title: 'Vehicle / Equip.', key: 'vehicle', width: '140px' },
+  { title: 'Utilized By', key: 'utilized_by', width: '120px' },
+  { title: 'Fund', key: 'fund_cluster', width: '70px' },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'center', width: '120px' },
 ]
 
 // ── BILLING PERIODS (24 per year) ──

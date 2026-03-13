@@ -10,6 +10,9 @@
               Track and manage corrective maintenance requests
             </p>
           </div>
+          <v-btn variant="outlined" prepend-icon="mdi-history" @click="openEFHRReport">
+            EFHR Report
+          </v-btn>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             New Request
           </v-btn>
@@ -499,7 +502,18 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
+
+const router = useRouter()
+
+function openEFHRReport() {
+  const asset = assetList.value.find((a) => a.asset_name === vehicleFilter.value)
+  router.push({
+    path: '/efhr-report',
+    query: { vehicleId: asset?.id || '' },
+  })
+}
 
 async function quickUpdateStatus(item, newStatus) {
   const payload = { status: newStatus }

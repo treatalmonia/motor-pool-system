@@ -1,0 +1,73 @@
+/*
+  print.css
+  Place in: src/assets/print.css
+  Import in: src/main.js  →  import './assets/print.css'
+
+  Suppresses browser-generated headers/footers (date, URL, page count)
+  and hides the app navigation so only report content prints.
+*/
+
+@media print {
+
+  /* ── 1. Remove browser-generated header/footer text ── */
+  @page {
+    margin: 10mm 12mm;   /* trim margin so browser text area shrinks away */
+    size: A4 portrait;
+  }
+
+  /* ── 2. Hide Vuetify navigation & app shell ── */
+
+  /* Top app bar */
+  .v-app-bar,
+  .v-toolbar,
+  header.v-app-bar {
+    display: none !important;
+  }
+
+  /* Left navigation drawer / sidebar */
+  .v-navigation-drawer,
+  nav.v-navigation-drawer {
+    display: none !important;
+  }
+
+  /* Vuetify overlay scrim */
+  .v-overlay,
+  .v-overlay__scrim {
+    display: none !important;
+  }
+
+  /* Push main content to full width (no sidebar gap) */
+  .v-main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* v-container spacing reset */
+  .v-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide screen-only controls inside report views */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure print area takes full page */
+  .print-area,
+  .fuel-page,
+  .pmc-page {
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Background colours must print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

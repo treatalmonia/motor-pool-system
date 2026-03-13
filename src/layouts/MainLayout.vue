@@ -17,8 +17,6 @@
 
         <v-list-subheader>MOTOR POOL</v-list-subheader>
 
-        <v-list-subheader>MOTOR POOL</v-list-subheader>
-
         <v-list-item prepend-icon="mdi-car" title="Asset Registry" to="/vehicles" rounded="lg" />
         <v-list-item
           prepend-icon="mdi-wrench"
@@ -58,6 +56,17 @@
               <v-icon size="18" class="mr-2">mdi-table-eye</v-icon>
             </template>
           </v-list-item>
+
+          <v-list-item
+            title="PMC Report"
+            to="/pmc-report"
+            rounded="lg"
+            style="padding-left: 16px !important"
+          >
+            <template v-slot:prepend>
+              <v-icon size="18" class="mr-2">mdi-clipboard-check</v-icon>
+            </template>
+          </v-list-item>
         </v-list-group>
 
         <v-list-item
@@ -88,25 +97,33 @@
           rounded="lg"
         />
         <v-list-item
+          prepend-icon="mdi-history"
+          title="EFHR Report"
+          value="efhr-report"
+          to="/efhr-report"
+          rounded="lg"
+        />
+        <v-list-item
           prepend-icon="mdi-snowflake"
           title="AC Cleaning Log"
           to="/ac-cleaning"
           rounded="lg"
         />
+
+        <v-list-subheader>FUEL MANAGEMENT</v-list-subheader>
+        <v-list-item
+          prepend-icon="mdi-file-document-multiple"
+          title="Fuel Contracts"
+          to="/fuel-contracts"
+          rounded="lg"
+        />
+        <v-list-item
+          prepend-icon="mdi-receipt-text"
+          title="Fuel Transactions"
+          to="/fuel-transactions"
+          rounded="lg"
+        />
       </v-list>
-      <v-list-subheader>FUEL MANAGEMENT</v-list-subheader>
-      <v-list-item
-        prepend-icon="mdi-file-document-multiple"
-        title="Fuel Contracts"
-        to="/fuel-contracts"
-        rounded="lg"
-      />
-      <v-list-item
-        prepend-icon="mdi-receipt-text"
-        title="Fuel Transactions"
-        to="/fuel-transactions"
-        rounded="lg"
-      />
     </v-navigation-drawer>
 
     <!-- Top Bar -->
@@ -156,9 +173,13 @@ const pageTitles = {
   '/maintenance-log': 'Maintenance Log',
   '/schedule-of-maintenance': 'Preventive Maintenance Program',
   '/annual-pm': 'Annual PM Program',
+  '/pmc-report': 'PMC Report',
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
+
   '/ac-cleaning': 'AC Cleaning Log',
+  '/fuel-contracts': 'Fuel Contracts',
+  '/fuel-transactions': 'Fuel Transactions',
 }
 const currentPageTitle = computed(() => pageTitles[route.path] || 'Motor Pool System')
 </script>

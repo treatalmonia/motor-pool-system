@@ -10,6 +10,10 @@
               Track scheduled and completed preventive maintenance
             </p>
           </div>
+          
+          <v-btn variant="outlined" prepend-icon="mdi-clipboard-check" @click="openPMCReport">
+            PMC Report
+          </v-btn>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             Add PM Record
           </v-btn>
@@ -184,7 +188,7 @@
                       size="small"
                       variant="tonal"
                       v-bind="props"
-                      style="cursor: pointer;"
+                      style="cursor: pointer"
                       append-icon="mdi-chevron-down"
                     >
                       {{ item.status }}
@@ -354,8 +358,6 @@
 
             <v-col cols="12"><v-divider /></v-col>
 
-
-
             <!-- Conducted By -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -515,7 +517,7 @@
                     {{ formatDate(selectedRecord.date_performed) || '—' }}
                   </p>
                 </v-col>
-               <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
+                <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
                   <p class="text-caption text-medium-emphasis">Odometer at Service</p>
                   <p class="text-body-2 font-weight-medium">
                     {{
@@ -597,7 +599,6 @@
             </v-card-text>
           </v-card>
 
-
           <!-- Remarks -->
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REMARKS</p>
           <v-card variant="tonal" color="grey" rounded="lg">
@@ -646,7 +647,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
+
+const router = useRouter()
 
 // ---- DATA ----
 const pmRecords = ref([])
@@ -789,6 +793,21 @@ const filteredRecords = computed(() => {
 })
 
 // ---- FORMAT HELPERS ----
+function openPMCReport() {
+  const vehicleId =
+    vehicleFilter.value !== 'All'
+      ? assetList.value.find((a) => a.asset_name === vehicleFilter.value)?.id
+      : null
+
+  router.push({
+    path: '/pmc-report',
+    query: {
+      vehicleId: vehicleId || '',
+      year: new Date().getFullYear(),
+    },
+  })
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -1046,9 +1065,7 @@ function openEditDialog(record) {
       ? formatNumber(record.next_due_odometer)
       : '',
     cost_display: record.cost ? formatNumber(record.cost) : '',
-    current_odometer_display: record.current_odometer
-      ? formatNumber(record.current_odometer)
-      : '',
+    current_odometer_display: record.current_odometer ? formatNumber(record.current_odometer) : '',
   }
   errors.value = {}
   formDialog.value = true

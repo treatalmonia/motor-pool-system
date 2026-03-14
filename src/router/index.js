@@ -78,6 +78,12 @@ const router = createRouter({
           name: 'EFHRReport',
           component: () => import('../views/EFHRReportView.vue'),
         },
+        // ✅ FIX 1: was missing entirely — caused blank screen for Fuel Summary
+        {
+          path: 'fuel-summary-report',
+          name: 'FuelSummaryReport',
+          component: () => import('../views/FuelSummaryReportView.vue'),
+        },
       ],
     },
   ],

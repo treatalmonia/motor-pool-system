@@ -58,15 +58,12 @@
           </v-list-item>
 
           <v-list-item
+            prepend-icon="mdi-clipboard-check"
             title="PMC Report"
             to="/pmc-report"
             rounded="lg"
             style="padding-left: 16px !important"
-          >
-            <template v-slot:prepend>
-              <v-icon size="18" class="mr-2">mdi-clipboard-check</v-icon>
-            </template>
-          </v-list-item>
+          />
         </v-list-group>
 
         <v-list-item
@@ -123,6 +120,28 @@
           to="/fuel-transactions"
           rounded="lg"
         />
+
+        <v-list-subheader>PRINTABLE REPORTS</v-list-subheader>
+
+        <v-list-item
+          prepend-icon="mdi-clipboard-check"
+          title="PMC Report"
+          to="/pmc-report"
+          rounded="lg"
+        />
+        <v-list-item
+          prepend-icon="mdi-history"
+          title="EFHR Report"
+          to="/efhr-report"
+          rounded="lg"
+        />
+
+        <v-list-item
+          prepend-icon="mdi-gas-station"
+          title="Fuel Summary Report"
+          to="/fuel-summary-report"
+          rounded="lg"
+        />
       </v-list>
     </v-navigation-drawer>
 
@@ -162,7 +181,7 @@ const theme = useTheme()
 const isDark = computed(() => theme.global.name.value === 'dark')
 
 function toggleTheme() {
-  theme.change(isDark.value ? 'dark' : 'light')
+  theme.global.name.value = isDark.value ? 'light' : 'dark'
 }
 
 const pageTitles = {
@@ -174,6 +193,8 @@ const pageTitles = {
   '/schedule-of-maintenance': 'Preventive Maintenance Program',
   '/annual-pm': 'Annual PM Program',
   '/pmc-report': 'PMC Report',
+  '/efhr-report': 'EFHR Report',
+  '/fuel-summary-report': 'Fuel Summary Report',
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
 

@@ -112,6 +112,17 @@
               hide-details
             />
           </v-col>
+
+          <v-col cols="12" sm="2">
+            <v-select
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+          </v-col>
           <v-col cols="12" sm="3">
             <v-select
               v-model="vehicleFilter"
@@ -661,6 +672,11 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
+const yearFilter = ref(new Date().getFullYear())
+const yearOptions = computed(() => {
+  const cur = new Date().getFullYear()
+  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+})
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
 const selectedAssetType = ref('Vehicle')
@@ -788,6 +804,12 @@ const filteredRecords = computed(() => {
         r.conducted_by?.toLowerCase().includes(s) ||
         r.remarks?.toLowerCase().includes(s),
     )
+  }
+  if (yearFilter.value) {
+    result = result.filter((r) => {
+      const yr = r.date_performed ? new Date(r.date_performed + 'T00:00:00').getFullYear() : null
+      return yr === yearFilter.value
+    })
   }
   return result
 })

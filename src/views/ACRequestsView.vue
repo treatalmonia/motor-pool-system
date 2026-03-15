@@ -137,7 +137,7 @@
                   size="small"
                   variant="tonal"
                   v-bind="props"
-                  style="cursor: pointer;"
+                  style="cursor: pointer"
                   append-icon="mdi-chevron-down"
                 >
                   {{ item.status }}
@@ -152,6 +152,11 @@
                 />
               </v-list>
             </v-menu>
+          </template>
+
+          <!-- Date Completed Column -->
+          <template v-slot:item.date_completed="{ item }">
+            {{ item.date_completed ? formatDate(item.date_completed) : '—' }}
           </template>
 
           <!-- Actions Column -->
@@ -275,6 +280,16 @@
                 label="Status"
                 variant="outlined"
                 density="comfortable"
+                @update:modelValue="onStatusChange"
+              />
+            </v-col>
+            <v-col cols="12" sm="6" v-if="form.status === 'Completed'">
+              <v-text-field
+                v-model="form.date_completed"
+                label="Date Completed"
+                variant="outlined"
+                density="comfortable"
+                type="date"
               />
             </v-col>
           </v-row>
@@ -320,6 +335,12 @@
             <v-list-item
               subtitle="Details of Request"
               :title="selectedRequest.details_of_request || '—'"
+            />
+            <v-list-item
+              subtitle="Date Completed"
+              :title="
+                selectedRequest.date_completed ? formatDate(selectedRequest.date_completed) : '—'
+              "
             />
             <v-list-item subtitle="Remarks" :title="selectedRequest.remarks || '—'" />
           </v-list>
@@ -396,6 +417,7 @@ const defaultForm = {
   details_of_request: '',
   remarks: '',
   status: 'Pending',
+  date_completed: null,
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
@@ -411,6 +433,7 @@ const headers = [
   { title: 'Area / Room', key: 'area_room', sortable: false },
   { title: 'Details', key: 'details_of_request', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
+  { title: 'Date Completed', key: 'date_completed', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
 ]
 
@@ -455,6 +478,15 @@ const filteredRequests = computed(() => {
 })
 
 // ---- HELPERS ----
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  return `${mm}/${dd}/${yy}`
+}
+
 function statusColor(status) {
   const colors = {
     Pending: 'warning',
@@ -462,6 +494,12 @@ function statusColor(status) {
     Completed: 'success',
   }
   return colors[status] || 'grey'
+}
+
+function onStatusChange(newStatus) {
+  if (newStatus === 'Completed' && !form.value.date_completed) {
+    form.value.date_completed = new Date().toISOString().split('T')[0]
+  }
 }
 
 function getAcUnitRoom(acUnitId) {
@@ -597,6 +635,7 @@ async function saveRequest() {
     details_of_request: form.value.details_of_request,
     remarks: form.value.remarks,
     status: form.value.status,
+    date_completed: form.value.date_completed || null,
   }
 
   if (isEditing.value) {
@@ -647,14 +686,16 @@ async function deleteRequest() {
 }
 
 async function quickUpdateStatus(item, newStatus) {
-  const { error } = await supabase
-    .from('ac_service_requests')
-    .update({ status: newStatus })
-    .eq('id', item.id)
+  const payload = { status: newStatus }
+  if (newStatus === 'Completed' && !item.date_completed) {
+    payload.date_completed = new Date().toISOString().split('T')[0]
+  }
+  const { error } = await supabase.from('ac_service_requests').update(payload).eq('id', item.id)
   if (error) {
     showSnackbar('Failed to update status', 'error')
   } else {
     item.status = newStatus
+    if (payload.date_completed) item.date_completed = payload.date_completed
     showSnackbar('Status updated', 'success')
   }
 }

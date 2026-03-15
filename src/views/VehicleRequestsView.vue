@@ -141,7 +141,7 @@
         >
           <!-- Request No -->
           <template v-slot:item.request_no="{ item }">
-            <span class="font-weight-bold text-primary">
+            <span class="font-weight-bold text-primary"> vehiclereqeust
               {{ item.request_no }}
             </span>
           </template>

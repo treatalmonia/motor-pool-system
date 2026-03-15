@@ -1,349 +1,305 @@
 <template>
-  <v-container fluid>
-    <!-- Header -->
-    <v-row class="mb-4">
-      <v-col>
-        <h2 class="text-h5 font-weight-bold">Dashboard</h2>
-        <p class="text-medium-emphasis text-body-2 mt-1">
-          Motor Pool & AC Management System — {{ todayFormatted }}
+  <v-container fluid class="pa-6">
+    <!-- ── Page Header ── -->
+    <div class="d-flex align-center justify-space-between mb-6">
+      <div>
+        <h1 class="text-h5 font-weight-bold">Dashboard</h1>
+        <p class="text-body-2 text-medium-emphasis mt-1">
+          Caraga State University — General Services Office, Transportation Unit
         </p>
-      </v-col>
-    </v-row>
+      </div>
+      <div class="d-flex align-center ga-3">
+        <v-select
+          v-model="selectedYear"
+          :items="yearOptions"
+          label="Year"
+          variant="outlined"
+          density="compact"
+          hide-details
+          style="min-width: 110px"
+          @update:modelValue="loadAll"
+        />
+        <v-chip variant="tonal" color="primary" size="small">
+          <v-icon start size="14">mdi-clock-outline</v-icon>
+          Updated {{ todayLabel }}
+        </v-chip>
+      </div>
+    </div>
 
-    <!-- TOP SUMMARY CARDS -->
-    <v-row class="mb-4">
-      <!-- Vehicles -->
-      <v-col cols="6" sm="4" md="2">
+    <!-- ── KPI Summary Cards ── -->
+    <v-row dense class="mb-4">
+      <v-col cols="6" sm="3" v-for="kpi in kpiCards" :key="kpi.label">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="primary" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-car</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold">{{ stats.totalVehicles }}</p>
-            <p class="text-caption text-medium-emphasis">Total Vehicles</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="4" md="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="error" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-alert-circle</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold text-error">{{ stats.overduePM }}</p>
-            <p class="text-caption text-medium-emphasis">Overdue PM</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="4" md="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="warning" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-clock-alert</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold text-warning">{{ stats.dueSoonPM }}</p>
-            <p class="text-caption text-medium-emphasis">Due Soon</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="4" md="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="warning" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-wrench-clock</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold">{{ stats.inProgressSR }}</p>
-            <p class="text-caption text-medium-emphasis">In Repair</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="4" md="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="info" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-air-conditioner</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold">{{ stats.totalAC }}</p>
-            <p class="text-caption text-medium-emphasis">AC Units</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="4" md="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="text-center pa-3">
-            <v-avatar color="success" variant="tonal" size="40" class="mb-2">
-              <v-icon size="20">mdi-fuel</v-icon>
-            </v-avatar>
-            <p class="text-h5 font-weight-bold">{{ stats.fuelBalance.toLocaleString() }}</p>
-            <p class="text-caption text-medium-emphasis">Fuel Balance (L)</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- ROW 2: PM Overview + Service Requests -->
-    <v-row class="mb-4">
-      <!-- PM Overview -->
-      <v-col cols="12" md="6">
-        <v-card rounded="lg" elevation="0" border height="100%">
-          <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-            <v-icon start color="primary" size="18">mdi-calendar-check</v-icon>
-            PM Overview
-          </v-card-title>
-          <v-card-text class="pa-4 pt-0">
-            <v-row density="comfortable">
-              <v-col cols="6">
-                <v-sheet rounded="lg" color="error" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h4 font-weight-bold text-error">{{ stats.overduePM }}</p>
-                  <p class="text-caption">Overdue</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6">
-                <v-sheet rounded="lg" color="warning" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h4 font-weight-bold text-warning">{{ stats.dueSoonPM }}</p>
-                  <p class="text-caption">Due in 30 days</p>
-                </v-sheet>
-              </v-col>
-            </v-row>
-            <v-divider class="my-3" />
-            <p class="text-caption text-medium-emphasis font-weight-bold mb-2">OVERDUE SERVICES</p>
-            <div v-if="overdueItems.length === 0" class="text-center py-2">
-              <p class="text-caption text-success">All services up to date</p>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis text-uppercase font-weight-medium">{{
+                kpi.label
+              }}</span>
+              <v-icon :color="kpi.color" size="18" opacity="0.7">{{ kpi.icon }}</v-icon>
             </div>
-            <v-list density="compact" class="pa-0" v-else>
-              <v-list-item
-                v-for="item in overdueItems.slice(0, 5)"
-                :key="item.id"
-                class="px-0"
-                density="compact"
-              >
-                <template v-slot:prepend>
-                  <v-icon color="error" size="16" class="mr-2">mdi-alert-circle</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  {{ item.asset_name }} — {{ item.service_type }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption text-error">
-                  Due {{ formatDate(item.next_due_date) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-            <p v-if="overdueItems.length > 5" class="text-caption text-medium-emphasis mt-1">
-              +{{ overdueItems.length - 5 }} more overdue
-            </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <!-- Service Requests -->
-      <v-col cols="12" md="6">
-        <v-card rounded="lg" elevation="0" border height="100%">
-          <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-            <v-icon start color="primary" size="18">mdi-wrench</v-icon>
-            Service Requests
-          </v-card-title>
-          <v-card-text class="pa-4 pt-0">
-           <v-row density="comfortable" class="mb-3">
-              <v-col cols="4">
-                <v-sheet rounded="lg" color="warning" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h4 font-weight-bold text-warning">{{ stats.inProgressSR }}</p>
-                  <p class="text-caption">In Progress</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="4">
-                <v-sheet rounded="lg" color="success" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h4 font-weight-bold text-success">{{ stats.completedSR }}</p>
-                  <p class="text-caption">Completed</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="4">
-                <v-sheet rounded="lg" color="grey" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h4 font-weight-bold">{{ stats.totalSR }}</p>
-                  <p class="text-caption">Total</p>
-                </v-sheet>
-              </v-col>
-            </v-row>
-            <v-divider class="my-3" />
-            <p class="text-caption text-medium-emphasis font-weight-bold mb-2">IN PROGRESS</p>
-            <div v-if="inProgressSRItems.length === 0" class="text-center py-2">
-              <p class="text-caption text-medium-emphasis">No active service requests</p>
-            </div>
-            <v-list density="compact" class="pa-0" v-else>
-              <v-list-item
-                v-for="item in inProgressSRItems.slice(0, 5)"
-                :key="item.id"
-                class="px-0"
-                density="compact"
-              >
-                <template v-slot:prepend>
-                  <v-icon color="warning" size="16" class="mr-2">mdi-clock-outline</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  {{ item.request_no }} — {{ item.asset_name }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  {{ item.problem_details?.slice(0, 50)
-                  }}{{ item.problem_details?.length > 50 ? '...' : '' }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-            <p v-if="inProgressSRItems.length > 5" class="text-caption text-medium-emphasis mt-1">
-              +{{ inProgressSRItems.length - 5 }} more in progress
-            </p>
+            <div class="text-h5 font-weight-bold">{{ kpi.value }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">{{ kpi.sub }}</div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- ROW 3: Fuel Summary Cards -->
-    <v-row class="mb-2">
-      <v-col cols="12">
-        <p class="text-body-2 font-weight-bold text-medium-emphasis mb-2">
-          <v-icon size="16" class="mr-1">mdi-fuel</v-icon>
-          FUEL SUMMARY
-        </p>
-      </v-col>
-      <v-col cols="6" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="pa-3">
-            <p class="text-caption text-medium-emphasis">Total Allocated</p>
-            <p class="text-h6 font-weight-bold">
-              {{ fuelStats.totalAllocated.toLocaleString() }} L
-            </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="pa-3">
-            <p class="text-caption text-medium-emphasis">Total Consumed</p>
-            <p class="text-h6 font-weight-bold text-error">
-              {{ fuelStats.totalConsumed.toLocaleString() }} L
-            </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="pa-3">
-            <p class="text-caption text-medium-emphasis">Balance Remaining</p>
-            <p class="text-h6 font-weight-bold text-success">
-              {{ fuelStats.balance.toLocaleString() }} L
-            </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="6" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="pa-3">
-            <p class="text-caption text-medium-emphasis">Total Cost</p>
-            <p class="text-h6 font-weight-bold">₱{{ fuelStats.totalCost.toLocaleString() }}</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Fuel balance progress bar -->
-    <v-row class="mb-4">
-      <v-col cols="12">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="pa-3">
-            <div class="d-flex justify-space-between mb-1">
-              <span class="text-caption text-medium-emphasis">Fuel Usage</span>
-              <span class="text-caption font-weight-bold">
-                {{
-                  fuelStats.totalAllocated > 0
-                    ? Math.round((fuelStats.totalConsumed / fuelStats.totalAllocated) * 100)
-                    : 0
-                }}% used
-              </span>
-            </div>
-            <v-progress-linear
-              :model-value="
-                fuelStats.totalAllocated > 0
-                  ? (fuelStats.totalConsumed / fuelStats.totalAllocated) * 100
-                  : 0
-              "
-              :color="fuelProgressColor"
-              bg-color="grey-lighten-3"
-              rounded
-              height="10"
-            />
-            <div class="d-flex justify-space-between mt-1">
-              <span class="text-caption text-medium-emphasis">0 L</span>
-              <span class="text-caption text-medium-emphasis"
-                >{{ fuelStats.totalAllocated.toLocaleString() }} L</span
-              >
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- ROW 4: Fuel Charts -->
-    <v-row class="mb-4">
-      <!-- Monthly Consumption Trend -->
+    <!-- ── Row 2: Fuel Consumption Bar Chart + PM Status ── -->
+    <v-row dense class="mb-4">
+      <!-- Fuel Consumption Per Year -->
       <v-col cols="12" md="8">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-            <v-icon start color="primary" size="18">mdi-chart-line</v-icon>
-            Monthly Fuel Consumption
-          </v-card-title>
-          <v-card-text class="pa-4 pt-0">
-            <canvas ref="monthlyChartRef" height="120" />
+        <v-card rounded="lg" elevation="0" border height="340">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-4">
+              <div>
+                <div class="text-subtitle-2 font-weight-bold">Fuel Consumption Per Year</div>
+                <div class="text-caption text-medium-emphasis">Diesel vs Gasoline (Liters)</div>
+              </div>
+              <div class="d-flex ga-3 align-center">
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #1976d2"></span> Diesel
+                </span>
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #ff8f00"></span> Gasoline
+                </span>
+              </div>
+            </div>
+            <div
+              v-if="loadingFuel"
+              class="d-flex align-center justify-center"
+              style="height: 220px"
+            >
+              <v-progress-circular indeterminate size="32" width="2" />
+            </div>
+            <canvas v-else ref="fuelYearChart" height="220"></canvas>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <!-- Cost per Vehicle -->
+      <!-- PM Status Donut -->
       <v-col cols="12" md="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-            <v-icon start color="primary" size="18">mdi-chart-bar</v-icon>
-            Cost per Vehicle
-          </v-card-title>
-          <v-card-text class="pa-4 pt-0">
-            <canvas ref="vehicleCostChartRef" height="200" />
+        <v-card rounded="lg" elevation="0" border height="340">
+          <v-card-text class="pa-4">
+            <div class="text-subtitle-2 font-weight-bold mb-1">PM Status</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              {{ selectedYear }} — All Assets
+            </div>
+            <div v-if="loadingPM" class="d-flex align-center justify-center" style="height: 220px">
+              <v-progress-circular indeterminate size="32" width="2" />
+            </div>
+            <div v-else>
+              <canvas ref="pmDonutChart" height="180"></canvas>
+              <div class="d-flex justify-center flex-wrap ga-2 mt-2">
+                <span
+                  v-for="s in pmStatusData"
+                  :key="s.label"
+                  class="d-flex align-center ga-1 text-caption"
+                >
+                  <span class="legend-dot" :style="`background:${s.color}`"></span>
+                  {{ s.label }} ({{ s.count }})
+                </span>
+              </div>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- ROW 5: AC Summary -->
-    <v-row class="mb-4">
+    <!-- ── Row 3: Vehicular Consumption Bar + Non-Vehicular Bar ── -->
+    <v-row dense class="mb-4">
+      <!-- Vehicular Fuel Consumption -->
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="0" border height="320">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+              <div>
+                <div class="text-subtitle-2 font-weight-bold">Vehicular Consumption</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ selectedYear }} — Liters per Vehicle
+                </div>
+              </div>
+              <div class="d-flex ga-3 align-center">
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #1976d2"></span> Diesel
+                </span>
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #ff8f00"></span> Gasoline
+                </span>
+              </div>
+            </div>
+            <div
+              v-if="loadingVehicle"
+              class="d-flex align-center justify-center"
+              style="height: 200px"
+            >
+              <v-progress-circular indeterminate size="32" width="2" />
+            </div>
+            <canvas v-else ref="vehicleBarChart" height="200"></canvas>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Non-Vehicular Fuel Consumption -->
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="0" border height="320">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+              <div>
+                <div class="text-subtitle-2 font-weight-bold">Non-Vehicular Consumption</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ selectedYear }} — Liters per Equipment
+                </div>
+              </div>
+              <div class="d-flex ga-3 align-center">
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #1976d2"></span> Diesel
+                </span>
+                <span class="d-flex align-center ga-1 text-caption">
+                  <span class="legend-dot" style="background: #ff8f00"></span> Gasoline
+                </span>
+              </div>
+            </div>
+            <div
+              v-if="loadingNonVehicle"
+              class="d-flex align-center justify-center"
+              style="height: 200px"
+            >
+              <v-progress-circular indeterminate size="32" width="2" />
+            </div>
+            <canvas v-else ref="nonVehicleBarChart" height="200"></canvas>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- ── Row 4: Asset Fuel Summary Table ── -->
+    <v-row dense class="mb-4">
       <v-col cols="12">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-            <v-icon start color="primary" size="18">mdi-air-conditioner</v-icon>
-            AC Units Summary
-          </v-card-title>
-          <v-card-text class="pa-4 pt-0">
-            <v-row density="comfortable">
-              <v-col cols="6" sm="3">
-                <v-sheet rounded="lg" color="success" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h5 font-weight-bold text-success">{{ acStats.active }}</p>
-                  <p class="text-caption">Active</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet rounded="lg" color="warning" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h5 font-weight-bold text-warning">{{ acStats.forRepair }}</p>
-                  <p class="text-caption">For Repair</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet rounded="lg" color="grey" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h5 font-weight-bold">{{ acStats.condemned }}</p>
-                  <p class="text-caption">Condemned</p>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet rounded="lg" color="primary" variant="tonal" class="pa-3 text-center">
-                  <p class="text-h5 font-weight-bold">{{ stats.totalAC }}</p>
-                  <p class="text-caption">Total Units</p>
-                </v-sheet>
-              </v-col>
-            </v-row>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+              <div>
+                <div class="text-subtitle-2 font-weight-bold">
+                  Asset Fuel Summary — {{ selectedYear }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  Withdrawals, liters consumed, fuel type, and total amount per asset
+                </div>
+              </div>
+              <v-text-field
+                v-model="assetSearch"
+                placeholder="Search asset..."
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
+                style="max-width: 220px"
+              />
+            </div>
+            <v-data-table
+              :headers="assetTableHeaders"
+              :items="filteredAssetRows"
+              :loading="loadingAssets"
+              density="compact"
+              :items-per-page="10"
+              class="asset-table"
+            >
+              <template #item.asset_type="{ item }">
+                <v-chip
+                  :color="item.asset_type === 'Vehicle' ? 'primary' : 'warning'"
+                  size="x-small"
+                  variant="tonal"
+                  >{{ item.asset_type }}</v-chip
+                >
+              </template>
+              <template #item.fuel_type="{ item }">
+                <span class="text-caption">{{ item.fuel_type }}</span>
+              </template>
+              <template #item.total_liters="{ item }">
+                <span class="font-weight-medium">{{ formatNum(item.total_liters) }} L</span>
+              </template>
+              <template #item.total_amount="{ item }">
+                <span class="font-weight-medium">{{ formatCurrency(item.total_amount) }}</span>
+              </template>
+              <template #item.diesel_liters="{ item }">
+                <span class="text-caption">{{
+                  item.diesel_liters > 0 ? formatNum(item.diesel_liters) + ' L' : '—'
+                }}</span>
+              </template>
+              <template #item.gasoline_liters="{ item }">
+                <span class="text-caption">{{
+                  item.gasoline_liters > 0 ? formatNum(item.gasoline_liters) + ' L' : '—'
+                }}</span>
+              </template>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- ── Row 5: Recent Service Requests ── -->
+    <v-row dense>
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="text-subtitle-2 font-weight-bold mb-3">Recent Service Requests</div>
+            <v-progress-linear v-if="loadingSR" indeterminate color="primary" class="mb-2" />
+            <div v-else>
+              <div
+                v-if="recentSR.length === 0"
+                class="text-caption text-medium-emphasis text-center pa-4"
+              >
+                No records
+              </div>
+              <div
+                v-for="sr in recentSR"
+                :key="sr.id"
+                class="sr-row d-flex align-center justify-space-between py-2"
+              >
+                <div>
+                  <div class="text-body-2 font-weight-medium">{{ sr.request_no }}</div>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ sr.asset_name }} · {{ formatDate(sr.date_of_request) }}
+                  </div>
+                </div>
+                <v-chip :color="srColor(sr.status)" size="x-small" variant="tonal">{{
+                  sr.status
+                }}</v-chip>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="text-subtitle-2 font-weight-bold mb-3">Upcoming PM Due</div>
+            <v-progress-linear v-if="loadingPMDue" indeterminate color="primary" class="mb-2" />
+            <div v-else>
+              <div
+                v-if="upcomingPM.length === 0"
+                class="text-caption text-medium-emphasis text-center pa-4"
+              >
+                No upcoming PM within 30 days
+              </div>
+              <div
+                v-for="pm in upcomingPM"
+                :key="pm.id"
+                class="sr-row d-flex align-center justify-space-between py-2"
+              >
+                <div>
+                  <div class="text-body-2 font-weight-medium">{{ pm.asset_name }}</div>
+                  <div class="text-caption text-medium-emphasis">
+                    {{ pm.service_type }} · Due {{ formatDate(pm.next_due_date) }}
+                  </div>
+                </div>
+                <v-chip :color="dueColor(pm.next_due_date)" size="x-small" variant="tonal">
+                  {{ daysUntil(pm.next_due_date) }}d
+                </v-chip>
+              </div>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -352,341 +308,621 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { supabase } from '../supabase'
-import { Chart, registerables } from 'chart.js'
-Chart.register(...registerables)
 
-// ---- DATE ----
-const today = new Date().toISOString().split('T')[0]
+// ── Year selector ──
 const currentYear = new Date().getFullYear()
-const todayFormatted = new Date().toLocaleDateString('en-PH', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
+const selectedYear = ref(currentYear)
+const yearOptions = computed(() => {
+  return [currentYear - 2, currentYear - 1, currentYear].reverse()
+})
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }),
+)
+
+// ── Loading flags ──
+const loadingFuel = ref(true)
+const loadingVehicle = ref(true)
+const loadingNonVehicle = ref(true)
+const loadingPM = ref(true)
+const loadingAssets = ref(true)
+const loadingSR = ref(true)
+const loadingPMDue = ref(true)
+
+// ── KPI data ──
+const kpiCards = ref([
+  {
+    label: 'Total Assets',
+    icon: 'mdi-car',
+    color: 'primary',
+    value: '—',
+    sub: 'Active vehicles & equipment',
+  },
+  { label: 'Service Requests', icon: 'mdi-wrench', color: 'orange', value: '—', sub: 'This year' },
+  {
+    label: 'PM Completed',
+    icon: 'mdi-check-circle',
+    color: 'success',
+    value: '—',
+    sub: 'This year',
+  },
+  {
+    label: 'Total Fuel Cost',
+    icon: 'mdi-gas-station',
+    color: 'blue',
+    value: '—',
+    sub: 'This year (₱)',
+  },
+])
+
+// ── Chart refs ──
+const fuelYearChart = ref(null)
+const pmDonutChart = ref(null)
+const vehicleBarChart = ref(null)
+const nonVehicleBarChart = ref(null)
+
+// ── Chart instances (for cleanup) ──
+let fuelYearInstance = null
+let pmDonutInstance = null
+let vehicleBarInstance = null
+let nonVehicleBarInstance = null
+
+// ── PM status data for legend ──
+const pmStatusData = ref([])
+
+// ── Asset table ──
+const assetSearch = ref('')
+const assetRows = ref([])
+const assetTableHeaders = [
+  { title: 'Asset', key: 'asset_name', sortable: true },
+  { title: 'Type', key: 'asset_type', sortable: true },
+  { title: 'Withdrawals', key: 'withdrawals', sortable: true, align: 'end' },
+  { title: 'Diesel (L)', key: 'diesel_liters', sortable: true, align: 'end' },
+  { title: 'Gasoline (L)', key: 'gasoline_liters', sortable: true, align: 'end' },
+  { title: 'Total (L)', key: 'total_liters', sortable: true, align: 'end' },
+  { title: 'Fuel Type', key: 'fuel_type', sortable: false },
+  { title: 'Total Amount', key: 'total_amount', sortable: true, align: 'end' },
+]
+const filteredAssetRows = computed(() => {
+  if (!assetSearch.value) return assetRows.value
+  const s = assetSearch.value.toLowerCase()
+  return assetRows.value.filter(
+    (r) =>
+      (r.asset_name || '').toLowerCase().includes(s) ||
+      (r.asset_type || '').toLowerCase().includes(s) ||
+      (r.fuel_type || '').toLowerCase().includes(s),
+  )
 })
 
-// ---- REFS ----
-const monthlyChartRef = ref(null)
-const vehicleCostChartRef = ref(null)
-let monthlyChart = null
-let vehicleCostChart = null
+// ── Recent service requests ──
+const recentSR = ref([])
+const upcomingPM = ref([])
 
-// ---- STATE ----
-const stats = ref({
-  totalVehicles: 0,
-  overduePM: 0,
-  dueSoonPM: 0,
-  inProgressSR: 0,
-  completedSR: 0,
-  totalSR: 0,
-  totalAC: 0,
-  fuelBalance: 0,
-})
-
-const fuelStats = ref({
-  totalAllocated: 0,
-  totalConsumed: 0,
-  balance: 0,
-  totalCost: 0,
-})
-
-const acStats = ref({ active: 0, forRepair: 0, condemned: 0 })
-const overdueItems = ref([])
-const inProgressSRItems = ref([])
-const vehicleNames = ref([])
-
-// ---- COMPUTED ----
-const fuelProgressColor = computed(() => {
-  const pct =
-    fuelStats.value.totalAllocated > 0
-      ? (fuelStats.value.totalConsumed / fuelStats.value.totalAllocated) * 100
-      : 0
-  if (pct >= 90) return 'error'
-  if (pct >= 70) return 'warning'
+// ── Helpers ──
+function formatNum(n) {
+  return Number(n || 0).toLocaleString('en-PH', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+}
+function formatCurrency(n) {
+  return '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })
+}
+function formatDate(d) {
+  if (!d) return '—'
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+function srColor(s) {
+  return { 'In Progress': 'warning', Completed: 'success', Cancelled: 'grey' }[s] || 'grey'
+}
+function daysUntil(d) {
+  if (!d) return 0
+  return Math.max(0, Math.ceil((new Date(d + 'T00:00:00') - new Date()) / 86400000))
+}
+function dueColor(d) {
+  const days = daysUntil(d)
+  if (days <= 7) return 'error'
+  if (days <= 14) return 'warning'
   return 'success'
-})
-
-// ---- HELPERS ----
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr + 'T00:00:00')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  return `${mm}/${dd}/${yy}`
 }
 
-// ---- FETCH ----
-async function fetchAll() {
+// ── Destroy chart safely ──
+function destroyChart(instance) {
+  if (instance) {
+    try {
+      instance.destroy()
+    } catch (err) {
+      // ignore destroy errors
+      console.warn('Chart destroy failed', err)
+    }
+  }
+  return null
+}
+
+// ── Load all data ──
+async function loadAll() {
   await Promise.all([
-    fetchVehicleStats(),
-    fetchPMStats(),
-    fetchSRStats(),
-    fetchACStats(),
-    fetchFuelStats(),
+    loadKPIs(),
+    loadFuelYearChart(),
+    loadVehicleCharts(),
+    loadPMStatus(),
+    loadAssetTable(),
+    loadRecentSR(),
+    loadUpcomingPM(),
   ])
-  await nextTick()
-  buildCharts()
 }
 
-async function fetchVehicleStats() {
-  const { data } = await supabase
-    .from('vehicles')
-    .select('id, asset_name, asset_type')
-    .eq('status', 'Active')
-  if (data) {
-    stats.value.totalVehicles = data.filter((v) => v.asset_type === 'Vehicle').length
-    vehicleNames.value = data.filter((v) => v.asset_type === 'Vehicle')
+// ── KPI ──
+async function loadKPIs() {
+  const yr = selectedYear.value
+  const [assetRes, srRes, pmRes, fuelRes] = await Promise.all([
+    supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('status', 'Active'),
+    supabase
+      .from('vehicle_service_requests')
+      .select('id', { count: 'exact', head: true })
+      .gte('date_of_request', `${yr}-01-01`)
+      .lte('date_of_request', `${yr}-12-31`),
+    supabase
+      .from('vehicle_pm_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'Completed')
+      .gte('date_performed', `${yr}-01-01`)
+      .lte('date_performed', `${yr}-12-31`),
+    supabase
+      .from('fuel_transactions')
+      .select('total_amount')
+      .gte('date', `${yr}-01-01`)
+      .lte('date', `${yr}-12-31`),
+  ])
+
+  const totalFuel = (fuelRes.data || []).reduce((s, r) => s + (Number(r.total_amount) || 0), 0)
+
+  kpiCards.value = [
+    {
+      label: 'Total Assets',
+      icon: 'mdi-car',
+      color: 'primary',
+      value: assetRes.count ?? '—',
+      sub: 'Active vehicles & equipment',
+    },
+    {
+      label: 'Service Requests',
+      icon: 'mdi-wrench',
+      color: 'orange',
+      value: srRes.count ?? '—',
+      sub: `${yr} records`,
+    },
+    {
+      label: 'PM Completed',
+      icon: 'mdi-check-circle',
+      color: 'success',
+      value: pmRes.count ?? '—',
+      sub: `${yr} records`,
+    },
+    {
+      label: 'Total Fuel Cost',
+      icon: 'mdi-gas-station',
+      color: 'blue',
+      value: '₱' + formatNum(totalFuel),
+      sub: `${yr} transactions`,
+    },
+  ]
+}
+
+// ── Fuel per year (multi-year bar) ──
+async function loadFuelYearChart() {
+  loadingFuel.value = true
+  const years = [currentYear - 2, currentYear - 1, currentYear]
+  const results = await Promise.all(
+    years.map((yr) =>
+      supabase
+        .from('fuel_transactions')
+        .select('fuel_type, quantity')
+        .gte('date', `${yr}-01-01`)
+        .lte('date', `${yr}-12-31`),
+    ),
+  )
+
+  const dieselData = []
+  const gasData = []
+  years.forEach((_, i) => {
+    const rows = results[i].data || []
+    dieselData.push(
+      rows
+        .filter((r) => (r.fuel_type || '').toLowerCase().includes('diesel'))
+        .reduce((s, r) => s + (Number(r.quantity) || 0), 0),
+    )
+    gasData.push(
+      rows
+        .filter((r) => (r.fuel_type || '').toLowerCase().includes('gasoline'))
+        .reduce((s, r) => s + (Number(r.quantity) || 0), 0),
+    )
+  })
+
+  loadingFuel.value = false
+  await nextTick()
+  fuelYearInstance = destroyChart(fuelYearInstance)
+  if (!fuelYearChart.value) return
+
+  const Chart = (await import('chart.js/auto')).default
+  fuelYearInstance = new Chart(fuelYearChart.value, {
+    type: 'bar',
+    data: {
+      labels: years.map(String),
+      datasets: [
+        {
+          label: 'Diesel',
+          data: dieselData,
+          backgroundColor: '#1976D2',
+          borderRadius: 4,
+          barPercentage: 0.6,
+        },
+        {
+          label: 'Gasoline',
+          data: gasData,
+          backgroundColor: '#FF8F00',
+          borderRadius: 4,
+          barPercentage: 0.6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${formatNum(ctx.raw)} L`,
+          },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 10 }, callback: (v) => formatNum(v) + ' L' },
+        },
+      },
+    },
+  })
+}
+
+// ── Vehicle / Non-vehicular charts ──
+async function loadVehicleCharts() {
+  loadingVehicle.value = true
+  loadingNonVehicle.value = true
+  const yr = selectedYear.value
+
+  const [vRes, nvRes] = await Promise.all([
+    supabase
+      .from('vehicles')
+      .select('id, asset_name, asset_type')
+      .eq('asset_type', 'Vehicle')
+      .eq('status', 'Active')
+      .order('asset_name'),
+    supabase
+      .from('vehicles')
+      .select('id, asset_name, asset_type')
+      .eq('asset_type', 'Non-Vehicular')
+      .eq('status', 'Active')
+      .order('asset_name'),
+  ])
+
+  const txRes = await supabase
+    .from('fuel_transactions')
+    .select('vehicle, fuel_type, quantity, total_amount')
+    .gte('date', `${yr}-01-01`)
+    .lte('date', `${yr}-12-31`)
+
+  const txRows = txRes.data || []
+
+  // helper: match vehicle name in transactions (fuel_transactions.vehicle is plain text)
+  function sumFor(assetName, fuelType) {
+    const nm = (assetName || '').toLowerCase()
+    return txRows
+      .filter(
+        (r) =>
+          (r.vehicle || '').toLowerCase().includes(nm) &&
+          (r.fuel_type || '').toLowerCase().includes(fuelType),
+      )
+      .reduce((s, r) => s + (Number(r.quantity) || 0), 0)
+  }
+
+  const vehicles = vRes.data || []
+  const nonVehicles = nvRes.data || []
+
+  // Build vehicle chart data
+  const vLabels = vehicles.map((v) => v.asset_name)
+  const vDiesel = vehicles.map((v) => sumFor(v.asset_name, 'diesel'))
+  const vGasoline = vehicles.map((v) => sumFor(v.asset_name, 'gasoline'))
+
+  const nvLabels = nonVehicles.map((v) => v.asset_name)
+  const nvDiesel = nonVehicles.map((v) => sumFor(v.asset_name, 'diesel'))
+  const nvGasoline = nonVehicles.map((v) => sumFor(v.asset_name, 'gasoline'))
+
+  loadingVehicle.value = false
+  loadingNonVehicle.value = false
+  await nextTick()
+
+  const Chart = (await import('chart.js/auto')).default
+
+  // Vehicle bar
+  vehicleBarInstance = destroyChart(vehicleBarInstance)
+  if (vehicleBarChart.value) {
+    vehicleBarInstance = new Chart(vehicleBarChart.value, {
+      type: 'bar',
+      data: {
+        labels: vLabels.length ? vLabels : ['No data'],
+        datasets: [
+          {
+            label: 'Diesel',
+            data: vDiesel,
+            backgroundColor: '#1976D2',
+            borderRadius: 3,
+            barPercentage: 0.65,
+          },
+          {
+            label: 'Gasoline',
+            data: vGasoline,
+            backgroundColor: '#FF8F00',
+            borderRadius: 3,
+            barPercentage: 0.65,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${formatNum(ctx.raw)} L` },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: {
+            grid: { color: '#f0f0f0' },
+            ticks: { font: { size: 10 }, callback: (v) => formatNum(v) },
+          },
+        },
+      },
+    })
+  }
+
+  // Non-vehicular bar
+  nonVehicleBarInstance = destroyChart(nonVehicleBarInstance)
+  if (nonVehicleBarChart.value) {
+    nonVehicleBarInstance = new Chart(nonVehicleBarChart.value, {
+      type: 'bar',
+      data: {
+        labels: nvLabels.length ? nvLabels : ['No data'],
+        datasets: [
+          {
+            label: 'Diesel',
+            data: nvDiesel,
+            backgroundColor: '#1976D2',
+            borderRadius: 3,
+            barPercentage: 0.65,
+          },
+          {
+            label: 'Gasoline',
+            data: nvGasoline,
+            backgroundColor: '#FF8F00',
+            borderRadius: 3,
+            barPercentage: 0.65,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${formatNum(ctx.raw)} L` },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: {
+            grid: { color: '#f0f0f0' },
+            ticks: { font: { size: 10 }, callback: (v) => formatNum(v) },
+          },
+        },
+      },
+    })
   }
 }
 
-async function fetchPMStats() {
+// ── PM status donut ──
+async function loadPMStatus() {
+  loadingPM.value = true
+  const yr = selectedYear.value
+  const { data } = await supabase
+    .from('vehicle_pm_log')
+    .select('status')
+    .gte('date_performed', `${yr}-01-01`)
+    .lte('date_performed', `${yr}-12-31`)
+
+  const counts = { Completed: 0, Scheduled: 0, Overdue: 0, Cancelled: 0 }
+  ;(data || []).forEach((r) => {
+    if (counts[r.status] !== undefined) counts[r.status]++
+  })
+
+  const colors = {
+    Completed: '#43A047',
+    Scheduled: '#1976D2',
+    Overdue: '#E53935',
+    Cancelled: '#9E9E9E',
+  }
+  pmStatusData.value = Object.entries(counts).map(([label, count]) => ({
+    label,
+    count,
+    color: colors[label],
+  }))
+
+  loadingPM.value = false
+  await nextTick()
+  pmDonutInstance = destroyChart(pmDonutInstance)
+  if (!pmDonutChart.value) return
+
+  const Chart = (await import('chart.js/auto')).default
+  pmDonutInstance = new Chart(pmDonutChart.value, {
+    type: 'doughnut',
+    data: {
+      labels: pmStatusData.value.map((s) => s.label),
+      datasets: [
+        {
+          data: pmStatusData.value.map((s) => s.count),
+          backgroundColor: pmStatusData.value.map((s) => s.color),
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}` } },
+      },
+    },
+  })
+}
+
+// ── Asset fuel table ──
+async function loadAssetTable() {
+  loadingAssets.value = true
+  const yr = selectedYear.value
+
+  const [vRes, txRes] = await Promise.all([
+    supabase
+      .from('vehicles')
+      .select('id, asset_name, asset_type')
+      .eq('status', 'Active')
+      .order('asset_name'),
+    supabase
+      .from('fuel_transactions')
+      .select('vehicle, fuel_type, quantity, total_amount')
+      .gte('date', `${yr}-01-01`)
+      .lte('date', `${yr}-12-31`),
+  ])
+
+  const vehicles = vRes.data || []
+  const txRows = txRes.data || []
+
+  // Map transactions to vehicles by name matching
+  assetRows.value = vehicles
+    .map((v) => {
+      const nm = (v.asset_name || '').toLowerCase()
+      const matching = txRows.filter((r) => (r.vehicle || '').toLowerCase().includes(nm))
+      const diesel = matching.filter((r) => (r.fuel_type || '').toLowerCase().includes('diesel'))
+      const gasoline = matching.filter((r) =>
+        (r.fuel_type || '').toLowerCase().includes('gasoline'),
+      )
+      const dL = diesel.reduce((s, r) => s + (Number(r.quantity) || 0), 0)
+      const gL = gasoline.reduce((s, r) => s + (Number(r.quantity) || 0), 0)
+      const allAmt = matching.reduce((s, r) => s + (Number(r.total_amount) || 0), 0)
+
+      const fuelType =
+        dL > 0 && gL > 0 ? 'Diesel / Gasoline' : dL > 0 ? 'Diesel' : gL > 0 ? 'Gasoline' : '—'
+
+      return {
+        id: v.id,
+        asset_name: v.asset_name,
+        asset_type: v.asset_type,
+        withdrawals: matching.length,
+        diesel_liters: Math.round(dL * 100) / 100,
+        gasoline_liters: Math.round(gL * 100) / 100,
+        total_liters: Math.round((dL + gL) * 100) / 100,
+        fuel_type: fuelType,
+        total_amount: Math.round(allAmt * 100) / 100,
+      }
+    })
+    .filter((r) => r.withdrawals > 0 || true) // show all assets
+
+  loadingAssets.value = false
+}
+
+// ── Recent Service Requests ──
+async function loadRecentSR() {
+  loadingSR.value = true
+  const { data } = await supabase
+    .from('vehicle_service_requests')
+    .select('id, request_no, date_of_request, status, vehicle_id')
+    .order('date_of_request', { ascending: false })
+    .limit(8)
+
+  const vRes = await supabase.from('vehicles').select('id, asset_name')
+  const vMap = Object.fromEntries((vRes.data || []).map((v) => [String(v.id), v.asset_name]))
+
+  recentSR.value = (data || []).map((r) => ({
+    ...r,
+    asset_name: vMap[String(r.vehicle_id)] || `Asset #${r.vehicle_id}`,
+  }))
+  loadingSR.value = false
+}
+
+// ── Upcoming PM ──
+async function loadUpcomingPM() {
+  loadingPMDue.value = true
+  const today = new Date().toISOString().split('T')[0]
+  const plus30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+
   const { data } = await supabase
     .from('vehicle_pm_log')
     .select('id, vehicle_id, service_type, next_due_date, status')
+    .neq('status', 'Completed')
+    .gte('next_due_date', today)
+    .lte('next_due_date', plus30)
+    .order('next_due_date')
+    .limit(8)
 
-  if (!data) return
+  const vRes = await supabase.from('vehicles').select('id, asset_name')
+  const vMap = Object.fromEntries((vRes.data || []).map((v) => [String(v.id), v.asset_name]))
 
-  const soon = new Date()
-  soon.setDate(soon.getDate() + 30)
-  const soonStr = soon.toISOString().split('T')[0]
-
-  // Enrich with asset names
-  const { data: vehicles } = await supabase.from('vehicles').select('id, asset_name')
-  const vMap = {}
-  if (vehicles)
-    vehicles.forEach((v) => {
-      vMap[v.id] = v.asset_name
-    })
-
-  const enriched = data.map((r) => ({ ...r, asset_name: vMap[r.vehicle_id] || '—' }))
-
-  const overdue = enriched.filter(
-    (r) =>
-      r.status !== 'Completed' &&
-      r.status !== 'Cancelled' &&
-      r.next_due_date &&
-      r.next_due_date < today,
-  )
-  const dueSoon = enriched.filter(
-    (r) =>
-      r.status !== 'Completed' &&
-      r.status !== 'Cancelled' &&
-      r.next_due_date &&
-      r.next_due_date >= today &&
-      r.next_due_date <= soonStr,
-  )
-
-  stats.value.overduePM = overdue.length
-  stats.value.dueSoonPM = dueSoon.length
-  overdueItems.value = overdue.sort((a, b) => a.next_due_date.localeCompare(b.next_due_date))
+  upcomingPM.value = (data || []).map((r) => ({
+    ...r,
+    asset_name: vMap[String(r.vehicle_id)] || `Asset #${r.vehicle_id}`,
+  }))
+  loadingPMDue.value = false
 }
 
-async function fetchSRStats() {
-  const { data } = await supabase
-    .from('vehicle_service_requests')
-    .select('id, request_no, vehicle_id, status, problem_details')
-
-  if (!data) return
-
-  const { data: vehicles } = await supabase.from('vehicles').select('id, asset_name')
-  const vMap = {}
-  if (vehicles)
-    vehicles.forEach((v) => {
-      vMap[v.id] = v.asset_name
-    })
-
-  const enriched = data.map((r) => ({ ...r, asset_name: vMap[r.vehicle_id] || '—' }))
-
-  stats.value.totalSR = data.length
-  stats.value.inProgressSR = data.filter((r) => r.status === 'In Progress').length
-  stats.value.completedSR = data.filter((r) => r.status === 'Completed').length
-  inProgressSRItems.value = enriched.filter((r) => r.status === 'In Progress')
-}
-
-async function fetchACStats() {
-  const { data } = await supabase.from('ac_units').select('id, status')
-  if (!data) return
-  stats.value.totalAC = data.length
-  acStats.value.active = data.filter((r) => r.status === 'Active').length
-  acStats.value.forRepair = data.filter((r) => r.status === 'For Repair').length
-  acStats.value.condemned = data.filter((r) => r.status === 'Condemned').length
-}
-
-async function fetchFuelStats() {
-  const { data: contracts } = await supabase.from('fuel_contracts').select('*')
-  const { data: transactions } = await supabase.from('fuel_transactions').select('*')
-
-  const totalAllocated =
-    contracts?.reduce(
-      (s, c) => s + (Number(c.allocated_diesel) || 0) + (Number(c.allocated_gasoline) || 0),
-      0,
-    ) || 0
-  const totalConsumed = transactions?.reduce((s, t) => s + (Number(t.quantity) || 0), 0) || 0
-  const totalCost = transactions?.reduce((s, t) => s + (Number(t.total_amount) || 0), 0) || 0
-
-  fuelStats.value = {
-    totalAllocated,
-    totalConsumed,
-    balance: totalAllocated - totalConsumed,
-    totalCost,
-  }
-  stats.value.fuelBalance = totalAllocated - totalConsumed
-
-  buildMonthlyData(transactions || [])
-  buildVehicleCostData(transactions || [])
-}
-
-// ---- CHART DATA ----
-const monthlyLabels = ref([])
-const monthlyData = ref([])
-const vehicleCostLabels = ref([])
-const vehicleCostData = ref([])
-
-function buildMonthlyData(transactions) {
-  const months = {}
-  for (let m = 1; m <= 12; m++) {
-    const label = new Date(currentYear, m - 1, 1).toLocaleString('en', { month: 'short' })
-    months[label] = 0
-  }
-  transactions.forEach((t) => {
-    if (!t.date) return
-    const d = new Date(t.date)
-    if (d.getFullYear() !== currentYear) return
-    const label = d.toLocaleString('en', { month: 'short' })
-    if (months[label] !== undefined) months[label] += Number(t.quantity) || 0
-  })
-  monthlyLabels.value = Object.keys(months)
-  monthlyData.value = Object.values(months)
-}
-
-function buildVehicleCostData(transactions) {
-  const costMap = {}
-  transactions.forEach((t) => {
-    const name = t.vehicle || 'Unknown'
-    if (!costMap[name]) costMap[name] = 0
-    costMap[name] += Number(t.total_amount) || 0
-  })
-  const entries = Object.entries(costMap).filter(([, cost]) => cost > 0)
-  vehicleCostLabels.value = entries.map(([name]) => name)
-  vehicleCostData.value = entries.map(([, cost]) => cost)
-}
-
-// ---- CHARTS ----
-function buildCharts() {
-  buildMonthlyChart()
-  buildVehicleCostChart()
-}
-
-function buildMonthlyChart() {
-  if (!monthlyChartRef.value) return
-  if (monthlyChart) monthlyChart.destroy()
-
-  monthlyChart = new Chart(monthlyChartRef.value, {
-    type: 'line',
-    data: {
-      labels: monthlyLabels.value,
-      datasets: [
-        {
-          label: 'Liters',
-          data: monthlyData.value,
-          borderColor: '#00d4ff',
-          backgroundColor: 'rgba(0, 212, 255, 0.1)',
-          borderWidth: 2,
-          pointBackgroundColor: '#00d4ff',
-          pointRadius: 4,
-          fill: true,
-          tension: 0.4,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => ` ${ctx.parsed.y.toLocaleString()} L`,
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(128,128,128,0.1)' },
-          ticks: { color: 'rgba(128,128,128,0.8)' },
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: 'rgba(128,128,128,0.8)' },
-        },
-      },
-    },
-  })
-}
-
-function buildVehicleCostChart() {
-  if (!vehicleCostChartRef.value) return
-  if (vehicleCostChart) vehicleCostChart.destroy()
-
-  const colors = [
-    'rgba(0,212,255,0.7)',
-    'rgba(124,58,237,0.7)',
-    'rgba(34,197,94,0.7)',
-    'rgba(245,158,11,0.7)',
-    'rgba(239,68,68,0.7)',
-    'rgba(99,102,241,0.7)',
-    'rgba(20,184,166,0.7)',
-  ]
-
-  vehicleCostChart = new Chart(vehicleCostChartRef.value, {
-    type: 'bar',
-    data: {
-      labels: vehicleCostLabels.value.length > 0 ? vehicleCostLabels.value : ['No data'],
-      datasets: [
-        {
-          label: 'Cost (₱)',
-          data: vehicleCostData.value.length > 0 ? vehicleCostData.value : [0],
-          backgroundColor: colors.slice(0, vehicleCostLabels.value.length || 1),
-          borderRadius: 6,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      indexAxis: 'y',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => ` ₱${ctx.parsed.x.toLocaleString()}`,
-          },
-        },
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: { color: 'rgba(128,128,128,0.1)' },
-          ticks: {
-            color: 'rgba(128,128,128,0.8)',
-            callback: (v) => '₱' + Number(v).toLocaleString(),
-          },
-        },
-        y: {
-          grid: { display: false },
-          ticks: { color: 'rgba(128,128,128,0.8)' },
-        },
-      },
-    },
-  })
-}
-
-// ---- LIFECYCLE ----
-onMounted(() => fetchAll())
-onBeforeUnmount(() => {
-  if (monthlyChart) monthlyChart.destroy()
-  if (vehicleCostChart) vehicleCostChart.destroy()
-})
+// ── Lifecycle ──
+onMounted(() => loadAll())
 </script>
+
+<style scoped>
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.sr-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.sr-row:last-child {
+  border-bottom: none;
+}
+
+.asset-table :deep(thead th) {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+.asset-table :deep(tbody td) {
+  font-size: 12px !important;
+}
+</style>

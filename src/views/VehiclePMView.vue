@@ -10,7 +10,7 @@
               Track scheduled and completed preventive maintenance
             </p>
           </div>
-          
+
           <v-btn variant="outlined" prepend-icon="mdi-clipboard-check" @click="openPMCReport">
             PMC Report
           </v-btn>

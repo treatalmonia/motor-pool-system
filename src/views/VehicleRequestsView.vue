@@ -102,11 +102,11 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" sm="3">
+          <v-col cols="12" sm="2">
             <v-select
-              v-model="statusFilter"
-              :items="['All', 'In Progress', 'Completed', 'Cancelled']"
-              label="Status"
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
               variant="outlined"
               density="compact"
               hide-details
@@ -554,6 +554,11 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
+const yearFilter   = ref(new Date().getFullYear())
+const yearOptions  = computed(() => {
+  const cur = new Date().getFullYear()
+  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+})
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
 const selectedAssetType = ref('Vehicle')
@@ -570,7 +575,7 @@ const defaultForm = {
   request_no: '',
   date_of_request: '',
 
- 
+
   vehicle_id: null,
   asset_type: 'Vehicle',
   requisitioner: '',
@@ -672,6 +677,12 @@ const filteredRequests = computed(() => {
   }
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
+  }
+  if (yearFilter.value) {
+    result = result.filter((r) => {
+      const yr = r.date_of_request ? new Date(r.date_of_request + 'T00:00:00').getFullYear() : null
+      return yr === yearFilter.value
+    })
   }
   if (vehicleFilter.value !== 'All') {
     result = result.filter((r) => r.asset_name === vehicleFilter.value)

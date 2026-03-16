@@ -10,9 +10,7 @@
               Track and manage corrective maintenance requests
             </p>
           </div>
-          <v-btn variant="outlined" prepend-icon="mdi-history" @click="openEFHRReport">
-            EFHR Report
-          </v-btn>
+
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             New Request
           </v-btn>
@@ -141,7 +139,7 @@
         >
           <!-- Request No -->
           <template v-slot:item.request_no="{ item }">
-            <span class="font-weight-bold text-primary"> vehiclereqeust
+            <span class="font-weight-bold text-primary">
               {{ item.request_no }}
             </span>
           </template>
@@ -514,18 +512,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+//import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
-const router = useRouter()
-
-function openEFHRReport() {
-  const asset = assetList.value.find((a) => a.asset_name === vehicleFilter.value)
-  router.push({
-    path: '/efhr-report',
-    query: { vehicleId: asset?.id || '' },
-  })
-}
+// const router = useRouter()
 
 async function quickUpdateStatus(item, newStatus) {
   const payload = { status: newStatus }
@@ -554,8 +544,8 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
-const yearFilter   = ref(new Date().getFullYear())
-const yearOptions  = computed(() => {
+const yearFilter = ref(new Date().getFullYear())
+const yearOptions = computed(() => {
   const cur = new Date().getFullYear()
   return [cur - 2, cur - 1, cur, cur + 1].reverse()
 })
@@ -574,7 +564,6 @@ const selectedRequest = ref(null)
 const defaultForm = {
   request_no: '',
   date_of_request: '',
-
 
   vehicle_id: null,
   asset_type: 'Vehicle',
@@ -858,8 +847,6 @@ async function saveRequest() {
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
-
-
   }
 
   if (isEditing.value) {

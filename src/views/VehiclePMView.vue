@@ -11,9 +11,6 @@
             </p>
           </div>
 
-          <v-btn variant="outlined" prepend-icon="mdi-clipboard-check" @click="openPMCReport">
-            PMC Report
-          </v-btn>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             Add PM Record
           </v-btn>
@@ -485,7 +482,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">ASSET & SERVICE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row  density="comfortable">
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Asset</p>
                   <p class="text-body-2 font-weight-medium">
@@ -521,7 +518,7 @@
 
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row  density="comfortable">
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
@@ -586,7 +583,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">NEXT DUE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row  density="comfortable">
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Next Due Date</p>
                   <p
@@ -658,10 +655,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
-const router = useRouter()
+// const router = useRouter()
 
 // ---- DATA ----
 const pmRecords = ref([])
@@ -815,20 +812,6 @@ const filteredRecords = computed(() => {
 })
 
 // ---- FORMAT HELPERS ----
-function openPMCReport() {
-  const vehicleId =
-    vehicleFilter.value !== 'All'
-      ? assetList.value.find((a) => a.asset_name === vehicleFilter.value)?.id
-      : null
-
-  router.push({
-    path: '/pmc-report',
-    query: {
-      vehicleId: vehicleId || '',
-      year: new Date().getFullYear(),
-    },
-  })
-}
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
@@ -1207,4 +1190,3 @@ onMounted(async () => {
   await fetchRecords()
 })
 </script>
-

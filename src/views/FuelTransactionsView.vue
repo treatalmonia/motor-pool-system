@@ -7,10 +7,28 @@
           <div>
             <h2 class="text-h5 font-weight-bold">Fuel Transactions</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
-              Encode fuel withdrawals from hard copy Petron invoices
+              Encode fuel withdrawals from hard copy invoices
             </p>
           </div>
-         <div class="d-flex ga-2 flex-wrap align-center">
+          <div class="d-flex ga-2 flex-wrap align-center">
+            <v-select
+              v-model="filterYear"
+              :items="availableYears"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="min-width: 110px"
+              @update:modelValue="fetchTransactions"
+            />
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              prepend-icon="mdi-calendar-plus"
+              @click="openAddYearDialog"
+            >
+              Add Year
+            </v-btn>
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Transaction
             </v-btn>
@@ -88,16 +106,7 @@
           clearable
           style="min-width: 260px"
         />
-        <v-select
-          v-model="filterYear"
-          :items="availableYears"
-          label="Year"
-          variant="outlined"
-          density="compact"
-          hide-details
-          style="min-width: 100px"
-          @update:modelValue="fetchTransactions"
-        />
+
         <v-select
           v-model="filterPeriod"
           :items="['All Periods', ...billingPeriods]"
@@ -130,77 +139,6 @@
           {{ filteredTransactions.length }} of {{ transactions.length }}
         </p>
       </div>
-    </v-card>
-
-    <!-- Vehicle Quick Lookup -->
-    <v-card rounded="lg" elevation="0" border class="mb-4">
-      <v-card-title class="pa-3 pb-0">
-        <v-icon start color="primary" size="18">mdi-car-search</v-icon>
-        <span class="text-body-1 font-weight-bold">Vehicle / Equipment Quick Lookup</span>
-      </v-card-title>
-      <v-card-text class="pa-3">
-        <div class="d-flex ga-3 flex-wrap align-center mb-3">
-          <v-select
-            v-model="lookupYear"
-            :items="availableYears"
-            label="Year"
-            variant="outlined"
-            density="compact"
-            hide-details
-            style="min-width: 100px"
-          />
-          <v-text-field
-            v-model="lookupSearch"
-            prepend-inner-icon="mdi-magnify"
-            label="Search vehicle or equipment..."
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="min-width: 240px"
-          />
-        </div>
-        <div v-if="vehicleSummary.length === 0" class="text-medium-emphasis text-body-2 pa-2">
-          No data found.
-        </div>
-        <v-table v-else density="compact" class="lookup-table">
-          <thead>
-            <tr>
-              <th>Vehicle / Equipment</th>
-              <th class="text-center">Withdrawals</th>
-              <th class="text-center">Diesel (L)</th>
-              <th class="text-center">Gasoline (L)</th>
-              <th class="text-right">Total Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="v in filteredVehicleSummary" :key="v.name">
-              <td>
-                <div class="d-flex align-center ga-2">
-                  <v-icon size="16" :color="v.is_vehicle ? 'primary' : 'orange'">
-                    {{ v.is_vehicle ? 'mdi-car' : 'mdi-cog' }}
-                  </v-icon>
-                  {{ v.name }}
-                </div>
-              </td>
-              <td class="text-center">{{ v.count }}</td>
-              <td class="text-center">
-                <span v-if="v.diesel > 0" class="text-blue-darken-2 font-weight-medium">
-                  {{ formatNumber(v.diesel) }}
-                </span>
-                <span v-else class="text-medium-emphasis">—</span>
-              </td>
-              <td class="text-center">
-                <span v-if="v.gasoline > 0" class="text-green-darken-2 font-weight-medium">
-                  {{ formatNumber(v.gasoline) }}
-                </span>
-                <span v-else class="text-medium-emphasis">—</span>
-              </td>
-              <td class="text-right font-weight-medium">₱{{ formatNumber(v.amount) }}</td>
-            </tr>
-          </tbody>
-        </v-table>
-      </v-card-text>
     </v-card>
 
     <!-- Transactions Table -->
@@ -258,27 +196,29 @@
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <v-btn
-            icon="mdi-eye"
-            size="x-small"
-            variant="text"
-            color="info"
-            @click="openViewDialog(item)"
-          />
-          <v-btn
-            icon="mdi-pencil"
-            size="x-small"
-            variant="text"
-            color="primary"
-            @click="openEditDialog(item)"
-          />
-          <v-btn
-            icon="mdi-delete"
-            size="x-small"
-            variant="text"
-            color="error"
-            @click="openDeleteDialog(item)"
-          />
+          <div class="d-flex align-center">
+            <v-btn
+              icon="mdi-eye"
+              size="x-small"
+              variant="text"
+              color="info"
+              @click="openViewDialog(item)"
+            />
+            <v-btn
+              icon="mdi-pencil"
+              size="x-small"
+              variant="text"
+              color="primary"
+              @click="openEditDialog(item)"
+            />
+            <v-btn
+              icon="mdi-delete"
+              size="x-small"
+              variant="text"
+              color="error"
+              @click="openDeleteDialog(item)"
+            />
+          </div>
         </template>
 
         <template #no-data>
@@ -526,7 +466,7 @@
           <!-- Invoice Info -->
           <v-card rounded="lg" variant="tonal" color="grey" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">INVOICE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Date</p>
                 <p class="font-weight-medium">{{ formatDate(selectedTx.date) }}</p>
@@ -544,7 +484,7 @@
           <!-- Fuel Info -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">FUEL</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Quantity</p>
                 <p class="font-weight-bold">{{ formatNumber(selectedTx.quantity) }} L</p>
@@ -564,7 +504,7 @@
           <!-- Usage Info -->
           <v-card rounded="lg" variant="tonal" color="green" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">USAGE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">Vehicle / Equipment</p>
                 <p class="font-weight-medium">{{ selectedTx.vehicle }}</p>
@@ -578,7 +518,7 @@
           <!-- Charge Info -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CHARGED TO</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Fund</p>
                 <v-chip
@@ -643,6 +583,31 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="addYearDialog" max-width="360">
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <v-icon start>mdi-calendar-plus</v-icon>
+          Add New Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="newYear"
+            label="Year"
+            variant="outlined"
+            density="comfortable"
+            type="number"
+            placeholder="e.g. 2027"
+            hint="Starts blank with no data"
+            persistent-hint
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="addYearDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="confirmAddYear">Add Year</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <!-- Snackbar -->
 
     <v-snackbar
@@ -668,13 +633,13 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const filterYear = ref(new Date().getFullYear())
+const addYearDialog = ref(false)
+const newYear = ref(new Date().getFullYear() + 1)
 const availableYears = ref([new Date().getFullYear()])
 const search = ref('')
 const filterPeriod = ref('All Periods')
 const filterFuel = ref('All Types')
 const filterFund = ref('All Funds')
-const lookupSearch = ref('')
-const lookupYear = ref(new Date().getFullYear())
 
 // ── DIALOGS ──
 const formDialog = ref(false)
@@ -713,17 +678,17 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 
 // ── TABLE HEADERS ──
 const headers = [
-  { title: 'Date', key: 'date', width: '100px' },
-  { title: 'OR #', key: 'or_number', width: '90px' },
-  { title: 'Billing Period', key: 'billing_period', width: '160px' },
-  { title: 'Type', key: 'fuel_type', width: '90px' },
-  { title: 'Qty (L)', key: 'quantity', align: 'end', width: '90px' },
-  { title: 'Unit Price', key: 'unit_price', align: 'end', width: '100px' },
-  { title: 'Total Amt.', key: 'total_amount', align: 'end', width: '110px' },
-  { title: 'Vehicle / Equip.', key: 'vehicle' },
-  { title: 'Utilized By', key: 'utilized_by' },
-  { title: 'Fund', key: 'fund_cluster', width: '80px' },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'center', width: '100px' },
+  { title: 'Date', key: 'date', width: '90px' },
+  { title: 'OR #', key: 'or_number', width: '80px' },
+  { title: 'Billing Period', key: 'billing_period', width: '150px' },
+  { title: 'Type', key: 'fuel_type', width: '80px' },
+  { title: 'Qty (L)', key: 'quantity', align: 'end', width: '80px' },
+  { title: 'Unit Price', key: 'unit_price', align: 'end', width: '90px' },
+  { title: 'Total Amt.', key: 'total_amount', align: 'end', width: '100px' },
+  { title: 'Vehicle / Equip.', key: 'vehicle', width: '140px' },
+  { title: 'Utilized By', key: 'utilized_by', width: '120px' },
+  { title: 'Fund', key: 'fund_cluster', width: '70px' },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'center', width: '120px' },
 ]
 
 // ── BILLING PERIODS (24 per year) ──
@@ -817,42 +782,6 @@ const utilizedByOptions = computed(() =>
   [...new Set(transactions.value.map((t) => t.utilized_by).filter(Boolean))].sort(),
 )
 
-// ── VEHICLE SUMMARY (quick lookup) ──
-const vehicleSummary = computed(() => {
-  const yearTx = transactions.value.filter((t) => {
-    const d = new Date(t.date + 'T00:00:00')
-    return d.getFullYear() === Number(lookupYear.value)
-  })
-  const map = new Map()
-  yearTx.forEach((t) => {
-    const key = t.vehicle || 'Unknown'
-    if (!map.has(key)) {
-      map.set(key, {
-        name: key,
-        count: 0,
-        diesel: 0,
-        gasoline: 0,
-        amount: 0,
-        is_vehicle:
-          assets.value.find((a) => a.asset_name === key && a.asset_type === 'Vehicle') != null,
-      })
-    }
-    const entry = map.get(key)
-    entry.count++
-    entry.amount += t.total_amount || 0
-    if (t.fuel_type === 'Diesel') entry.diesel += t.quantity || 0
-    else entry.gasoline += t.quantity || 0
-  })
-  return [...map.values()].sort((a, b) => b.amount - a.amount)
-})
-
-const filteredVehicleSummary = computed(() => {
-  if (!lookupSearch.value) return vehicleSummary.value
-  return vehicleSummary.value.filter((v) =>
-    v.name.toLowerCase().includes(lookupSearch.value.toLowerCase()),
-  )
-})
-
 // ── FETCH ──
 async function fetchAvailableYears() {
   const { data } = await supabase.from('fuel_transactions').select('date').order('date')
@@ -877,6 +806,21 @@ async function fetchTransactions() {
   if (error) showSnackbar('Failed to load transactions', 'error')
   else transactions.value = data
   loading.value = false
+}
+function openAddYearDialog() {
+  newYear.value = new Date().getFullYear() + 1
+  addYearDialog.value = true
+}
+
+function confirmAddYear() {
+  const y = Number(newYear.value)
+  if (!y || y < 2000 || y > 2100) return
+  if (!availableYears.value.includes(y)) {
+    availableYears.value = [...availableYears.value, y].sort()
+  }
+  filterYear.value = y
+  addYearDialog.value = false
+  fetchTransactions()
 }
 
 async function fetchContracts() {
@@ -1101,3 +1045,4 @@ onMounted(async () => {
   await fetchTransactions()
 })
 </script>
+

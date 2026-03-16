@@ -10,6 +10,7 @@
               Track and manage corrective maintenance requests
             </p>
           </div>
+
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             New Request
           </v-btn>
@@ -99,11 +100,11 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" sm="3">
+          <v-col cols="12" sm="2">
             <v-select
-              v-model="statusFilter"
-              :items="['All', 'In Progress', 'Completed', 'Cancelled']"
-              label="Status"
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
               variant="outlined"
               density="compact"
               hide-details
@@ -170,6 +171,11 @@
                   {{ item.status }}
                 </v-chip>
               </template>
+
+              <template v-slot:item.date_completed="{ item }">
+                {{ item.date_completed ? formatDate(item.date_completed) : '—' }}
+              </template>
+
               <v-list density="compact" min-width="150">
                 <v-list-item
                   v-for="s in ['In Progress', 'Completed', 'Cancelled']"
@@ -355,6 +361,19 @@
               />
             </v-col>
 
+            <!-- Date Completed (auto-filled, editable) -->
+            <v-col v-if="form.status === 'Completed'" cols="12" sm="6">
+              <v-text-field
+                v-model="form.date_completed"
+                label="Date Completed"
+                type="date"
+                variant="outlined"
+                density="comfortable"
+                hint="Auto-filled when status is set to Completed"
+                persistent-hint
+              />
+            </v-col>
+
             <!-- Status -->
             <v-col cols="12" sm="6">
               <v-select
@@ -364,19 +383,6 @@
                 variant="outlined"
                 density="comfortable"
                 @update:modelValue="onStatusChange"
-              />
-            </v-col>
-
-            <!-- Date Completed -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.date_completed"
-                label="Date Completed"
-                variant="outlined"
-                density="comfortable"
-                type="date"
-                hint="Auto-filled when status = Completed"
-                persistent-hint
               />
             </v-col>
           </v-row>
@@ -458,6 +464,13 @@
                 selectedRequest.cost ? '₱' + Number(selectedRequest.cost).toLocaleString() : '—'
               "
             />
+            <v-list-item
+              v-if="selectedRequest.status === 'Completed'"
+              subtitle="Date Completed"
+              :title="
+                selectedRequest.date_completed ? formatDate(selectedRequest.date_completed) : '—'
+              "
+            />
           </v-list>
         </v-card-text>
       </v-card>
@@ -499,7 +512,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+//import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
+
+// const router = useRouter()
 
 async function quickUpdateStatus(item, newStatus) {
   const payload = { status: newStatus }
@@ -528,6 +544,11 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
+const yearFilter = ref(new Date().getFullYear())
+const yearOptions = computed(() => {
+  const cur = new Date().getFullYear()
+  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+})
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
 const selectedAssetType = ref('Vehicle')
@@ -544,7 +565,6 @@ const defaultForm = {
   request_no: '',
   date_of_request: '',
 
-  date_completed: '',
   vehicle_id: null,
   asset_type: 'Vehicle',
   requisitioner: '',
@@ -555,6 +575,7 @@ const defaultForm = {
   hours_of_operation: null,
   cost: null,
   status: 'In Progress',
+  date_completed: null,
   remarks: '',
 }
 const form = ref({ ...defaultForm })
@@ -573,6 +594,7 @@ const headers = [
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
   { title: 'Problem', key: 'problem_details', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
+  { title: 'Date Completed', key: 'date_completed', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
 ]
 
@@ -645,6 +667,12 @@ const filteredRequests = computed(() => {
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
+  if (yearFilter.value) {
+    result = result.filter((r) => {
+      const yr = r.date_of_request ? new Date(r.date_of_request + 'T00:00:00').getFullYear() : null
+      return yr === yearFilter.value
+    })
+  }
   if (vehicleFilter.value !== 'All') {
     result = result.filter((r) => r.asset_name === vehicleFilter.value)
   }
@@ -663,6 +691,15 @@ const filteredRequests = computed(() => {
 })
 
 // ---- HELPERS ----
+function formatDate(d) {
+  if (!d) return ''
+  const dt = new Date(d + 'T00:00:00')
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  const yy = String(dt.getFullYear()).slice(-2)
+  return `${mm}/${dd}/${yy}`
+}
+
 function statusColor(status) {
   const colors = {
     'In Progress': 'warning',
@@ -810,7 +847,6 @@ async function saveRequest() {
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
-    remarks: form.value.remarks || null,
   }
 
   if (isEditing.value) {

@@ -10,6 +10,7 @@
               Track scheduled and completed preventive maintenance
             </p>
           </div>
+
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
             Add PM Record
           </v-btn>
@@ -108,6 +109,17 @@
               hide-details
             />
           </v-col>
+
+          <v-col cols="12" sm="2">
+            <v-select
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+          </v-col>
           <v-col cols="12" sm="3">
             <v-select
               v-model="vehicleFilter"
@@ -177,9 +189,28 @@
               </td>
 
               <td>
-                <v-chip :color="statusColor(item.status)" size="small" variant="tonal">
-                  {{ item.status }}
-                </v-chip>
+                <v-menu>
+                  <template v-slot:activator="{ props }">
+                    <v-chip
+                      :color="statusColor(item.status)"
+                      size="small"
+                      variant="tonal"
+                      v-bind="props"
+                      style="cursor: pointer"
+                      append-icon="mdi-chevron-down"
+                    >
+                      {{ item.status }}
+                    </v-chip>
+                  </template>
+                  <v-list density="compact" min-width="150">
+                    <v-list-item
+                      v-for="s in ['Scheduled', 'Completed', 'Cancelled']"
+                      :key="s"
+                      :title="s"
+                      @click="quickUpdateStatus(item, s)"
+                    />
+                  </v-list>
+                </v-menu>
               </td>
               <td class="text-center">
                 <v-btn
@@ -335,19 +366,6 @@
 
             <v-col cols="12"><v-divider /></v-col>
 
-            <!-- Reference No -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.reference_no"
-                label="Reference No. (SR)"
-                variant="outlined"
-                density="comfortable"
-                placeholder="e.g. 2025-001"
-                hint="Service Request number linked to this PM"
-                persistent-hint
-              />
-            </v-col>
-
             <!-- Conducted By -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -464,7 +482,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">ASSET & SERVICE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Asset</p>
                   <p class="text-body-2 font-weight-medium">
@@ -497,9 +515,10 @@
 
           <!-- Section: Service Details -->
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">SERVICE DETAILS</p>
+
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
@@ -512,6 +531,16 @@
                     {{
                       selectedRecord.odometer
                         ? Number(selectedRecord.odometer).toLocaleString() + ' km'
+                        : '—'
+                    }}
+                  </p>
+                </v-col>
+                <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
+                  <p class="text-caption text-medium-emphasis">Current Odometer</p>
+                  <p class="text-body-2 font-weight-medium">
+                    {{
+                      selectedRecord.current_odometer
+                        ? Number(selectedRecord.current_odometer).toLocaleString() + ' km'
                         : '—'
                     }}
                   </p>
@@ -554,7 +583,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">NEXT DUE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Next Due Date</p>
                   <p
@@ -575,17 +604,6 @@
                   </p>
                 </v-col>
               </v-row>
-            </v-card-text>
-          </v-card>
-
-          <!-- Reference -->
-          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REFERENCE</p>
-          <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
-            <v-card-text class="pa-3">
-              <p class="text-caption text-medium-emphasis">Service Request No.</p>
-              <p class="text-body-2 font-weight-medium">
-                {{ selectedRecord.reference_no || '—' }}
-              </p>
             </v-card-text>
           </v-card>
 
@@ -637,7 +655,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+// import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
+
+// const router = useRouter()
 
 // ---- DATA ----
 const pmRecords = ref([])
@@ -648,6 +669,11 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
+const yearFilter = ref(new Date().getFullYear())
+const yearOptions = computed(() => {
+  const cur = new Date().getFullYear()
+  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+})
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
 const selectedAssetType = ref('Vehicle')
@@ -776,10 +802,17 @@ const filteredRecords = computed(() => {
         r.remarks?.toLowerCase().includes(s),
     )
   }
+  if (yearFilter.value) {
+    result = result.filter((r) => {
+      const yr = r.date_performed ? new Date(r.date_performed + 'T00:00:00').getFullYear() : null
+      return yr === yearFilter.value
+    })
+  }
   return result
 })
 
 // ---- FORMAT HELPERS ----
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -1037,6 +1070,7 @@ function openEditDialog(record) {
       ? formatNumber(record.next_due_odometer)
       : '',
     cost_display: record.cost ? formatNumber(record.cost) : '',
+    current_odometer_display: record.current_odometer ? formatNumber(record.current_odometer) : '',
   }
   errors.value = {}
   formDialog.value = true
@@ -1128,6 +1162,21 @@ async function deleteRecord() {
     await fetchRecords()
   }
   deleting.value = false
+}
+
+async function quickUpdateStatus(item, newStatus) {
+  const payload = { status: newStatus }
+  if (newStatus === 'Completed' && !item.date_accomplished) {
+    payload.date_accomplished = new Date().toISOString().split('T')[0]
+  }
+  const { error } = await supabase.from('vehicle_pm_log').update(payload).eq('id', item.id)
+  if (error) {
+    showSnackbar('Failed to update status', 'error')
+  } else {
+    item.status = newStatus
+    if (payload.date_accomplished) item.date_accomplished = payload.date_accomplished
+    showSnackbar('Status updated', 'success')
+  }
 }
 
 function showSnackbar(message, color = 'success') {

@@ -187,7 +187,7 @@
           <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
           <h3 class="ml-detail__title">Service Record</h3>
           <div class="ml-detail__grid">
-            
+
             <div class="ml-detail__item">
               <span class="ml-detail__key">Date Conducted</span>
               <div class="ml-detail__item">

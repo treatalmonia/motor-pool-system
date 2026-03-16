@@ -472,6 +472,7 @@ const defaultForm = {
   status: 'Active', remarks: '',
 }
 const form = ref({ ...defaultForm })
+
 const errors = ref({})
 
 // ---- SNACKBAR ----
@@ -483,7 +484,7 @@ const headers = [
   { title: 'Floor', key: 'floor', sortable: true },
   { title: 'Area / Room', key: 'area_room', sortable: true },
   { title: 'Unit Type', key: 'unit_type', sortable: true },
-  { title: 'No. of Units', key: 'num_units', sortable: false },
+  // { title: 'No. of Units', key: 'num_units', sortable: false },
   { title: 'Brand', key: 'brand', sortable: false },
   { title: 'Capacity', key: 'capacity', sortable: false },
   { title: 'Technology', key: 'technology', sortable: true },

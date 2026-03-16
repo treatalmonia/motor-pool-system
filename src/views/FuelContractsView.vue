@@ -24,11 +24,12 @@
             <v-btn
               color="secondary"
               variant="outlined"
-              prepend-icon="mdi-content-copy"
-              @click="openCopyYearDialog"
+              prepend-icon="mdi-calendar-plus"
+              @click="openAddYearDialog"
             >
-              Copy to New Year
+              Add Year
             </v-btn>
+
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Contract
             </v-btn>
@@ -94,8 +95,9 @@
             <v-row>
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">Total No. of (L)</p>
-                <p class="text-h6 font-weight-bold text-green-darken-2">{{ formatNumber(totalGasoline) }}</p>
-
+                <p class="text-h6 font-weight-bold text-green-darken-2">
+                  {{ formatNumber(totalGasoline) }}
+                </p>
               </v-col>
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">Total Amount</p>
@@ -403,11 +405,12 @@
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
-
           <!-- Contract Info -->
           <v-card rounded="lg" variant="tonal" color="grey" class="pa-3 mb-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CONTRACT INFORMATION</p>
-            <v-row dense>
+            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
+              CONTRACT INFORMATION
+            </p>
+            <v-row  density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">PO Number</p>
                 <p class="font-weight-medium">{{ selectedContract.po_number }}</p>
@@ -430,7 +433,7 @@
           <!-- Peso Balance -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">PESO BALANCE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Contract Amount</p>
                 <p class="font-weight-bold text-orange-darken-3">
@@ -445,7 +448,13 @@
               </v-col>
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Remaining</p>
-                <p :class="selectedContract.balance >= 0 ? 'font-weight-bold text-success' : 'font-weight-bold text-error'">
+                <p
+                  :class="
+                    selectedContract.balance >= 0
+                      ? 'font-weight-bold text-success'
+                      : 'font-weight-bold text-error'
+                  "
+                >
                   ₱{{ formatNumber(Math.abs(selectedContract.balance)) }}
                   {{ selectedContract.balance < 0 ? '(OVER)' : '' }}
                 </p>
@@ -453,8 +462,21 @@
             </v-row>
             <v-progress-linear
               class="mt-2"
-              :model-value="selectedContract.contract_amount > 0 ? Math.min((selectedContract.consumed_amount / selectedContract.contract_amount) * 100, 100) : 0"
-              :color="selectedContract.balance < 0 ? 'error' : selectedContract.balance / selectedContract.contract_amount < 0.1 ? 'warning' : 'success'"
+              :model-value="
+                selectedContract.contract_amount > 0
+                  ? Math.min(
+                      (selectedContract.consumed_amount / selectedContract.contract_amount) * 100,
+                      100,
+                    )
+                  : 0
+              "
+              :color="
+                selectedContract.balance < 0
+                  ? 'error'
+                  : selectedContract.balance / selectedContract.contract_amount < 0.1
+                    ? 'warning'
+                    : 'success'
+              "
               bg-color="grey-lighten-3"
               rounded
               height="6"
@@ -464,7 +486,7 @@
           <!-- Liter Balance -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">LITER BALANCE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <!-- Diesel -->
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis font-weight-bold mb-1">
@@ -475,13 +497,28 @@
                   <span>Used: {{ formatNumber(selectedContract.consumed_diesel) }} L</span>
                 </div>
                 <v-progress-linear
-                  :model-value="selectedContract.allocated_diesel > 0 ? Math.min((selectedContract.consumed_diesel / selectedContract.allocated_diesel) * 100, 100) : 0"
+                  :model-value="
+                    selectedContract.allocated_diesel > 0
+                      ? Math.min(
+                          (selectedContract.consumed_diesel / selectedContract.allocated_diesel) *
+                            100,
+                          100,
+                        )
+                      : 0
+                  "
                   :color="selectedContract.remaining_diesel < 0 ? 'error' : 'blue-darken-2'"
                   bg-color="grey-lighten-3"
                   rounded
                   height="5"
                 />
-                <p class="text-caption mt-1" :class="selectedContract.remaining_diesel < 0 ? 'text-error font-weight-bold' : 'text-medium-emphasis'">
+                <p
+                  class="text-caption mt-1"
+                  :class="
+                    selectedContract.remaining_diesel < 0
+                      ? 'text-error font-weight-bold'
+                      : 'text-medium-emphasis'
+                  "
+                >
                   Remaining: {{ formatNumber(selectedContract.remaining_diesel) }} L
                   {{ selectedContract.remaining_diesel < 0 ? '(OVER)' : '' }}
                 </p>
@@ -496,13 +533,29 @@
                   <span>Used: {{ formatNumber(selectedContract.consumed_gasoline) }} L</span>
                 </div>
                 <v-progress-linear
-                  :model-value="selectedContract.allocated_gasoline > 0 ? Math.min((selectedContract.consumed_gasoline / selectedContract.allocated_gasoline) * 100, 100) : 0"
+                  :model-value="
+                    selectedContract.allocated_gasoline > 0
+                      ? Math.min(
+                          (selectedContract.consumed_gasoline /
+                            selectedContract.allocated_gasoline) *
+                            100,
+                          100,
+                        )
+                      : 0
+                  "
                   :color="selectedContract.remaining_gasoline < 0 ? 'error' : 'green-darken-2'"
                   bg-color="grey-lighten-3"
                   rounded
                   height="5"
                 />
-                <p class="text-caption mt-1" :class="selectedContract.remaining_gasoline < 0 ? 'text-error font-weight-bold' : 'text-medium-emphasis'">
+                <p
+                  class="text-caption mt-1"
+                  :class="
+                    selectedContract.remaining_gasoline < 0
+                      ? 'text-error font-weight-bold'
+                      : 'text-medium-emphasis'
+                  "
+                >
                   Remaining: {{ formatNumber(selectedContract.remaining_gasoline) }} L
                   {{ selectedContract.remaining_gasoline < 0 ? '(OVER)' : '' }}
                 </p>
@@ -515,7 +568,10 @@
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
               TRANSACTIONS ({{ selectedContract.transactions?.length || 0 }})
             </p>
-            <div v-if="!selectedContract.transactions?.length" class="text-caption text-medium-emphasis pa-2 text-center">
+            <div
+              v-if="!selectedContract.transactions?.length"
+              class="text-caption text-medium-emphasis pa-2 text-center"
+            >
               No transactions recorded for this contract.
             </div>
             <v-table v-else density="compact" class="text-caption">
@@ -530,7 +586,12 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="t in [...(selectedContract.transactions || [])].sort((a,b) => a.date.localeCompare(b.date))" :key="t.id">
+                <tr
+                  v-for="t in [...(selectedContract.transactions || [])].sort((a, b) =>
+                    a.date.localeCompare(b.date),
+                  )"
+                  :key="t.id"
+                >
                   <td>{{ formatDate(t.date) }}</td>
                   <td>{{ t.or_number }}</td>
                   <td class="text-caption">{{ t.billing_period }}</td>
@@ -539,7 +600,8 @@
                       :color="t.fuel_type === 'Diesel' ? 'blue-darken-2' : 'green-darken-2'"
                       variant="tonal"
                       size="x-small"
-                    >{{ t.fuel_type }}</v-chip>
+                      >{{ t.fuel_type }}</v-chip
+                    >
                   </td>
                   <td class="text-right">{{ formatNumber(t.quantity) }}</td>
                   <td class="text-right font-weight-medium">₱{{ formatNumber(t.total_amount) }}</td>
@@ -548,8 +610,17 @@
               <tfoot>
                 <tr class="font-weight-bold">
                   <td colspan="4" class="text-right text-caption">TOTAL</td>
-                  <td class="text-right">{{ formatNumber(selectedContract.consumed_diesel + selectedContract.consumed_gasoline) }} L</td>
-                  <td class="text-right text-orange-darken-3">₱{{ formatNumber(selectedContract.consumed_amount) }}</td>
+                  <td class="text-right">
+                    {{
+                      formatNumber(
+                        selectedContract.consumed_diesel + selectedContract.consumed_gasoline,
+                      )
+                    }}
+                    L
+                  </td>
+                  <td class="text-right text-orange-darken-3">
+                    ₱{{ formatNumber(selectedContract.consumed_amount) }}
+                  </td>
                 </tr>
               </tfoot>
             </v-table>
@@ -566,7 +637,12 @@
           <v-btn
             color="primary"
             variant="flat"
-            @click="() => { viewDialog = false; openEditDialog(selectedContract) }"
+            @click="
+              () => {
+                viewDialog = false
+                openEditDialog(selectedContract)
+              }
+            "
           >
             Edit
           </v-btn>
@@ -595,46 +671,28 @@
       </v-card>
     </v-dialog>
 
-    <!-- ── COPY YEAR DIALOG ── -->
-    <v-dialog v-model="copyYearDialog" max-width="420">
+    <v-dialog v-model="addYearDialog" max-width="360">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0">
-          <v-icon start>mdi-content-copy</v-icon>
-          Copy Contracts to New Year
+          <v-icon start>mdi-calendar-plus</v-icon>
+          Add New Year
         </v-card-title>
         <v-card-text class="pa-4">
-          <p class="text-body-2 text-medium-emphasis mb-4">
-            All contracts from <strong>{{ copyFromYear }}</strong> will be copied to a new year
-            (consumption resets to zero).
-          </p>
-          <v-row>
-            <v-col cols="6">
-              <v-select
-                v-model="copyFromYear"
-                :items="availableYears"
-                label="Copy From"
-                variant="outlined"
-                density="comfortable"
-              />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field
-                v-model="copyToYear"
-                label="Copy To (Year)"
-                variant="outlined"
-                density="comfortable"
-                type="number"
-                placeholder="e.g. 2026"
-              />
-            </v-col>
-          </v-row>
+          <v-text-field
+            v-model="newYear"
+            label="Year"
+            variant="outlined"
+            density="comfortable"
+            type="number"
+            placeholder="e.g. 2027"
+            hint="Starts blank with no data"
+            persistent-hint
+          />
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
-          <v-btn variant="text" @click="copyYearDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" :loading="copying" @click="copyToNewYear">
-            Copy Contracts
-          </v-btn>
+          <v-btn variant="text" @click="addYearDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="confirmAddYear">Add Year</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -660,8 +718,10 @@ const contracts = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
-const copying = ref(false)
+
 const selectedYear = ref(new Date().getFullYear())
+const addYearDialog = ref(false)
+const newYear = ref(new Date().getFullYear() + 1)
 const availableYears = ref([new Date().getFullYear()])
 const search = ref('')
 const filterFund = ref('All Funds')
@@ -671,11 +731,9 @@ const allTransactions = ref([])
 const formDialog = ref(false)
 const viewDialog = ref(false)
 const deleteDialog = ref(false)
-const copyYearDialog = ref(false)
+
 const isEditing = ref(false)
 const selectedContract = ref(null)
-const copyFromYear = ref(new Date().getFullYear())
-const copyToYear = ref(new Date().getFullYear() + 1)
 
 // ── FORM ──
 const defaultForm = {
@@ -829,13 +887,30 @@ async function fetchContracts() {
   else contracts.value = data
   loading.value = false
 }
+function openAddYearDialog() {
+  newYear.value = new Date().getFullYear() + 1
+  addYearDialog.value = true
+}
+
+function confirmAddYear() {
+  const y = Number(newYear.value)
+  if (!y || y < 2000 || y > 2100) return
+  if (!availableYears.value.includes(y)) {
+    availableYears.value = [...availableYears.value, y].sort()
+  }
+  selectedYear.value = y
+  addYearDialog.value = false
+  refreshData()
+}
 
 async function fetchAllTransactions() {
   const startDate = `${selectedYear.value}-01-01`
   const endDate = `${selectedYear.value}-12-31`
   const { data } = await supabase
     .from('fuel_transactions')
-    .select('id, contract_id, fuel_type, quantity, total_amount, billing_period, date, vehicle, or_number')
+    .select(
+      'id, contract_id, fuel_type, quantity, total_amount, billing_period, date, vehicle, or_number',
+    )
     .gte('date', startDate)
     .lte('date', endDate)
   if (data) allTransactions.value = data
@@ -870,12 +945,6 @@ function openViewDialog(contract) {
 function openDeleteDialog(contract) {
   selectedContract.value = contract
   deleteDialog.value = true
-}
-
-function openCopyYearDialog() {
-  copyFromYear.value = selectedYear.value
-  copyToYear.value = selectedYear.value + 1
-  copyYearDialog.value = true
 }
 
 function closeFormDialog() {
@@ -949,48 +1018,6 @@ async function deleteContract() {
   deleting.value = false
 }
 
-// ── COPY YEAR ──
-async function copyToNewYear() {
-  if (!copyToYear.value) return
-  copying.value = true
-  const { data, error } = await supabase
-    .from('fuel_contracts')
-    .select('*')
-    .eq('year', copyFromYear.value)
-  if (error || !data || data.length === 0) {
-    showSnackbar('No contracts found for selected year', 'error')
-    copying.value = false
-    return
-  }
-  const { data: existing } = await supabase
-    .from('fuel_contracts')
-    .select('id')
-    .eq('year', copyToYear.value)
-    .limit(1)
-  if (existing && existing.length > 0) {
-    showSnackbar(`Year ${copyToYear.value} already has contracts`, 'error')
-    copying.value = false
-    return
-  }
-
-  const newRows = data.map((row) => {
-    // eslint-disable-next-line no-unused-vars
-    const { id, created_at, ...rest } = row
-    return { ...rest, year: Number(copyToYear.value) }
-  })
-
-  const { error: insertError } = await supabase.from('fuel_contracts').insert(newRows)
-  if (insertError) showSnackbar('Failed to copy contracts', 'error')
-  else {
-    showSnackbar(`Contracts copied to ${copyToYear.value}`, 'success')
-    await fetchAvailableYears()
-    selectedYear.value = Number(copyToYear.value)
-    await refreshData()
-    copyYearDialog.value = false
-  }
-  copying.value = false
-}
-
 // ── COMMA-FORMATTED INPUTS ──
 function onAmountInput(e) {
   const raw = e.target.value.replace(/,/g, '')
@@ -1026,7 +1053,6 @@ function formatNumber(val) {
   return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
 }
 function formatCurrency(val) {
-
   if (!val) return '₱0'
   if (val >= 1000000) return '₱' + (val / 1000000).toFixed(2) + 'M'
   if (val >= 1000) return '₱' + (val / 1000).toFixed(1) + 'K'
@@ -1058,3 +1084,4 @@ onMounted(async () => {
   await refreshData()
 })
 </script>
+

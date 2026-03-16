@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainLayout from '../layouts/MainLayout.vue'
+import MainLayout from '../views/MainLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,7 +33,6 @@ const router = createRouter({
           name: 'ScheduleOfMaintenance',
           component: () => import('../views/PMProgramView.vue'),
         },
-
         {
           path: 'annual-pm',
           name: 'AnnualPM',
@@ -44,7 +43,6 @@ const router = createRouter({
           name: 'MaintenanceLog',
           component: () => import('../views/MaintenanceOverviewView.vue'),
         },
-
         {
           path: 'ac-units',
           name: 'ac-units',
@@ -60,10 +58,31 @@ const router = createRouter({
           name: 'ac-cleaning',
           component: () => import('../views/ACCleaningView.vue'),
         },
-        { path: '/fuel-contracts', component: () => import('../views/FuelContractsView.vue') },
         {
-          path: '/fuel-transactions',
+          path: 'fuel-contracts',
+          name: 'FuelContracts',
+          component: () => import('../views/FuelContractsView.vue'),
+        },
+        {
+          path: 'fuel-transactions',
+          name: 'FuelTransactions',
           component: () => import('../views/FuelTransactionsView.vue'),
+        },
+        {
+          path: 'pmc-report',
+          name: 'PMCReport',
+          component: () => import('../views/PMCReportView.vue'),
+        },
+        {
+          path: 'efhr-report',
+          name: 'EFHRReport',
+          component: () => import('../views/EFHRReportView.vue'),
+        },
+        // ✅ FIX 1: was missing entirely — caused blank screen for Fuel Summary
+        {
+          path: 'fuel-summary-report',
+          name: 'FuelSummaryReport',
+          component: () => import('../views/FuelSummaryReportView.vue'),
         },
       ],
     },

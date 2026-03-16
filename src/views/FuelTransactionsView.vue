@@ -466,7 +466,7 @@
           <!-- Invoice Info -->
           <v-card rounded="lg" variant="tonal" color="grey" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">INVOICE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Date</p>
                 <p class="font-weight-medium">{{ formatDate(selectedTx.date) }}</p>
@@ -484,7 +484,7 @@
           <!-- Fuel Info -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">FUEL</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Quantity</p>
                 <p class="font-weight-bold">{{ formatNumber(selectedTx.quantity) }} L</p>
@@ -504,7 +504,7 @@
           <!-- Usage Info -->
           <v-card rounded="lg" variant="tonal" color="green" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">USAGE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">Vehicle / Equipment</p>
                 <p class="font-weight-medium">{{ selectedTx.vehicle }}</p>
@@ -518,7 +518,7 @@
           <!-- Charge Info -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CHARGED TO</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Fund</p>
                 <v-chip
@@ -1045,3 +1045,4 @@ onMounted(async () => {
   await fetchTransactions()
 })
 </script>
+

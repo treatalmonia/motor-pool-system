@@ -57,13 +57,7 @@
             </template>
           </v-list-item>
 
-          <v-list-item
-            prepend-icon="mdi-clipboard-check"
-            title="PMC Report"
-            to="/pmc-report"
-            rounded="lg"
-            style="padding-left: 16px !important"
-          />
+
         </v-list-group>
 
         <v-list-item
@@ -72,12 +66,7 @@
           to="/schedule-of-maintenance"
           rounded="lg"
         />
-        <v-list-item
-          prepend-icon="mdi-file-document-edit"
-          title="Annual PM Program"
-          to="/annual-pm"
-          rounded="lg"
-        />
+
 
         <v-list-subheader>AIR CONDITIONER</v-list-subheader>
 
@@ -93,13 +82,7 @@
           to="/ac-requests"
           rounded="lg"
         />
-        <v-list-item
-          prepend-icon="mdi-history"
-          title="EFHR Report"
-          value="efhr-report"
-          to="/efhr-report"
-          rounded="lg"
-        />
+
         <v-list-item
           prepend-icon="mdi-snowflake"
           title="AC Cleaning Log"
@@ -143,6 +126,13 @@
           rounded="lg"
         />
       </v-list>
+
+          <v-list-item
+          prepend-icon="mdi-file-document-edit"
+          title="Annual PM Program"
+          to="/annual-pm"
+          rounded="lg"
+        />
     </v-navigation-drawer>
 
     <!-- Top Bar -->

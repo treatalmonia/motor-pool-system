@@ -410,7 +410,7 @@
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
               CONTRACT INFORMATION
             </p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">PO Number</p>
                 <p class="font-weight-medium">{{ selectedContract.po_number }}</p>
@@ -433,7 +433,7 @@
           <!-- Peso Balance -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">PESO BALANCE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Contract Amount</p>
                 <p class="font-weight-bold text-orange-darken-3">
@@ -486,7 +486,7 @@
           <!-- Liter Balance -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">LITER BALANCE</p>
-            <v-row dense>
+            <v-row  density="comfortable">
               <!-- Diesel -->
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis font-weight-bold mb-1">
@@ -1084,3 +1084,4 @@ onMounted(async () => {
   await refreshData()
 })
 </script>
+

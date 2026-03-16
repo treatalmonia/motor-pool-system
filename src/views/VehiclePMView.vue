@@ -485,7 +485,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">ASSET & SERVICE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row  density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Asset</p>
                   <p class="text-body-2 font-weight-medium">
@@ -521,7 +521,7 @@
 
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row  density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
@@ -586,7 +586,7 @@
           <p class="text-caption text-medium-emphasis font-weight-bold mb-2">NEXT DUE</p>
           <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
             <v-card-text class="pa-3">
-              <v-row dense>
+              <v-row  density="comfortable">
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Next Due Date</p>
                   <p
@@ -1207,3 +1207,4 @@ onMounted(async () => {
   await fetchRecords()
 })
 </script>
+

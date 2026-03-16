@@ -74,7 +74,7 @@
     <v-card v-if="rows.length > 0" rounded="lg" elevation="0" border class="mb-4">
       <v-card-text class="pa-4">
         <div class="text-subtitle-2 font-weight-bold mb-2">OBJECTIVE:</div>
-        <v-row dense>
+        <v-row  density="comfortable">
           <v-col v-for="(obj, i) in objectives" :key="i" cols="12" md="4">
             <div class="obj-group">
               <div class="obj-title">{{ obj.title }}</div>
@@ -167,7 +167,7 @@
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-2">{{ isEditing ? 'Edit Row' : 'Add Row' }}</v-card-title>
         <v-card-text class="pa-4">
-          <v-row dense>
+          <v-row  density="comfortable">
             <v-col cols="12" sm="6">
               <v-text-field v-model="form.description" label="Description *" variant="outlined"
                 density="comfortable" :error-messages="errors.description" />
@@ -214,7 +214,7 @@
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-2">Edit Signatories</v-card-title>
         <v-card-text class="pa-4">
-          <v-row dense>
+          <v-row  density="comfortable">
             <v-col cols="12"><div class="text-subtitle-2 mb-1">Prepared By</div></v-col>
             <v-col cols="12" sm="6">
               <v-text-field v-model="sigForm.prepared_by_name" label="Name" variant="outlined" density="comfortable" />
@@ -623,3 +623,4 @@ onMounted(async () => {
 .sig-name  { font-weight: bold; font-size: 13px; margin: 0; }
 .sig-title { font-size: 11px; color: #555; margin: 0; }
 </style>
+

@@ -11,9 +11,24 @@
             </p>
           </div>
 
-          <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            New Request
-          </v-btn>
+          <!-- WHAT: Year management controls — Year Dropdown, Add Year, Add Contract -->
+          <!-- WHY: Required by spec. Buttons appear in order before New Request. -->
+          <div class="d-flex align-center ga-2 flex-wrap">
+            <v-select
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="min-width: 100px"
+            />
+            <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
+
+            <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
+              New Request
+            </v-btn>
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -155,8 +170,7 @@
             </v-chip>
           </template>
 
-          <!-- Status -->
-          <!-- Status -->
+          <!-- Status — clickable chip that opens a quick-change menu -->
           <template v-slot:item.status="{ item }">
             <v-menu>
               <template v-slot:activator="{ props }">
@@ -171,11 +185,6 @@
                   {{ item.status }}
                 </v-chip>
               </template>
-
-              <template v-slot:item.date_completed="{ item }">
-                {{ item.date_completed ? formatDate(item.date_completed) : '—' }}
-              </template>
-
               <v-list density="compact" min-width="150">
                 <v-list-item
                   v-for="s in ['In Progress', 'Completed', 'Cancelled']"
@@ -185,6 +194,29 @@
                 />
               </v-list>
             </v-menu>
+          </template>
+
+          <!-- BUG FIX: This was previously nested inside the status menu — it never rendered. -->
+          <!-- WHY: Each column slot must be a DIRECT child of v-data-table, not inside another slot. -->
+          <template v-slot:item.date_completed="{ item }">
+            {{ item.date_completed ? formatDate(item.date_completed) : '—' }}
+          </template>
+
+          <!-- WHAT: Formats mileage with commas and km unit in the table -->
+          <!-- WHY: Raw numbers like 43117 are hard to read — 43,117 km is clear -->
+          <template v-slot:item.mileage="{ item }">
+            <span v-if="item.mileage">
+              {{ Number(item.mileage).toLocaleString() }} km
+            </span>
+            <span v-else class="text-medium-emphasis">—</span>
+          </template>
+
+          <!-- WHAT: Formats cost with peso sign and commas in the table -->
+          <template v-slot:item.cost="{ item }">
+            <span v-if="item.cost">
+              ₱{{ Number(item.cost).toLocaleString() }}
+            </span>
+            <span v-else class="text-medium-emphasis">—</span>
           </template>
 
           <!-- Actions -->
@@ -238,15 +270,19 @@
               />
             </v-col>
 
-            <!-- Date -->
+            <!-- Date of Request — MM/DD/YY typed input with multi-format support -->
+            <!-- WHAT: User types the date; the parser converts it to YYYY-MM-DD for the database -->
+            <!-- WHY: type="date" forces YYYY-MM-DD display and shows a browser calendar only -->
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.date_of_request"
-                label="Date of Request *"
+                v-model="dateOfRequestDisplay"
+                label="Date of Request * (MM/DD/YY)"
                 variant="outlined"
                 density="comfortable"
-                type="date"
+                placeholder="e.g. 04/24/26"
+                autocomplete="off"
                 :error-messages="errors.date_of_request"
+                @input="onDateOfRequestInput"
               />
             </v-col>
 
@@ -266,26 +302,65 @@
               />
             </v-col>
 
-            <!-- Requisitioner -->
+            <!-- Requisitioner — searchable combobox with plain string items -->
+            <!-- WHAT: User picks from list or types a new name -->
+            <!-- WHY: New names auto-save to Supabase. Saved names shown below with delete. -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.requisitioner"
+                :items="requisitionerOptions"
                 label="Requisitioner"
                 variant="outlined"
                 density="comfortable"
-                placeholder="Name of person requesting"
+                placeholder="Type or select name"
+                clearable
+                @update:modelValue="
+                  (val) => onComboboxUpdate('requisitioner', val, requisitionerOptions)
+                "
               />
+              <!-- Saved custom entries — shown as chips with X delete button -->
+              <!-- WHY: We cannot use a custom item slot in Vuetify 4 combobox safely -->
+              <div
+                v-if="getSavedOptions('requisitioner').length"
+                class="d-flex flex-wrap ga-1 mt-1"
+              >
+                <v-chip
+                  v-for="opt in getSavedOptions('requisitioner')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
-            <!-- Conducted By -->
+            <!-- Conducted By — same pattern as Requisitioner -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.conducted_by"
+                :items="conductedByOptions"
                 label="Conducted By"
                 variant="outlined"
                 density="comfortable"
-                placeholder="Technician name"
+                placeholder="Type or select name"
+                clearable
+                @update:modelValue="
+                  (val) => onComboboxUpdate('conducted_by', val, conductedByOptions)
+                "
               />
+              <div v-if="getSavedOptions('conducted_by').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('conducted_by')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <!-- Problem Encountered -->
@@ -301,18 +376,30 @@
               />
             </v-col>
 
-            <!-- Diagnosis & Action Taken -->
+            <!-- Diagnosis & Action Taken — plain string combobox -->
             <v-col cols="12">
-              <v-textarea
+              <v-combobox
                 v-model="form.work_details"
+                :items="diagnosisOptions"
                 label="Diagnosis & Action Taken"
                 variant="outlined"
                 density="comfortable"
-                rows="3"
-                placeholder="Describe diagnosis and actions taken"
+                placeholder="Type or select diagnosis / action taken"
+                clearable
+                @update:modelValue="(val) => onComboboxUpdate('diagnosis', val, diagnosisOptions)"
               />
+              <div v-if="getSavedOptions('diagnosis').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('diagnosis')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
-
             <!-- Remarks -->
             <v-col cols="12">
               <v-textarea
@@ -325,15 +412,19 @@
               />
             </v-col>
 
-            <!-- Mileage — Vehicle only -->
+            <!-- Mileage — Vehicle only — comma-formatted display -->
+            <!-- WHAT: Binds to mileageDisplay (the formatted text) not form.mileage (the number) -->
+            <!-- WHY: type="number" cannot show commas — we handle formatting manually -->
             <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
               <v-text-field
-                v-model="form.mileage"
+                v-model="mileageDisplay"
                 label="Mileage (km)"
                 variant="outlined"
                 density="comfortable"
-                type="number"
-                placeholder="e.g. 43117"
+                placeholder="e.g. 12,000"
+                autocomplete="off"
+                @input="onMileageInput"
+                @blur="onMileageBlur"
               />
             </v-col>
 
@@ -349,28 +440,32 @@
               />
             </v-col>
 
-            <!-- Cost -->
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.cost"
+                v-model="costDisplay"
                 label="Cost (₱)"
                 variant="outlined"
                 density="comfortable"
-                type="number"
-                placeholder="e.g. 1500"
+                placeholder="e.g. 1,250"
+                autocomplete="off"
+                @input="onCostInput"
+                @blur="onCostBlur"
               />
             </v-col>
 
-            <!-- Date Completed (auto-filled, editable) -->
-            <v-col v-if="form.status === 'Completed'" cols="12" sm="6">
+            <!-- Date Completed — always visible, auto-fills when status = Completed -->
+            <!-- WHY: User may want to enter date completed even before changing status -->
+            <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.date_completed"
-                label="Date Completed"
-                type="date"
+                v-model="dateCompletedDisplay"
+                label="Date Completed (MM/DD/YY)"
                 variant="outlined"
                 density="comfortable"
-                hint="Auto-filled when status is set to Completed"
+                placeholder="e.g. 04/24/26"
+                autocomplete="off"
+                hint="Auto-fills when status is set to Completed. You can change it."
                 persistent-hint
+                @input="onDateCompletedInput"
               />
             </v-col>
 
@@ -539,6 +634,56 @@ async function quickUpdateStatus(item, newStatus) {
 // ---- DATA ----
 const requests = ref([])
 const assetList = ref([])
+
+// WHY: These hold the dropdown options loaded from Supabase.
+// WHAT: Each item looks like: { id, category, value }
+// HOW: We filter by category when building each dropdown list.
+const dropdownOptions = ref([])
+
+// WHAT: Loads all dropdown options from the database in one call.
+// WHY: One call for all categories is cheaper than 3 separate calls.
+async function fetchDropdownOptions() {
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .select('*')
+    .order('value', { ascending: true })
+  if (!error) dropdownOptions.value = data
+}
+
+// WHAT: Saves a new option to the database.
+// WHY: When the user types a name that doesn't exist, this saves it
+//      so it appears in the dropdown the next time the form opens.
+// CONNECTS TO: addDropdownOption is called by onComboboxUpdate
+async function addDropdownOption(category, value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return
+
+  // Prevent duplicates — check if this value already exists for this category
+  const exists = dropdownOptions.value.some(
+    (o) => o.category === category && o.value.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (exists) return
+
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .insert({ category, value: trimmed })
+    .select()
+    .single()
+
+  // Add to local list immediately so the UI updates without a full re-fetch
+  if (!error && data) dropdownOptions.value.push(data)
+}
+
+// WHAT: Deletes one option from the database by its ID.
+// WHY: Users need to remove incorrect or outdated entries.
+// CONNECTS TO: Called by the X button in each combobox item slot
+async function deleteDropdownOption(id) {
+  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
+  if (!error) {
+    // Remove from local list immediately — no re-fetch needed
+    dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
+  }
+}
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
@@ -588,17 +733,135 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 const headers = [
   { title: 'Request No.', key: 'request_no', sortable: true },
   { title: 'Date Start', key: 'date_of_request', sortable: true },
-
   { title: 'Asset Type', key: 'asset_type', sortable: true },
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Requisitioner', key: 'requisitioner', sortable: false },
   { title: 'Problem', key: 'problem_details', sortable: false },
+  { title: 'Diagnosis & Action Taken', key: 'work_details', sortable: false },
+  { title: 'Remarks', key: 'remarks', sortable: false },
+  // WHY: Mileage and Cost were in the form and database but had no table column
+  { title: 'Mileage (km)', key: 'mileage', sortable: false },
+  { title: 'Cost (₱)', key: 'cost', sortable: false },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Date Completed', key: 'date_completed', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
 ]
 
 // ---- COMPUTED ----
+
+// WHAT: The default names always available in Requisitioner and Conducted By.
+// WHY: These people are always in the list even before anyone adds custom entries.
+const DEFAULT_REQUISITIONERS = [
+  'Adonis Mateo',
+  'Albert Hora',
+  'Allan M. Albero',
+  'Ariel Ancheta',
+  'Christopher F. Sison',
+  'Concordio P. Lacre',
+  'Jonathan Bahian',
+  'Marlon Solis',
+  'Ranold Marco',
+  'Rene R. Longakit',
+  'Retchie Capangpangan',
+  'Rodrigo P. Villa',
+  'Timoteo V. Umpad',
+  'Verjelyn Capilitan',
+]
+
+// WHAT: The default options for Diagnosis & Action Taken.
+const DEFAULT_DIAGNOSIS = [
+  'Changed Engine Oil (7l) And 1 Pc. Oil Filter',
+  'Stencilled Engine And Chassis Number',
+  'Replaced Brake Pads',
+  'Changed 7l Engine Oil, 1 Pc. Oil Filter',
+  'Cleaned And Adjusted Brake',
+  'Replaced Fuel Filter',
+  'Repaired Grass Cutter',
+  'Replaced Battery 11 Plates',
+  'Changed Engine Oil (6l)',
+  'Repacked Fr Wheel Bearing (Left & Right)',
+  'Replaced Wiper Blade',
+  'Replaced Primary Clutch Assembly',
+  'Replaced Timing Belt',
+  'Checked, Cleaned And Adjusted Brake; Fr & Rr Brakes',
+  'Replaced Solenoid Switch',
+  'Replaced Alternator Belt',
+  'Cleaned And Adjusted Rr Brake',
+  'Cleaned And Adjusted Brake - Front & Rear',
+  'Repaired Horn; Re-wired',
+  'Replaced Brake Lining',
+  'Replaced Engine Support (Left And Right)',
+  'Replaced 2 Pcs. Tires',
+  'Replaced 2 Pcs. Cross Bearing',
+  'Replaced 2 Pcs. Tie Rod End (Left And Right)',
+  'Replaced 2 Pcs. Rack End Rod (Left And Right)',
+  'Replaced Tensioner Brg. (2 Pcs.)',
+  'Replaced Air Cleaner Element',
+  'Replaced 1 Set Brake Pad',
+  'Repacked Wheel Bearing (Left And Right)',
+]
+
+// WHAT: Builds the Requisitioner dropdown list.
+// HOW: Gets saved entries from Supabase, merges with defaults,
+//      removes duplicates so the same name never appears twice.
+// WHAT: Returns plain string arrays for the combobox items.
+// WHY: Vuetify 4's virtual scroll crashes when we use object arrays
+//      with a custom v-slot:item. Plain strings are stable and reliable.
+// The delete UI is handled separately below each field.
+
+const requisitionerOptions = computed(() => {
+  const savedValues = dropdownOptions.value
+    .filter((o) => o.category === 'requisitioner')
+    .map((o) => o.value)
+  const filteredDefaults = DEFAULT_REQUISITIONERS.filter(
+    (d) => !savedValues.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...savedValues, ...filteredDefaults]
+})
+
+// WHAT: Default options for the Conducted By field.
+// WHY: These are the shops and technicians who actually perform the work.
+//      This is a completely separate list from Requisitioner.
+const DEFAULT_CONDUCTED_BY = [
+  'Vergilio P. Villamor Jr.',
+  'Redline Auto Parts',
+  'Torralba Metalcraft, Inc.',
+  'Gv Diesel Calibration Center',
+  'Toyota Butuan',
+  'Oro Asian Automotive Center Corp.',
+  'Allan Velmote',
+]
+
+// WHAT: Builds the Conducted By dropdown list.
+// HOW: Same pattern as Requisitioner — saved entries from Supabase first,
+//      then defaults that aren't already saved.
+const conductedByOptions = computed(() => {
+  const savedValues = dropdownOptions.value
+    .filter((o) => o.category === 'conducted_by')
+    .map((o) => o.value)
+  const filteredDefaults = DEFAULT_CONDUCTED_BY.filter(
+    (d) => !savedValues.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...savedValues, ...filteredDefaults]
+})
+
+// WHAT: Same logic for Diagnosis & Action Taken.
+const diagnosisOptions = computed(() => {
+  const savedValues = dropdownOptions.value
+    .filter((o) => o.category === 'diagnosis')
+    .map((o) => o.value)
+  const filteredDefaults = DEFAULT_DIAGNOSIS.filter(
+    (d) => !savedValues.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...savedValues, ...filteredDefaults]
+})
+// WHAT: Returns only the SAVED (non-default) entries for a given category.
+// WHY: These are shown below the combobox with an X button to delete them.
+// CONNECTS TO: The "Manage saved options" chip display in the template.
+function getSavedOptions(category) {
+  return dropdownOptions.value.filter((o) => o.category === category)
+}
+
 const inProgressCount = computed(
   () => requests.value.filter((r) => r.status === 'In Progress').length,
 )
@@ -607,7 +870,7 @@ const cancelledCount = computed(() => requests.value.filter((r) => r.status === 
 
 // Grouped asset items for dropdown
 const groupedAssetItems = computed(() => {
-  const vehicles = assetList.value.filter((a) => a.asset_type === 'Vehicle')
+  const vehicles = assetList.value.filter((a) => a.asset_type?.toLowerCase() === 'vehicle')
   const nonVehicles = assetList.value.filter((a) => a.asset_type === 'Non-Vehicular')
   const items = []
 
@@ -745,9 +1008,149 @@ async function generateRequestNo() {
   const nextSequence = String(lastSequence + 1).padStart(3, '0')
   return `${year}-${nextSequence}`
 }
+// WHAT: Called when user picks or types a value in any combobox.
+// WHY: v-combobox fires this for both existing picks AND new typed values.
+//      If the value is new (not in the list), we save it to Supabase.
+// RECEIVES:
+//   category — which field this is ('requisitioner', 'conducted_by', 'diagnosis')
+//   value    — what the user typed or selected (may be a string or an object)
+//   options  — the current list for that field (used to check for duplicates)
+
+async function onComboboxUpdate(category, value, optionsRef) {
+  // Guard against undefined/null — Vuetify can fire this during render cycles
+  if (value === undefined || value === null) return
+
+  // Items are now plain strings, so value is always a string
+  const text = String(value).trim()
+  if (!text) return
+
+  // Check if this value already exists in the current options list
+  const exists = optionsRef.value.some((o) => o.toLowerCase() === text.toLowerCase())
+
+  // Only save if it's genuinely new — not in defaults AND not already saved
+  if (!exists) {
+    await addDropdownOption(category, text)
+  }
+}
+
+// WHAT: Converts user-typed dates into ISO format (YYYY-MM-DD) for the database.
+// WHY: The database needs YYYY-MM-DD. Users type in multiple formats.
+// HANDLES:
+//   MM/DD/YY    → e.g. 04/24/26
+//   MM/DD/YYYY  → e.g. 04/24/2026
+//   MM-DD-YY    → e.g. 04-24-26
+//   DD-Mon-YYYY → e.g. 10-Jan-2023
+function parseFlexibleDate(val) {
+  if (!val) return null
+  const s = val.trim()
+
+  // Handle: 10-Jan-2023 or 10-Jan-23 format
+  const monthNames = [
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+  ]
+  const alphaMatch = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/)
+  if (alphaMatch) {
+    const dd = alphaMatch[1].padStart(2, '0')
+    const mo = monthNames.indexOf(alphaMatch[2].toLowerCase())
+    if (mo === -1) return null
+    const mm = String(mo + 1).padStart(2, '0')
+    const yy = alphaMatch[3].length === 2 ? '20' + alphaMatch[3] : alphaMatch[3]
+    const iso = `${yy}-${mm}-${dd}`
+    return isNaN(new Date(iso).getTime()) ? null : iso
+  }
+
+  // Handle: MM/DD/YY, MM/DD/YYYY, MM-DD-YY, MM-DD-YYYY
+  const parts = s.split(/[/-]/)
+  if (parts.length === 3) {
+    const mm = parts[0].padStart(2, '0')
+    const dd = parts[1].padStart(2, '0')
+    const yy = parts[2].length === 2 ? '20' + parts[2] : parts[2]
+    const iso = `${yy}-${mm}-${dd}`
+    return isNaN(new Date(iso).getTime()) ? null : iso
+  }
+
+  return null
+}
+
+// WHAT: Display variables for comma-formatted number fields.
+// WHY: We can't use type="number" for comma display,
+//      so we use a plain text field + these separate display refs.
+// CONNECTS TO: mileageDisplay is bound to the Mileage text field in the template.
+//              form.value.mileage holds the real number for saving to the database.
+const mileageDisplay = ref('')
+const costDisplay = ref('')
+
+// WHAT: Called every time the user types in the Mileage field.
+// HOW: Strips commas first, converts to a number, then reformats with commas for display.
+function onMileageInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (raw === '' || isNaN(raw)) {
+    form.value.mileage = null
+  } else {
+    form.value.mileage = Number(raw)
+    mileageDisplay.value = Number(raw).toLocaleString()
+  }
+}
+// WHAT: Called when user leaves (clicks away from) the Mileage field.
+// WHY: Ensures the number is properly formatted after the user finishes typing.
+function onMileageBlur() {
+  mileageDisplay.value = form.value.mileage ? Number(form.value.mileage).toLocaleString() : ''
+}
+
+// Same input/blur pattern for the Cost field.
+function onCostInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (raw === '' || isNaN(raw)) {
+    form.value.cost = null
+  } else {
+    form.value.cost = Number(raw)
+    costDisplay.value = Number(raw).toLocaleString()
+  }
+}
+function onCostBlur() {
+  costDisplay.value = form.value.cost ? Number(form.value.cost).toLocaleString() : ''
+}
+
+// WHAT: Display variables for date fields (what the user sees and types).
+// WHY: The form stores ISO dates (YYYY-MM-DD) for the database,
+//      but the user sees and types MM/DD/YY.
+const dateOfRequestDisplay = ref('')
+const dateCompletedDisplay = ref('')
+
+// WHAT: Called every time the user types in the Date of Request field.
+function onDateOfRequestInput(e) {
+  const val = e.target.value
+  dateOfRequestDisplay.value = val
+  const iso = parseFlexibleDate(val)
+  // Only update the real value if the date is valid
+  if (iso) form.value.date_of_request = iso
+}
+
+// WHAT: Called every time the user types in the Date Completed field.
+function onDateCompletedInput(e) {
+  const val = e.target.value
+  dateCompletedDisplay.value = val
+  const iso = parseFlexibleDate(val)
+  if (iso) form.value.date_completed = iso
+}
+
 function onStatusChange(status) {
   if (status === 'Completed' && !form.value.date_completed) {
-    form.value.date_completed = new Date().toISOString().split('T')[0]
+    const todayIso = new Date().toISOString().split('T')[0]
+    form.value.date_completed = todayIso
+    // WHY: Also sync the display field so the user sees the auto-filled date
+    dateCompletedDisplay.value = formatDate(todayIso)
   }
 }
 // ---- METHODS ----
@@ -779,16 +1182,28 @@ async function fetchAssets() {
   if (!error) assetList.value = data
 }
 
+// WHAT: Placeholder for Add Year — expand later when year-specific logic is needed.
+function addYear() {
+  showSnackbar('Add Year feature coming soon', 'info')
+}
+
 async function openAddDialog() {
   isEditing.value = false
   errors.value = {}
   selectedAssetType.value = 'Vehicle'
   const requestNo = await generateRequestNo()
+  const todayIso = new Date().toISOString().split('T')[0]
   form.value = {
     ...defaultForm,
     request_no: requestNo,
-    date_of_request: new Date().toISOString().split('T')[0],
+    date_of_request: todayIso,
   }
+  // WHY: Sync display fields so the date and number inputs show correctly
+  //      when a new form opens. Without this they would be blank or stale.
+  mileageDisplay.value = ''
+  costDisplay.value = ''
+  dateOfRequestDisplay.value = formatDate(todayIso)
+  dateCompletedDisplay.value = ''
   formDialog.value = true
 }
 
@@ -798,6 +1213,12 @@ function openEditDialog(request) {
   form.value = { ...request }
   selectedAssetType.value = request.asset_type || 'Vehicle'
   errors.value = {}
+  // WHY: When editing an existing record, pre-fill the display fields
+  //      with the already-saved values so the user sees them correctly.
+  mileageDisplay.value = request.mileage ? Number(request.mileage).toLocaleString() : ''
+  costDisplay.value = request.cost ? Number(request.cost).toLocaleString() : ''
+  dateOfRequestDisplay.value = request.date_of_request ? formatDate(request.date_of_request) : ''
+  dateCompletedDisplay.value = request.date_completed ? formatDate(request.date_completed) : ''
   formDialog.value = true
 }
 
@@ -834,7 +1255,6 @@ async function saveRequest() {
   const payload = {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
-
     date_completed: form.value.date_completed || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,
@@ -847,6 +1267,9 @@ async function saveRequest() {
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
+    // WHY: remarks was missing from the payload — it was saved in the form
+    //      but never sent to Supabase, so it always disappeared after saving.
+    remarks: form.value.remarks || null,
   }
 
   if (isEditing.value) {
@@ -900,7 +1323,10 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
+  // WHY: All three must load before the form opens.
+  //      fetchDropdownOptions loads the saved names for the comboboxes.
   await fetchAssets()
+  await fetchDropdownOptions()
   await fetchRequests()
 })
 </script>

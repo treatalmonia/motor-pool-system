@@ -5,7 +5,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h2 class="text-h5 font-weight-bold">Preventive Maintenance Log</h2>
+            <h2 class="text-h5 font-weight-bold">Schedule of Maintenance</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
               Track scheduled and completed preventive maintenance
             </p>

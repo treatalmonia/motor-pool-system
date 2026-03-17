@@ -1435,11 +1435,11 @@ async function fetchRecords() {
 }
 
 async function fetchAssets() {
-  const { data, error } = await supabase
-    .from('vehicles')
-    .select('id, asset_name, asset_type')
-    .eq('status', 'Active')
-    .order('asset_type')
+ const { data, error } = await supabase
+  .from('vehicles')
+  .select('id, asset_name, asset_type')
+  .ilike('status', 'active')   // WHY: ilike = case-insensitive match, catches 'active', 'Active', 'ACTIVE'
+  .order('asset_type')
   if (!error) assetList.value = data
 }
 

@@ -13,14 +13,18 @@
 
           <!-- WHAT: Year management controls — matches VehicleRequestsView layout -->
           <div class="d-flex align-center ga-2 flex-wrap">
+            <!-- WHY: item-title/item-value needed because yearOptions now returns
+                 objects to support the "All Years" (null value) option -->
             <v-select
               v-model="yearFilter"
               :items="yearOptions"
+              item-title="title"
+              item-value="value"
               label="Year"
               variant="outlined"
               density="compact"
               hide-details
-              style="min-width: 100px"
+              style="min-width: 120px"
             />
             <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
 
@@ -923,10 +927,21 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
-const yearFilter = ref(new Date().getFullYear())
+// WHY: Default is null = "All Years" so the user sees everything on first load.
+//      Previously defaulted to current year which hid older records — this caused
+//      the problem where records from the previous year were invisible.
+const yearFilter = ref(null)
+
 const yearOptions = computed(() => {
   const cur = new Date().getFullYear()
-  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+  // WHY: null value = "All Years" — must be first so it's the default visible option
+  return [
+    { title: 'All Years', value: null },
+    { title: String(cur + 1), value: cur + 1 },
+    { title: String(cur), value: cur },
+    { title: String(cur - 1), value: cur - 1 },
+    { title: String(cur - 2), value: cur - 2 },
+  ]
 })
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
@@ -1174,7 +1189,9 @@ const filteredRecords = computed(() => {
         r.remarks?.toLowerCase().includes(s),
     )
   }
-  if (yearFilter.value) {
+  // WHY: Only filter by year if a specific year is selected.
+  //      null means "All Years" — skip the filter entirely.
+  if (yearFilter.value !== null) {
     result = result.filter((r) => {
       const yr = r.date_performed ? new Date(r.date_performed + 'T00:00:00').getFullYear() : null
       return yr === yearFilter.value

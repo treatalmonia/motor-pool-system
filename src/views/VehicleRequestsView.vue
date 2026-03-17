@@ -690,10 +690,17 @@ const saving = ref(false)
 const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('All')
-const yearFilter = ref(new Date().getFullYear())
+const yearFilter = ref(null)
+
 const yearOptions = computed(() => {
   const cur = new Date().getFullYear()
-  return [cur - 2, cur - 1, cur, cur + 1].reverse()
+  return [
+    { title: 'All Years', value: null },
+    { title: String(cur + 1), value: cur + 1 },
+    { title: String(cur), value: cur },
+    { title: String(cur - 1), value: cur - 1 },
+    { title: String(cur - 2), value: cur - 2 },
+  ]
 })
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
@@ -928,7 +935,7 @@ const filteredRequests = computed(() => {
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
-  if (yearFilter.value) {
+   if (yearFilter.value !== null) {
     result = result.filter((r) => {
       const yr = r.date_of_request ? new Date(r.date_of_request + 'T00:00:00').getFullYear() : null
       return yr === yearFilter.value

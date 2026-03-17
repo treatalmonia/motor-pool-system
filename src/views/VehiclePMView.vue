@@ -978,10 +978,17 @@ function onAssetSelected(assetId) {
   if (asset) {
     selectedAssetType.value = asset.asset_type
     form.value.asset_type = asset.asset_type
-    if (asset.asset_type === 'Non-Vehicular') {
+   if (asset.asset_type === 'Non-Vehicular') {
+      // WHY: Clear KM fields — non-vehicular assets only use month intervals
       form.value.km_between_service = null
       form.value.km_between_service_display = ''
-      form.value.months_between_service = 6
+      // WHY: If a service type is already selected, re-run onServiceTypeSelected
+      //      so it picks up the correct non-vehicular interval (months_between_service_nv)
+      if (form.value.service_type) {
+        onServiceTypeSelected(form.value.service_type)
+      } else {
+        form.value.months_between_service = null
+      }
       recalculateNextDueDate()
     }
     if (form.value.service_type) onServiceTypeSelected(form.value.service_type)
@@ -1000,10 +1007,13 @@ function onServiceTypeSelected(serviceTypeName) {
       }
       if (match.months_between_service)
         form.value.months_between_service = match.months_between_service
-    } else {
+        } else {
+      // WHY: Non-vehicular — clear KM fields, use only the month interval
       form.value.km_between_service = null
       form.value.km_between_service_display = ''
-      form.value.months_between_service = match.months_between_service || 6
+      // WHY: Use months_between_service_nv — the dedicated non-vehicular interval
+      //      set in PMProgramView. This replaces the old hardcoded 6-month default.
+      form.value.months_between_service = match.months_between_service_nv || null
     }
     recalculateNextDueDate()
     recalculateNextDueOdometer()

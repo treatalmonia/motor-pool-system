@@ -105,31 +105,16 @@
             <span v-else class="text-medium-emphasis">—</span>
           </template>
 
-          <!-- Interval Type chips -->
-          <template v-slot:item.interval_type="{ item }">
-            <div class="d-flex ga-1 flex-wrap">
-              <v-chip v-if="item.km_between_service" color="info" size="small" variant="tonal">
-                <v-icon start size="12">mdi-speedometer</v-icon>
-                KM
-              </v-chip>
-              <v-chip
-                v-if="item.months_between_service"
-                color="success"
-                size="small"
-                variant="tonal"
-              >
-                <v-icon start size="12">mdi-calendar</v-icon>
-                Month
-              </v-chip>
-              <v-chip
-                v-if="!item.km_between_service && !item.months_between_service"
-                color="grey"
-                size="small"
-                variant="tonal"
-              >
-                Manual
-              </v-chip>
-            </div>
+          <!-- WHY: Interval Type column removed per requirements. -->
+
+          <!-- Months Between Service (Non-Vehicular) -->
+          <!-- WHAT: Displays the non-vehicular month interval for this service type -->
+          <template v-slot:item.months_between_service_nv="{ item }">
+            <span v-if="item.months_between_service_nv">
+              {{ item.months_between_service_nv }}
+              {{ item.months_between_service_nv === 1 ? 'month' : 'months' }}
+            </span>
+            <span v-else class="text-medium-emphasis">—</span>
           </template>
 
           <!-- Actions -->
@@ -190,7 +175,7 @@
               />
             </v-col>
 
-            <!-- Months Between Service -->
+            <!-- Months Between Service — Vehicle only -->
             <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.months_between_service"
@@ -199,7 +184,24 @@
                 density="comfortable"
                 type="number"
                 placeholder="e.g. 6"
-                hint="Leave blank if not month-based"
+                hint="Vehicle only. Leave blank if not month-based."
+                persistent-hint
+              />
+            </v-col>
+
+            <!-- Months Between Service (Non-Vehicular) — separate editable field -->
+            <!-- WHAT: Controls how often non-vehicular assets need this service -->
+            <!-- WHY: Non-vehicular assets don't use KM — months is their only interval -->
+            <!-- Previously hardcoded to 6 everywhere — now editable per service type -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.months_between_service_nv"
+                label="Months Between Service (Non-Vehicular)"
+                variant="outlined"
+                density="comfortable"
+                type="number"
+                placeholder="e.g. 6"
+                hint="Non-vehicular only. Leave blank if not applicable."
                 persistent-hint
               />
             </v-col>
@@ -284,6 +286,8 @@ const defaultForm = {
   service_type: '',
   km_between_service: null,
   months_between_service: null,
+  // WHY: New field — stores the month interval specifically for non-vehicular assets
+  months_between_service_nv: null,
   remarks: '',
 }
 const form = ref({ ...defaultForm })
@@ -295,9 +299,13 @@ const snackbar = ref({ show: false, message: '', color: 'success' })
 // ---- TABLE HEADERS ----
 const headers = [
   { title: 'Service Type', key: 'service_type', sortable: true },
+  // WHY: These two columns are for VEHICLES only
   { title: 'KM Between Service', key: 'km_between_service', sortable: true },
   { title: 'Months Between Service', key: 'months_between_service', sortable: true },
-  { title: 'Interval Type', key: 'interval_type', sortable: false },
+  // WHY: New column — separate interval specifically for non-vehicular assets.
+  //      Previously this was hardcoded to 6 months everywhere.
+  //      Now the user controls it here per service type.
+  { title: 'Months Between Service (Non-Vehicular)', key: 'months_between_service_nv', sortable: true },
   { title: 'Remarks', key: 'remarks', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
 ]
@@ -381,6 +389,11 @@ async function saveServiceType() {
     months_between_service:
       form.value.months_between_service !== '' && form.value.months_between_service !== undefined
         ? Number(form.value.months_between_service)
+        : null,
+    // WHY: Save the non-vehicular month interval separately
+    months_between_service_nv:
+      form.value.months_between_service_nv !== '' && form.value.months_between_service_nv !== undefined
+        ? Number(form.value.months_between_service_nv)
         : null,
     remarks: form.value.remarks,
   }

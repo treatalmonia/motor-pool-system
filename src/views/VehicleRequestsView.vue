@@ -286,7 +286,9 @@
               />
             </v-col>
 
-            <!-- Asset (grouped dropdown) -->
+            <!-- Asset — grouped dropdown (Vehicles + Non-Vehicular) -->
+            <!-- WHY: :item-props with a function crashes Vuetify 4 virtual scroll. -->
+            <!-- disabled and class are now set directly on each item object instead. -->
             <v-col cols="12">
               <v-select
                 v-model="form.vehicle_id"
@@ -297,7 +299,6 @@
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle_id"
-                :item-props="itemProps"
                 @update:modelValue="onAssetSelected"
               />
             </v-col>
@@ -790,7 +791,7 @@ const DEFAULT_DIAGNOSIS = [
   'Cleaned And Adjusted Brake - Front & Rear',
   'Repaired Horn; Re-wired',
   'Replaced Brake Lining',
-  'Replaced Engine Support (Left And Right)',      
+  'Replaced Engine Support (Left And Right)',
   'Replaced 2 Pcs. Tires',
   'Replaced 2 Pcs. Cross Bearing',
   'Replaced 2 Pcs. Tie Rod End (Left And Right)',
@@ -868,26 +869,33 @@ const inProgressCount = computed(
 const completedCount = computed(() => requests.value.filter((r) => r.status === 'Completed').length)
 const cancelledCount = computed(() => requests.value.filter((r) => r.status === 'Cancelled').length)
 
-// Grouped asset items for dropdown
+// WHAT: Builds the grouped asset dropdown list for the form.
+// WHY: Assets are grouped into Vehicles and Non-Vehicular with visual headers.
+// HOW: Header items have disabled:true and class set directly on the object.
+//      This is the Vuetify 4 stable way — using :item-props with a function
+//      causes render crashes with virtual scroll.
 const groupedAssetItems = computed(() => {
-  const vehicles = assetList.value.filter((a) => a.asset_type?.toLowerCase() === 'vehicle')
-  const nonVehicles = assetList.value.filter((a) => a.asset_type === 'Non-Vehicular')
+  const vehicles = assetList.value.filter(
+    (a) => a.asset_type?.toLowerCase() === 'vehicle'
+  )
+  const nonVehicles = assetList.value.filter(
+    (a) => a.asset_type === 'Non-Vehicular'
+  )
   const items = []
 
   if (vehicles.length > 0) {
+    // Header row — disabled so user cannot select it, styled as a label
     items.push({
-      title: '── VEHICLE ──',
+      title: '── VEHICLES ──',
       value: '__header_vehicle__',
-      assetType: null,
-      isHeader: true,
+      disabled: true,
+      class: 'text-primary font-weight-bold text-caption',
     })
     vehicles.forEach((v) =>
       items.push({
         title: v.asset_name,
         value: v.id,
-        assetType: v.asset_type,
-        isHeader: false,
-      }),
+      })
     )
   }
 
@@ -895,29 +903,19 @@ const groupedAssetItems = computed(() => {
     items.push({
       title: '── NON-VEHICULAR ──',
       value: '__header_nonvehicle__',
-      assetType: null,
-      isHeader: true,
+      disabled: true,
+      class: 'text-primary font-weight-bold text-caption',
     })
     nonVehicles.forEach((v) =>
       items.push({
         title: v.asset_name,
         value: v.id,
-        assetType: v.asset_type,
-        isHeader: false,
-      }),
+      })
     )
   }
 
   return items
 })
-
-// Item props — disable header items so they can't be selected
-function itemProps(item) {
-  return {
-    disabled: item.isHeader,
-    class: item.isHeader ? 'text-primary font-weight-bold text-caption' : '',
-  }
-}
 
 const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
 
@@ -978,7 +976,7 @@ function getAssetName(assetId) {
 }
 
 function onAssetSelected(assetId) {
-  // Ignore header items
+  // WHY: Guard against header items being selected accidentally
   if (!assetId || assetId === '__header_vehicle__' || assetId === '__header_nonvehicle__') {
     form.value.vehicle_id = null
     return
@@ -987,10 +985,13 @@ function onAssetSelected(assetId) {
   if (asset) {
     selectedAssetType.value = asset.asset_type
     form.value.asset_type = asset.asset_type
+    // WHY: Reset numeric fields when switching assets so stale values don't carry over
     form.value.mileage = null
     form.value.hours_of_operation = null
+    mileageDisplay.value = ''
   }
 }
+
 
 async function generateRequestNo() {
   const year = new Date().getFullYear()

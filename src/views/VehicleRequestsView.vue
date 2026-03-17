@@ -790,7 +790,7 @@ const DEFAULT_DIAGNOSIS = [
   'Cleaned And Adjusted Brake - Front & Rear',
   'Repaired Horn; Re-wired',
   'Replaced Brake Lining',
-  'Replaced Engine Support (Left And Right)',
+  'Replaced Engine Support (Left And Right)',      
   'Replaced 2 Pcs. Tires',
   'Replaced 2 Pcs. Cross Bearing',
   'Replaced 2 Pcs. Tie Rod End (Left And Right)',

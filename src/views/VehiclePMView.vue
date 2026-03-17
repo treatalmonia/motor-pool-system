@@ -449,18 +449,7 @@
                 @input="onDateAccomplishedInput"
               />
             </v-col>
-            <!-- Current Odometer -->
-            <v-col cols="12" sm="6" v-if="selectedAssetType === 'Vehicle'">
-              <v-text-field
-                v-model="form.current_odometer_display"
-                label="Current Odometer (km)"
-                variant="outlined"
-                density="comfortable"
-                placeholder="e.g. 45,000"
-                @input="onCurrentOdometerInput"
-                @blur="onCurrentOdometerBlur"
-              />
-            </v-col>
+            <!-- WHY: Current Odometer removed — redundant with Previous Odometer -->
             <!-- Remarks -->
             <v-col cols="12">
               <v-textarea
@@ -570,16 +559,7 @@
                     }}
                   </p>
                 </v-col>
-                <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
-                  <p class="text-caption text-medium-emphasis">Current Odometer</p>
-                  <p class="text-body-2 font-weight-medium">
-                    {{
-                      selectedRecord.current_odometer
-                        ? Number(selectedRecord.current_odometer).toLocaleString() + ' km'
-                        : '—'
-                    }}
-                  </p>
-                </v-col>
+                <!-- WHY: Current Odometer removed — redundant with Previous Odometer -->
                 <v-col cols="6" v-if="selectedRecord.asset_type === 'Non-Vehicular'">
                   <p class="text-caption text-medium-emphasis">Hours of Operation</p>
                   <p class="text-body-2 font-weight-medium">
@@ -676,9 +656,214 @@
       </v-card>
     </v-dialog>
 
+    <!-- ── Schedule Next Maintenance Modal ── -->
+    <!-- WHAT: Opens automatically when a record is marked as Completed -->
+    <!-- WHY: Lets the user schedule the next maintenance cycle without -->
+    <!--      manually opening Add PM Record and re-entering everything -->
+    <v-dialog v-model="scheduleNextDialog" max-width="650" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <span class="text-h6">Schedule Next Maintenance</span>
+        </v-card-title>
+
+        <v-card-subtitle class="px-4 pb-2">
+          <!-- Read-only chips showing what asset and service this is for -->
+          <div class="d-flex ga-2 flex-wrap mt-1">
+            <v-chip color="primary" size="small" variant="tonal">
+              <v-icon start size="12">mdi-car</v-icon>
+              {{ scheduleNextForm.asset_name }}
+            </v-chip>
+            <v-chip color="info" size="small" variant="tonal">
+              <v-icon start size="12">mdi-wrench</v-icon>
+              {{ scheduleNextForm.service_type_label }}
+            </v-chip>
+            <v-chip color="success" size="small" variant="tonal">
+              <v-icon start size="12">mdi-calendar-clock</v-icon>
+              Scheduled
+            </v-chip>
+          </div>
+        </v-card-subtitle>
+
+        <v-card-text class="pa-4">
+          <v-row>
+
+            <!-- Last Date Performed — pre-filled from date_accomplished of completed record -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.date_performed_display"
+                label="Last Date Performed (MM/DD/YY)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 04/24/26"
+                autocomplete="off"
+                hint="Auto-filled from the completed record. You can change it."
+                persistent-hint
+                @input="onSNDatePerformedInput"
+              />
+            </v-col>
+
+            <!-- Previous Odometer — Vehicle only -->
+            <v-col cols="12" sm="6" v-if="scheduleNextForm.asset_type === 'Vehicle'">
+              <v-text-field
+                v-model="scheduleNextForm.odometer_display"
+                label="Previous Odometer (km)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 43,117"
+                autocomplete="off"
+                @input="onSNOdometerInput"
+                @blur="onSNOdometerBlur"
+              />
+            </v-col>
+
+            <!-- Hours of Operation — Non-Vehicular only -->
+            <v-col cols="12" sm="6" v-if="scheduleNextForm.asset_type === 'Non-Vehicular'">
+              <v-text-field
+                v-model="scheduleNextForm.hours_of_operation"
+                label="Hours of Operation"
+                variant="outlined"
+                density="comfortable"
+                type="number"
+                placeholder="e.g. 250"
+              />
+            </v-col>
+
+            <!-- Months Between Service -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.months_between_service"
+                label="Months Between Service"
+                variant="outlined"
+                density="comfortable"
+                readonly
+                bg-color="grey-lighten-4"
+                hint="From PM Program settings."
+                persistent-hint
+              />
+            </v-col>
+
+            <!-- KM Between Service — Vehicle only -->
+            <v-col cols="12" sm="6" v-if="scheduleNextForm.asset_type === 'Vehicle'">
+              <v-text-field
+                v-model="scheduleNextForm.km_between_service_display"
+                label="KM Between Service"
+                variant="outlined"
+                density="comfortable"
+                readonly
+                bg-color="grey-lighten-4"
+              />
+            </v-col>
+
+            <!-- Next Due Date — auto-calculated, editable -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.next_due_date_display"
+                label="Next Due Date (MM/DD/YY)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 10/24/26"
+                autocomplete="off"
+                @input="onSNNextDueDateInput"
+              />
+            </v-col>
+
+            <!-- Next Due Odometer — Vehicle only, auto-calculated, editable -->
+            <v-col cols="12" sm="6" v-if="scheduleNextForm.asset_type === 'Vehicle'">
+              <v-text-field
+                v-model="scheduleNextForm.next_due_odometer_display"
+                label="Next Due Odometer (km)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 51,117"
+                autocomplete="off"
+                @input="onSNNextDueOdometerInput"
+                @blur="onSNNextDueOdometerBlur"
+              />
+            </v-col>
+
+            <v-col cols="12"><v-divider /></v-col>
+
+            <!-- Conducted By -->
+            <v-col cols="12" sm="6">
+              <v-combobox
+                v-model="scheduleNextForm.conducted_by"
+                :items="conductedByOptions"
+                label="Conducted By"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Type or select name"
+                clearable
+                @update:modelValue="onConductedByUpdate"
+              />
+              <div v-if="getSavedOptions('conducted_by').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('conducted_by')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
+            </v-col>
+
+            <!-- Cost -->
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.cost_display"
+                label="Cost (₱)"
+                variant="outlined"
+                density="comfortable"
+                placeholder="e.g. 1,500"
+                autocomplete="off"
+                @input="onSNCostInput"
+                @blur="onSNCostBlur"
+              />
+            </v-col>
+
+            <!-- Remarks -->
+            <v-col cols="12">
+              <v-textarea
+                v-model="scheduleNextForm.remarks"
+                label="Remarks"
+                variant="outlined"
+                density="comfortable"
+                rows="2"
+                placeholder="Additional notes"
+              />
+            </v-col>
+
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <!-- Skip — keeps the Completed status, just doesn't create next record -->
+          <v-btn
+            variant="text"
+            @click="scheduleNextDialog = false"
+          >
+            Skip for now
+          </v-btn>
+          <!-- Schedule Next — saves the new Scheduled record -->
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="savingNext"
+            prepend-icon="mdi-calendar-plus"
+            @click="saveScheduleNext"
+          >
+            Schedule Next
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
+
       :color="snackbar.color"
       location="bottom right"
       :timeout="3000"
@@ -755,6 +940,42 @@ const deleteDialog = ref(false)
 const isEditing = ref(false)
 const selectedRecord = ref(null)
 
+// WHAT: Controls the "Schedule Next Maintenance" modal.
+// WHY: Separate from formDialog so it doesn't conflict with the Add/Edit form.
+const scheduleNextDialog = ref(false)
+
+// WHAT: Holds the data for the next scheduled record being created.
+// WHY: Separate from form so the main form stays clean.
+const scheduleNextForm = ref({
+  // Read-only display info (shown to user but not editable)
+  asset_name: '',
+  service_type_label: '',
+  asset_type: 'Vehicle',
+
+  // Editable fields
+  vehicle_id: null,
+  service_type: '',
+  service_type_id: null,
+  date_performed: '',          // Last Date Performed = date_accomplished of completed record
+  date_performed_display: '',
+  odometer: null,              // Previous Odometer
+  odometer_display: '',
+  hours_of_operation: null,
+  km_between_service: null,
+  km_between_service_display: '',
+  months_between_service: null,
+  next_due_date: '',
+  next_due_date_display: '',
+  next_due_odometer: null,
+  next_due_odometer_display: '',
+  cost: null,
+  cost_display: '',
+  conducted_by: '',
+  remarks: '',
+  status: 'Scheduled',
+})
+const savingNext = ref(false)
+
 // ---- FORM ----
 const defaultForm = {
   vehicle_id: null,
@@ -778,8 +999,8 @@ const defaultForm = {
   cost: null,
   cost_display: '',
   status: 'Scheduled',
-  current_odometer: null,
-  current_odometer_display: '',
+  // WHY: current_odometer removed — it was redundant with odometer (Previous Odometer).
+  //      Both fields captured the same value with confusing different names.
   remarks: '',
   date_accomplished: null,
 }
@@ -995,17 +1216,18 @@ function onOdometerBlur() {
   form.value.odometer_display = form.value.odometer ? formatNumber(form.value.odometer) : ''
 }
 
-function onCurrentOdometerInput(e) {
-  const raw = e.target.value.replace(/,/g, '')
-  if (!isNaN(raw) && raw !== '') {
-    form.value.current_odometer = Number(raw)
-  }
-}
-function onCurrentOdometerBlur() {
-  form.value.current_odometer_display = form.value.current_odometer
-    ? formatNumber(form.value.current_odometer)
-    : ''
-}
+//current odometer removed — redundant with odometer (Previous Odometer)
+// function onCurrentOdometerInput(e) {
+//   const raw = e.target.value.replace(/,/g, '')
+//   if (!isNaN(raw) && raw !== '') {
+//     form.value.current_odometer = Number(raw)
+//   }
+// }
+// function onCurrentOdometerBlur() {
+//   form.value.current_odometer_display = form.value.current_odometer
+//     ? formatNumber(form.value.current_odometer)
+//     : ''
+// }
 
 function onDatePerformedInput(e) {
   const val = e.target.value
@@ -1240,7 +1462,7 @@ function openEditDialog(record) {
       ? formatNumber(record.next_due_odometer)
       : '',
     cost_display: record.cost ? formatNumber(record.cost) : '',
-    current_odometer_display: record.current_odometer ? formatNumber(record.current_odometer) : '',
+    // WHY: current_odometer_display removed — field no longer exists in the form
   }
   errors.value = {}
   // WHY: Sync the date accomplished display field with the saved record value
@@ -1285,7 +1507,6 @@ async function saveRecord() {
     asset_type: form.value.asset_type,
     service_type: form.value.service_type,
     date_performed: form.value.date_performed,
-
     odometer: selectedAssetType.value === 'Vehicle' ? form.value.odometer || null : null,
     hours_of_operation:
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
@@ -1298,8 +1519,7 @@ async function saveRecord() {
     conducted_by: form.value.conducted_by,
     cost: form.value.cost || null,
     status: form.value.status,
-    current_odometer:
-      selectedAssetType.value === 'Vehicle' ? form.value.current_odometer || null : null,
+    // WHY: current_odometer removed from payload — field no longer used
     remarks: form.value.remarks,
   }
 
@@ -1338,18 +1558,242 @@ async function deleteRecord() {
   deleting.value = false
 }
 
+// WHAT: Computes Next Due Date given a date string and months interval.
+// WHY: Reused by both the main form and the Schedule Next modal.
+function computeNextDueDate(isoDate, months) {
+  if (!isoDate || !months) return ''
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const next = new Date(year, month - 1 + Number(months), day)
+  const y = next.getFullYear()
+  const m = String(next.getMonth() + 1).padStart(2, '0')
+  const d = String(next.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// WHAT: Opens the Schedule Next Maintenance modal pre-filled from the
+//       record that was just marked as Completed.
+// WHY: Saves the user from manually opening Add PM Record and re-entering
+//      all the same asset/service info for the next cycle.
+async function openScheduleNextDialog(completedRecord) {
+  // Step 1: Check if a Scheduled record already exists for this asset + service type
+  // WHY: Prevent duplicate scheduled records
+  const { data: existing } = await supabase
+    .from('vehicle_pm_log')
+    .select('id')
+    .eq('vehicle_id', completedRecord.vehicle_id)
+    .eq('service_type', completedRecord.service_type)
+    .eq('status', 'Scheduled')
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    showSnackbar(
+      '⚠️ A scheduled record already exists for this service. Add manually if needed.',
+      'warning'
+    )
+    return
+  }
+
+  // Step 2: Get the service type intervals from the PM program
+  const serviceTypeRecord = pmServiceTypes.value.find(
+    (s) => s.service_type === completedRecord.service_type
+  )
+
+  // Step 3: Determine asset type for this record
+  const assetType = completedRecord.asset_type || 'Vehicle'
+  const isVehicle = assetType === 'Vehicle'
+
+  // Step 4: Last Date Performed = Date Completed of the record just marked done
+  const lastDatePerformed = completedRecord.date_accomplished || today
+
+  // Step 5: Get the correct months interval
+  // For non-vehicular, use months_between_service_nv; for vehicle use months_between_service
+  const monthsInterval = isVehicle
+    ? serviceTypeRecord?.months_between_service || completedRecord.months_between_service || null
+    : serviceTypeRecord?.months_between_service_nv || completedRecord.months_between_service || null
+
+  const kmInterval = isVehicle
+    ? serviceTypeRecord?.km_between_service || completedRecord.km_between_service || null
+    : null
+
+  // Step 6: Calculate Next Due Date
+  const nextDueDate = computeNextDueDate(lastDatePerformed, monthsInterval)
+
+  // Step 7: Calculate Next Due Odometer (vehicle only)
+  const lastOdometer = completedRecord.odometer || null
+  const nextDueOdometer =
+    isVehicle && lastOdometer && kmInterval
+      ? Number(lastOdometer) + Number(kmInterval)
+      : null
+
+  // Step 8: Pre-fill the schedule next form
+  scheduleNextForm.value = {
+    // Read-only display
+    asset_name: completedRecord.asset_name || getAssetName(completedRecord.vehicle_id),
+    service_type_label: completedRecord.service_type,
+    asset_type: assetType,
+
+    // Data fields
+    vehicle_id: completedRecord.vehicle_id,
+    service_type: completedRecord.service_type,
+    service_type_id: completedRecord.service_type_id || null,
+    date_performed: lastDatePerformed,
+    date_performed_display: formatDate(lastDatePerformed),
+    odometer: lastOdometer,
+    odometer_display: lastOdometer ? formatNumber(lastOdometer) : '',
+    hours_of_operation: completedRecord.hours_of_operation || null,
+    km_between_service: kmInterval,
+    km_between_service_display: kmInterval ? formatNumber(kmInterval) : '',
+    months_between_service: monthsInterval,
+    next_due_date: nextDueDate,
+    next_due_date_display: nextDueDate ? formatDate(nextDueDate) : '',
+    next_due_odometer: nextDueOdometer,
+    next_due_odometer_display: nextDueOdometer ? formatNumber(nextDueOdometer) : '',
+    cost: null,
+    cost_display: '',
+    conducted_by: '',
+    remarks: '',
+    status: 'Scheduled',
+  }
+
+  scheduleNextDialog.value = true
+}
+
+// WHAT: Saves the new scheduled record to the database.
+// WHY: Called when user clicks "Schedule Next" in the modal.
+async function saveScheduleNext() {
+  savingNext.value = true
+
+  const isVehicle = scheduleNextForm.value.asset_type === 'Vehicle'
+
+  const payload = {
+    vehicle_id: scheduleNextForm.value.vehicle_id,
+    asset_type: scheduleNextForm.value.asset_type,
+    service_type: scheduleNextForm.value.service_type,
+    service_type_id: scheduleNextForm.value.service_type_id || null,
+    date_performed: scheduleNextForm.value.date_performed || null,
+    odometer: isVehicle ? scheduleNextForm.value.odometer || null : null,
+    hours_of_operation: !isVehicle ? scheduleNextForm.value.hours_of_operation || null : null,
+    km_between_service: isVehicle ? scheduleNextForm.value.km_between_service || null : null,
+    months_between_service: scheduleNextForm.value.months_between_service || null,
+    next_due_date: scheduleNextForm.value.next_due_date || null,
+    next_due_odometer: isVehicle ? scheduleNextForm.value.next_due_odometer || null : null,
+    conducted_by: scheduleNextForm.value.conducted_by || null,
+    cost: scheduleNextForm.value.cost || null,
+    remarks: scheduleNextForm.value.remarks || null,
+    status: 'Scheduled',
+    date_accomplished: null,
+  }
+
+  const { error } = await supabase.from('vehicle_pm_log').insert(payload)
+
+  if (error) {
+    showSnackbar('Failed to schedule next maintenance', 'error')
+  } else {
+    showSnackbar('Next maintenance scheduled successfully', 'success')
+    scheduleNextDialog.value = false
+    await fetchRecords()
+  }
+
+  savingNext.value = false
+}
+
+// WHAT: Input handlers for the Schedule Next modal fields.
+// WHY: Same comma-format and date-parse behavior as the main form.
+function onSNDatePerformedInput(e) {
+  const val = e.target.value
+  scheduleNextForm.value.date_performed_display = val
+  const iso = parseFlexibleDate(val)
+  if (iso) {
+    scheduleNextForm.value.date_performed = iso
+    // Recalculate next due date when last date performed changes
+    const nextDue = computeNextDueDate(iso, scheduleNextForm.value.months_between_service)
+    if (nextDue) {
+      scheduleNextForm.value.next_due_date = nextDue
+      scheduleNextForm.value.next_due_date_display = formatDate(nextDue)
+    }
+  }
+}
+
+function onSNNextDueDateInput(e) {
+  const val = e.target.value
+  scheduleNextForm.value.next_due_date_display = val
+  const iso = parseFlexibleDate(val)
+  if (iso) scheduleNextForm.value.next_due_date = iso
+}
+
+function onSNOdometerInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (!isNaN(raw) && raw !== '') {
+    scheduleNextForm.value.odometer = Number(raw)
+    // Recalculate next due odometer
+    if (scheduleNextForm.value.km_between_service) {
+      scheduleNextForm.value.next_due_odometer =
+        Number(raw) + Number(scheduleNextForm.value.km_between_service)
+      scheduleNextForm.value.next_due_odometer_display = formatNumber(
+        scheduleNextForm.value.next_due_odometer
+      )
+    }
+  }
+}
+
+function onSNOdometerBlur() {
+  scheduleNextForm.value.odometer_display = scheduleNextForm.value.odometer
+    ? formatNumber(scheduleNextForm.value.odometer)
+    : ''
+}
+
+function onSNNextDueOdometerInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (!isNaN(raw) && raw !== '') {
+    scheduleNextForm.value.next_due_odometer = Number(raw)
+  }
+}
+
+function onSNNextDueOdometerBlur() {
+  scheduleNextForm.value.next_due_odometer_display = scheduleNextForm.value.next_due_odometer
+    ? formatNumber(scheduleNextForm.value.next_due_odometer)
+    : ''
+}
+
+function onSNCostInput(e) {
+  const raw = e.target.value.replace(/,/g, '')
+  if (!isNaN(raw) && raw !== '') {
+    scheduleNextForm.value.cost = Number(raw)
+    scheduleNextForm.value.cost_display = formatNumber(Number(raw))
+  }
+}
+
+function onSNCostBlur() {
+  scheduleNextForm.value.cost_display = scheduleNextForm.value.cost
+    ? formatNumber(scheduleNextForm.value.cost)
+    : ''
+}
+
 async function quickUpdateStatus(item, newStatus) {
   const payload = { status: newStatus }
+
+  // WHY: Auto-fill date_accomplished when marking as Completed
   if (newStatus === 'Completed' && !item.date_accomplished) {
-    payload.date_accomplished = new Date().toISOString().split('T')[0]
+    payload.date_accomplished = today
   }
+
   const { error } = await supabase.from('vehicle_pm_log').update(payload).eq('id', item.id)
+
   if (error) {
     showSnackbar('Failed to update status', 'error')
-  } else {
-    item.status = newStatus
-    if (payload.date_accomplished) item.date_accomplished = payload.date_accomplished
-    showSnackbar('Status updated', 'success')
+    return
+  }
+
+  // Update the local record immediately so the table reflects the change
+  item.status = newStatus
+  if (payload.date_accomplished) item.date_accomplished = payload.date_accomplished
+  showSnackbar('Status updated', 'success')
+
+  // WHY: Only open the Schedule Next modal when marking as Completed.
+  //      Other status changes (Scheduled, Cancelled) don't need it.
+  if (newStatus === 'Completed') {
+    // Pass the updated item (with date_accomplished set) to the modal
+    await openScheduleNextDialog({ ...item, date_accomplished: payload.date_accomplished || item.date_accomplished })
   }
 }
 

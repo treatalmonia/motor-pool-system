@@ -11,9 +11,23 @@
             </p>
           </div>
 
-          <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            Add PM Record
-          </v-btn>
+          <!-- WHAT: Year management controls — matches VehicleRequestsView layout -->
+          <div class="d-flex align-center ga-2 flex-wrap">
+            <v-select
+              v-model="yearFilter"
+              :items="yearOptions"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="min-width: 100px"
+            />
+            <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
+
+            <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
+              Add PM Record
+            </v-btn>
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -252,7 +266,8 @@
 
         <v-card-text class="pa-4">
           <v-row>
-            <!-- Asset -->
+            <!-- Asset — grouped dropdown, disabled/class set on items directly -->
+            <!-- WHY: :item-props function causes Vuetify 4 virtual scroll crash -->
             <v-col cols="12" sm="6">
               <v-select
                 v-model="form.vehicle_id"
@@ -263,7 +278,6 @@
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle_id"
-                :item-props="itemProps"
                 @update:modelValue="onAssetSelected"
               />
             </v-col>
@@ -366,15 +380,32 @@
 
             <v-col cols="12"><v-divider /></v-col>
 
-            <!-- Conducted By -->
+            <!-- Conducted By — searchable combobox with auto-save -->
+            <!-- WHAT: Same behavior as VehicleRequestsView Conducted By field -->
+            <!-- WHY: Saved entries persist in Supabase dropdown_options table -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.conducted_by"
+                :items="conductedByOptions"
                 label="Conducted By"
                 variant="outlined"
                 density="comfortable"
-                placeholder="Technician name"
+                placeholder="Type or select name"
+                clearable
+                @update:modelValue="onConductedByUpdate"
               />
+              <!-- Saved custom entries with delete button -->
+              <div v-if="getSavedOptions('conducted_by').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('conducted_by')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <!-- Cost -->
@@ -402,16 +433,20 @@
               />
             </v-col>
 
-            <!-- Date Completed -->
+            <!-- Date Completed — MM/DD/YY typed input -->
+            <!-- WHAT: User can type date in MM/DD/YY, MM-DD-YY, or DD-Mon-YYYY format -->
+            <!-- WHY: Matches the date input style used in VehicleRequestsView -->
             <v-col cols="12" sm="6">
               <v-text-field
-                v-model="form.date_accomplished"
-                label="Date Completed"
+                v-model="dateAccomplishedDisplay"
+                label="Date Completed (MM/DD/YY)"
                 variant="outlined"
                 density="comfortable"
-                type="date"
+                placeholder="e.g. 04/24/26"
+                autocomplete="off"
                 hint="Auto-fills when status is set to Completed. You can change it."
                 persistent-hint
+                @input="onDateAccomplishedInput"
               />
             </v-col>
             <!-- Current Odometer -->
@@ -664,6 +699,40 @@ import { supabase } from '../supabase'
 const pmRecords = ref([])
 const assetList = ref([])
 const pmServiceTypes = ref([])
+
+// WHY: Stores dropdown options for Conducted By, loaded from Supabase.
+// CONNECTS TO: Same 'dropdown_options' table used by VehicleRequestsView.
+const dropdownOptions = ref([])
+
+async function fetchDropdownOptions() {
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .select('*')
+    .order('value', { ascending: true })
+  if (!error) dropdownOptions.value = data
+}
+
+async function addDropdownOption(category, value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return
+  const exists = dropdownOptions.value.some(
+    (o) => o.category === category && o.value.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (exists) return
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .insert({ category, value: trimmed })
+    .select()
+    .single()
+  if (!error && data) dropdownOptions.value.push(data)
+}
+
+async function deleteDropdownOption(id) {
+  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
+  if (!error) {
+    dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
+  }
+}
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
@@ -717,6 +786,59 @@ const defaultForm = {
 const form = ref({ ...defaultForm })
 const errors = ref({})
 
+// WHAT: Display variables for MM/DD/YY date fields.
+// WHY: The form stores ISO dates (YYYY-MM-DD) for the database,
+//      but the user types and sees MM/DD/YY.
+const dateAccomplishedDisplay = ref('')
+
+// WHAT: Converts user-typed dates into ISO format for the database.
+// HANDLES: MM/DD/YY, MM/DD/YYYY, MM-DD-YY, DD-Mon-YYYY (e.g. 10-Jan-2023)
+function parseFlexibleDate(val) {
+  if (!val) return null
+  const s = val.trim()
+  const monthNames = [
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+  ]
+  const alphaMatch = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/)
+  if (alphaMatch) {
+    const dd = alphaMatch[1].padStart(2, '0')
+    const mo = monthNames.indexOf(alphaMatch[2].toLowerCase())
+    if (mo === -1) return null
+    const mm = String(mo + 1).padStart(2, '0')
+    const yy = alphaMatch[3].length === 2 ? '20' + alphaMatch[3] : alphaMatch[3]
+    const iso = `${yy}-${mm}-${dd}`
+    return isNaN(new Date(iso).getTime()) ? null : iso
+  }
+  const parts = s.split(/[/-]/)
+  if (parts.length === 3) {
+    const mm = parts[0].padStart(2, '0')
+    const dd = parts[1].padStart(2, '0')
+    const yy = parts[2].length === 2 ? '20' + parts[2] : parts[2]
+    const iso = `${yy}-${mm}-${dd}`
+    return isNaN(new Date(iso).getTime()) ? null : iso
+  }
+  return null
+}
+
+// WHAT: Called every time the user types in the Date Completed field.
+function onDateAccomplishedInput(e) {
+  const val = e.target.value
+  dateAccomplishedDisplay.value = val
+  const iso = parseFlexibleDate(val)
+  if (iso) form.value.date_accomplished = iso
+}
+
 // ---- SNACKBAR ----
 const snackbar = ref({ show: false, message: '', color: 'success' })
 
@@ -735,6 +857,47 @@ const headers = [
 ]
 
 // ---- COMPUTED ----
+
+// WHAT: Default technicians/shops for Conducted By in the PM module.
+// WHY: Same list used in VehicleRequestsView Conducted By field.
+const DEFAULT_CONDUCTED_BY = [
+  'Vergilio P. Villamor Jr.',
+  'Redline Auto Parts',
+  'Torralba Metalcraft, Inc.',
+  'Gv Diesel Calibration Center',
+  'Toyota Butuan',
+  'Oro Asian Automotive Center Corp.',
+  'Allan Velmote',
+]
+
+// WHAT: Builds the Conducted By dropdown list — saved entries first, then defaults.
+const conductedByOptions = computed(() => {
+  const savedValues = dropdownOptions.value
+    .filter((o) => o.category === 'conducted_by')
+    .map((o) => o.value)
+  const filteredDefaults = DEFAULT_CONDUCTED_BY.filter(
+    (d) => !savedValues.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...savedValues, ...filteredDefaults]
+})
+
+// WHAT: Returns only the saved (non-default) entries for the delete chip list.
+function getSavedOptions(category) {
+  return dropdownOptions.value.filter((o) => o.category === category)
+}
+
+// WHAT: Called when user picks or types in the Conducted By combobox.
+// WHY: If the value is new, saves it to Supabase for next time.
+async function onConductedByUpdate(value) {
+  if (value === undefined || value === null) return
+  const text = String(value).trim()
+  if (!text) return
+  const exists = conductedByOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
+  if (!exists) {
+    await addDropdownOption('conducted_by', text)
+  }
+}
+
 const scheduledCount = computed(
   () => pmRecords.value.filter((r) => r.status === 'Scheduled').length,
 )
@@ -745,6 +908,8 @@ const overdueCount = computed(() => pmRecords.value.filter((r) => isOverdue(r)).
 const serviceTypeNames = computed(() => pmServiceTypes.value.map((s) => s.service_type))
 const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
 
+// WHY: disabled and class are set directly on item objects instead of using
+//      :item-props function — prevents Vuetify 4 virtual scroll render crash.
 const groupedAssetItems = computed(() => {
   const vehicles = assetList.value.filter((a) => a.asset_type === 'Vehicle')
   const nonVehicles = assetList.value.filter((a) => a.asset_type === 'Non-Vehicular')
@@ -752,35 +917,21 @@ const groupedAssetItems = computed(() => {
 
   if (vehicles.length > 0) {
     items.push({
-      title: '── VEHICLE ──',
+      title: '── VEHICLES ──',
       value: '__header_vehicle__',
-      assetType: null,
-      isHeader: true,
+      disabled: true,
+      class: 'text-primary font-weight-bold text-caption',
     })
-    vehicles.forEach((v) =>
-      items.push({
-        title: v.asset_name,
-        value: v.id,
-        assetType: v.asset_type,
-        isHeader: false,
-      }),
-    )
+    vehicles.forEach((v) => items.push({ title: v.asset_name, value: v.id }))
   }
   if (nonVehicles.length > 0) {
     items.push({
       title: '── NON-VEHICULAR ──',
       value: '__header_nonvehicle__',
-      assetType: null,
-      isHeader: true,
+      disabled: true,
+      class: 'text-primary font-weight-bold text-caption',
     })
-    nonVehicles.forEach((v) =>
-      items.push({
-        title: v.asset_name,
-        value: v.id,
-        assetType: v.asset_type,
-        isHeader: false,
-      }),
-    )
+    nonVehicles.forEach((v) => items.push({ title: v.asset_name, value: v.id }))
   }
   return items
 })
@@ -914,14 +1065,16 @@ function onNextDueOdometerBlur() {
 function onStatusChange(newStatus) {
   if (newStatus === 'Completed' && !form.value.date_accomplished) {
     form.value.date_accomplished = today
+    // WHY: Also sync the display field so the user sees the auto-filled date
+    dateAccomplishedDisplay.value = formatDate(today)
   }
 }
-function itemProps(item) {
-  return {
-    disabled: item.isHeader,
-    class: item.isHeader ? 'text-primary font-weight-bold text-caption' : '',
-  }
-}
+// function itemProps(item) {
+//   return {
+//     disabled: item.isHeader,
+//     class: item.isHeader ? 'text-primary font-weight-bold text-caption' : '',
+//   }
+// }
 
 function isOverdue(record) {
   if (record.status === 'Completed' || record.status === 'Cancelled') return false
@@ -978,7 +1131,7 @@ function onAssetSelected(assetId) {
   if (asset) {
     selectedAssetType.value = asset.asset_type
     form.value.asset_type = asset.asset_type
-   if (asset.asset_type === 'Non-Vehicular') {
+    if (asset.asset_type === 'Non-Vehicular') {
       // WHY: Clear KM fields — non-vehicular assets only use month intervals
       form.value.km_between_service = null
       form.value.km_between_service_display = ''
@@ -1007,7 +1160,7 @@ function onServiceTypeSelected(serviceTypeName) {
       }
       if (match.months_between_service)
         form.value.months_between_service = match.months_between_service
-        } else {
+    } else {
       // WHY: Non-vehicular — clear KM fields, use only the month interval
       form.value.km_between_service = null
       form.value.km_between_service_display = ''
@@ -1056,11 +1209,18 @@ async function fetchPMServiceTypes() {
   if (!error) pmServiceTypes.value = data
 }
 
+// WHAT: Placeholder for Add Year button.
+function addYear() {
+  showSnackbar('Add Year feature coming soon', 'info')
+}
+
 function openAddDialog() {
   isEditing.value = false
   selectedAssetType.value = 'Vehicle'
   form.value = { ...defaultForm, date_performed: today }
   errors.value = {}
+  // WHY: Reset the date completed display when opening a fresh form
+  dateAccomplishedDisplay.value = ''
   formDialog.value = true
 }
 
@@ -1083,6 +1243,10 @@ function openEditDialog(record) {
     current_odometer_display: record.current_odometer ? formatNumber(record.current_odometer) : '',
   }
   errors.value = {}
+  // WHY: Sync the date accomplished display field with the saved record value
+  dateAccomplishedDisplay.value = record.date_accomplished
+    ? formatDate(record.date_accomplished)
+    : ''
   formDialog.value = true
 }
 
@@ -1196,6 +1360,7 @@ function showSnackbar(message, color = 'success') {
 // ---- LIFECYCLE ----
 onMounted(async () => {
   await fetchAssets()
+  await fetchDropdownOptions()
   await fetchPMServiceTypes()
   await fetchRecords()
 })

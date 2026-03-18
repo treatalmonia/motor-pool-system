@@ -761,7 +761,7 @@ thead .ml-sticky-l2 {
 /* WHY: Background color removed per requirements */
 
 .ml-task-name {
-  display: block;
+  display: block;  
   font-weight: 600;
   color: var(--c-text);
 }
@@ -771,6 +771,7 @@ thead .ml-sticky-l2 {
   color: var(--c-muted);
   margin-top: 1px;
 }
+
 
 /* Month cells */
 .ml-td-month {

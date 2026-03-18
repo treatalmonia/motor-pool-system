@@ -36,56 +36,49 @@
       </v-col>
     </v-row>
 
-    <!-- Summary Cards -->
+<!-- Summary Cards — date-based status for Scheduled records only -->
+    <!-- WHY: Shows actionable maintenance urgency, not just database status counts -->
     <v-row class="mb-4">
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="48">
-              <v-icon>mdi-calendar-check</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Records</p>
-              <p class="text-h5 font-weight-bold">{{ pmRecords.length }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="info" variant="tonal" size="48">
-              <v-icon>mdi-calendar-clock</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Scheduled</p>
-              <p class="text-h5 font-weight-bold">{{ scheduledCount }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="success" variant="tonal" size="48">
-              <v-icon>mdi-check-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Completed</p>
-              <p class="text-h5 font-weight-bold">{{ completedCount }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
+      <!-- Overdue Maintenance — past the due date -->
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
             <v-avatar color="error" variant="tonal" size="48">
               <v-icon>mdi-alert-circle</v-icon>
             </v-avatar>
             <div>
-              <p class="text-medium-emphasis text-body-2">Overdue</p>
-              <p class="text-h5 font-weight-bold">{{ overdueCount }}</p>
+              <p class="text-medium-emphasis text-body-2">Overdue Maintenance</p>
+              <p class="text-h5 font-weight-bold text-error">{{ overdueMaintenanceCount }}</p>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Due Today — exactly on the due date -->
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="d-flex align-center ga-3">
+            <v-avatar color="primary" variant="tonal" size="48">
+              <v-icon>mdi-calendar-today</v-icon>
+            </v-avatar>
+            <div>
+              <p class="text-medium-emphasis text-body-2">Due Today</p>
+              <p class="text-h5 font-weight-bold text-primary">{{ dueTodayCount }}</p>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Due Soon — within 2 days of due date -->
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="d-flex align-center ga-3">
+            <v-avatar color="warning" variant="tonal" size="48">
+              <v-icon>mdi-clock-alert</v-icon>
+            </v-avatar>
+            <div>
+              <p class="text-medium-emphasis text-body-2">Due Soon</p>
+              <p class="text-h5 font-weight-bold text-warning">{{ dueSoonCount }}</p>
             </div>
           </v-card-text>
         </v-card>
@@ -187,11 +180,32 @@
               <!-- Date Completed -->
               <td>{{ formatDate(item.date_accomplished) || '—' }}</td>
 
-              <!-- Next Due Date -->
+              <!-- Next Due Date — colored by date-based status -->
+              <!-- WHY: Red = Overdue, Blue = Due Today, Yellow = Due Soon -->
               <td>
-                <span :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
-                  {{ formatDate(item.next_due_date) || '—' }}
+                <span
+                  v-if="item.next_due_date"
+                  :class="{
+                    'text-error font-weight-bold': getDateStatus(item) === 'overdue',
+                    'text-primary font-weight-bold': getDateStatus(item) === 'due-today',
+                    'text-warning font-weight-bold': getDateStatus(item) === 'due-soon',
+                  }"
+                >
+                  {{ formatDate(item.next_due_date) }}
+                  <!-- Small badge label next to the date -->
+                  <v-chip
+                    v-if="getDateStatus(item) !== 'ok'"
+                    :color="dateStatusColor(item)"
+                    size="x-small"
+                    variant="tonal"
+                    class="ml-1"
+                  >
+                    {{ getDateStatus(item) === 'overdue' ? 'Overdue'
+                       : getDateStatus(item) === 'due-today' ? 'Due Today'
+                       : 'Due Soon' }}
+                  </v-chip>
                 </span>
+                <span v-else class="text-medium-emphasis">—</span>
               </td>
 
               <!-- Next Due Odo -->
@@ -1134,13 +1148,49 @@ async function onConductedByUpdate(value) {
   }
 }
 
-const scheduledCount = computed(
-  () => pmRecords.value.filter((r) => r.status === 'Scheduled').length,
+// WHY: scheduledCount removed — replaced by date-based status summary cards
+
+// WHY: completedCount removed — replaced by date-based status summary cards
+// WHY: overdueCount removed — replaced by overdueMaintenanceCount (date-based)
+
+// ── New date-based status logic ──
+// WHAT: Computes a visual status for each Scheduled record based on next_due_date.
+// WHY: The database status (Scheduled/Completed/Cancelled) is different from
+//      the visual urgency status (Overdue/Due Today/Due Soon/OK).
+// RULES:
+//   1 day AFTER next_due_date  → 'overdue'   (Red)
+//   Exactly ON next_due_date   → 'due-today' (Blue)
+//   2 days BEFORE next_due_date → 'due-soon'  (Yellow)
+//   Anything else              → 'ok'
+
+function getDateStatus(record) {
+  // Only Scheduled records have a meaningful due status
+  if (record.status !== 'Scheduled') return 'ok'
+  if (!record.next_due_date) return 'ok'
+
+  const now = new Date(today)
+  const due = new Date(record.next_due_date + 'T00:00:00')
+
+  // Difference in whole days (positive = future, negative = past)
+  const diffDays = Math.round((due - now) / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'overdue'    // Past due date
+  if (diffDays === 0) return 'due-today' // Exactly today
+  if (diffDays <= 2) return 'due-soon'   // Within 2 days
+  return 'ok'
+}
+
+// WHAT: Summary card counts — only for Scheduled records
+// WHY: Completed and Cancelled records are not actionable
+const overdueMaintenanceCount = computed(() =>
+  pmRecords.value.filter((r) => getDateStatus(r) === 'overdue').length
 )
-const completedCount = computed(
-  () => pmRecords.value.filter((r) => r.status === 'Completed').length,
+const dueTodayCount = computed(() =>
+  pmRecords.value.filter((r) => getDateStatus(r) === 'due-today').length
 )
-const overdueCount = computed(() => pmRecords.value.filter((r) => isOverdue(r)).length)
+const dueSoonCount = computed(() =>
+  pmRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length
+)
 const serviceTypeNames = computed(() => pmServiceTypes.value.map((s) => s.service_type))
 const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
 
@@ -1329,6 +1379,16 @@ function statusColor(status) {
     Cancelled: 'grey',
   }
   return colors[status] || 'grey'
+}
+
+// WHAT: Returns a Vuetify color name for the date-based status.
+// CONNECTS TO: Used by the row highlight in the table.
+function dateStatusColor(record) {
+  const s = getDateStatus(record)
+  if (s === 'overdue') return 'error'
+  if (s === 'due-today') return 'primary'
+  if (s === 'due-soon') return 'warning'
+  return ''
 }
 
 function getAssetName(assetId) {
@@ -1635,14 +1695,23 @@ async function openScheduleNextDialog(completedRecord) {
   // Step 6: Calculate Next Due Date
   const nextDueDate = computeNextDueDate(lastDatePerformed, monthsInterval)
 
-  // Step 7: Calculate Next Due Odometer (vehicle only)
-  const lastOdometer = completedRecord.odometer || null
+    // Step 7: Previous Odometer for the NEXT record =
+  //         next_due_odometer of the record just completed.
+  // WHY: This keeps the maintenance chain continuous and logical.
+  //      The completed record's next_due_odometer is where the
+  //      next service was predicted to happen — so that becomes
+  //      the "Previous Odometer" when scheduling the next cycle.
+  const previousOdometerForNext = isVehicle
+    ? completedRecord.next_due_odometer || completedRecord.odometer || null
+    : null
+
+  // Step 8: Calculate Next Due Odometer for the new scheduled record
   const nextDueOdometer =
-    isVehicle && lastOdometer && kmInterval
-      ? Number(lastOdometer) + Number(kmInterval)
+    isVehicle && previousOdometerForNext && kmInterval
+      ? Number(previousOdometerForNext) + Number(kmInterval)
       : null
 
-  // Step 8: Pre-fill the schedule next form
+  // Step 9: Pre-fill the schedule next form
   scheduleNextForm.value = {
     // Read-only display
     asset_name: completedRecord.asset_name || getAssetName(completedRecord.vehicle_id),
@@ -1655,8 +1724,9 @@ async function openScheduleNextDialog(completedRecord) {
     service_type_id: completedRecord.service_type_id || null,
     date_performed: lastDatePerformed,
     date_performed_display: formatDate(lastDatePerformed),
-    odometer: lastOdometer,
-    odometer_display: lastOdometer ? formatNumber(lastOdometer) : '',
+    odometer: previousOdometerForNext,
+    odometer_display: previousOdometerForNext ? formatNumber(previousOdometerForNext) : '',
+
     hours_of_operation: completedRecord.hours_of_operation || null,
     km_between_service: kmInterval,
     km_between_service_display: kmInterval ? formatNumber(kmInterval) : '',

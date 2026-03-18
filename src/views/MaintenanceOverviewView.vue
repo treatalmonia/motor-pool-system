@@ -29,61 +29,8 @@
       </v-col>
     </v-row>
 
-    <!-- Summary Cards — consistent with other modules -->
-    <v-row class="mb-4">
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="success" variant="tonal" size="48">
-              <v-icon>mdi-check-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">OK</p>
-              <p class="text-h5 font-weight-bold">{{ summaryTotals.ok }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="warning" variant="tonal" size="48">
-              <v-icon>mdi-clock-alert</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Due Soon</p>
-              <p class="text-h5 font-weight-bold">{{ summaryTotals.soon }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="error" variant="tonal" size="48">
-              <v-icon>mdi-alert-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Overdue</p>
-              <p class="text-h5 font-weight-bold">{{ summaryTotals.overdue }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="grey" variant="tonal" size="48">
-              <v-icon>mdi-minus-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">No Record</p>
-              <p class="text-h5 font-weight-bold">{{ summaryTotals.none }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- WHY: Summary Cards removed — performance tasks are already logged
+         automatically when marked Completed in VehiclePMView and VehicleRequestsView -->
 
     <!-- Filters + Matrix Table -->
     <v-card rounded="lg" elevation="0" border>
@@ -147,16 +94,16 @@
                   >
                     {{ m.label }}
                   </th>
-                  <th class="ml-col-status">Status</th>
+                  <!-- WHY: Status column removed per requirements -->
                 </tr>
               </thead>
               <tbody>
                 <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
+                  <!-- WHY: rowStatusClass removed — no more overdue row color highlighting -->
                   <tr
                     v-for="(row, ri) in group.rows"
                     :key="row.service_type"
                     class="ml-row"
-                    :class="rowStatusClass(row)"
                   >
                     <!-- Vehicle cell — only on first row of group -->
                     <td
@@ -222,34 +169,23 @@
                       </button>
                       <span v-else class="ml-cell-empty">—</span>
                     </td>
-                    <!-- Status -->
-                    <td class="ml-td-status">
-                      <span class="ml-status-pill" :class="'ml-status-pill--' + statusKey(row)">
-                        {{ statusLabel(row) }}
-                      </span>
-                    </td>
+                    <!-- WHY: Status column removed per requirements -->
                   </tr>
                   <!-- Group separator -->
                   <tr v-if="gi < matrixGroups.length - 1" class="ml-row-sep">
-                    <td :colspan="months.length + 3"></td>
+                    <!-- WHY: colspan reduced by 1 — Status column removed -->
+                    <td :colspan="months.length + 2"></td>
                   </tr>
                 </template>
                 <tr v-if="matrixGroups.length === 0">
-                  <td :colspan="months.length + 3" class="ml-empty-row">No records found.</td>
+                  <td :colspan="months.length + 2" class="ml-empty-row">No records found.</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Legend -->
-        <div class="d-flex align-center ga-2 flex-wrap mt-3">
-          <span class="text-caption text-medium-emphasis font-weight-medium">Legend:</span>
-          <v-chip color="success" size="small" variant="tonal">OK</v-chip>
-          <v-chip color="warning" size="small" variant="tonal">Due Soon (30 days)</v-chip>
-          <v-chip color="error" size="small" variant="tonal">Overdue</v-chip>
-          <v-chip color="grey" size="small" variant="tonal">No Record</v-chip>
-        </div>
+        <!-- WHY: Legend removed per requirements -->
       </v-card-text>
     </v-card>
 
@@ -465,16 +401,7 @@ const matrixGroups = computed(() => {
   return groups
 })
 
-// ── Summary totals (across all shown groups) ──
-const summaryTotals = computed(() => {
-  const counts = { ok: 0, soon: 0, overdue: 0, none: 0 }
-  matrixGroups.value.forEach((g) => {
-    g.rows.forEach((row) => {
-      counts[statusKey(row)]++
-    })
-  })
-  return counts
-})
+// WHY: summaryTotals removed — summary cards were removed per requirements
 
 // ── Helpers ──
 function formatDate(dateStr) {
@@ -500,16 +427,9 @@ function statusKey(row) {
   return 'ok'
 }
 
-function statusLabel(row) {
-  return { overdue: 'Overdue', soon: 'Due Soon', ok: 'OK', none: 'No Record' }[statusKey(row)]
-}
+// WHY: statusLabel removed — Status column was removed per requirements
 
-function rowStatusClass(row) {
-  return {
-    'ml-row--overdue': statusKey(row) === 'overdue',
-    'ml-row--soon': statusKey(row) === 'soon',
-  }
-}
+// WHY: rowStatusClass removed — row highlight colors were removed per requirements
 
 // ── Fetch ──
 async function fetchAll() {
@@ -793,9 +713,10 @@ thead .ml-sticky-l2 {
 .ml-row:hover td {
   background: #f8f8f6;
 }
-.ml-row--overdue td {
+/* WHY: Overdue row color removed per requirements */
+/* .ml-row--overdue td {
   background: #fff8f8;
-}
+} */
 .ml-row--soon td {
   background: #fffef5;
 }
@@ -808,10 +729,10 @@ thead .ml-sticky-l2 {
 }
 
 /* Vehicle cell */
+/* WHY: Background color removed — table should be clean and consistent */
 .ml-td-vehicle {
   vertical-align: top !important;
   padding-top: 12px !important;
-  background: #fafaf8;
   border-right: 1.5px solid var(--c-border);
 }
 .ml-vehicle-badge {
@@ -837,9 +758,8 @@ thead .ml-sticky-l2 {
 }
 
 /* Task cell */
-.ml-td-task {
-  background: #fafaf8;
-}
+/* WHY: Background color removed per requirements */
+
 .ml-task-name {
   display: block;
   font-weight: 600;
@@ -1085,5 +1005,64 @@ thead .ml-sticky-l2 {
 .ml-fade-leave-to {
   opacity: 0;
   transform: scale(0.97);
+}
+
+/* ── Print ── */
+/* WHAT: When printing, hide everything except the matrix table */
+/* WHY: Print layout must be clean — only the data table is needed */
+@media print {
+  /* Hide all Vuetify chrome and page controls */
+  .v-navigation-drawer,
+  .v-app-bar,
+  .v-btn,
+  .v-select,
+  .v-card:not(.print-target),
+  .v-row:first-child,
+  .ml-overlay,
+  .v-snackbar {
+    display: none !important;
+  }
+
+  /* Show only the matrix scroll area */
+  .ml-matrix-wrap {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Make the matrix table fill the full print width */
+  .ml-matrix {
+    width: 100% !important;
+    font-size: 8px !important;
+    border-collapse: collapse !important;
+  }
+
+  /* Clean border styling for print */
+  .ml-matrix th,
+  .ml-matrix td {
+    border: 1px solid #333 !important;
+    padding: 3px 4px !important;
+  }
+
+  /* Remove sticky positioning — it doesn't work in print */
+  .ml-sticky-l,
+  .ml-sticky-l2 {
+    position: static !important;
+  }
+
+  /* Remove scroll container constraints */
+  .ml-matrix-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Remove row hover/highlight effects */
+  .ml-row:hover {
+    background: transparent !important;
+  }
+
+  /* Hide the detail popup overlay */
+  .ml-overlay {
+    display: none !important;
+  }
 }
 </style>

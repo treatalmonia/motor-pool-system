@@ -109,60 +109,8 @@
           </div>
         </div>
 
-        <div class="pmc-note">Note: Put the actual date of maintenance and name of the mechanic.</div>
-
-        <!-- Service-type based table -->
-        <table class="pmc-checklist-table">
-          <thead>
-            <tr>
-              <th class="col-no">No.</th>
-              <th class="col-stype">Service Type / Performance Task</th>
-              <th class="col-dperf">Date Performed</th>
-              <th class="col-ddue">Next Due Date</th>
-              <th class="col-conducted">Conducted By</th>
-              <th class="col-status">Status</th>
-              <th class="col-remarks">Remarks</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in pmRows" :key="idx">
-              <td class="data-cell text-center">{{ idx + 1 }}</td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.service_type }}</div>
-                <input v-else v-model="pmRows[idx].service_type" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.date_performed }}</div>
-                <input v-else v-model="pmRows[idx].date_performed" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.next_due_date }}</div>
-                <input v-else v-model="pmRows[idx].next_due_date" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.conducted_by }}</div>
-                <input v-else v-model="pmRows[idx].conducted_by" class="edit-input" />
-              </td>
-              <td class="data-cell text-center">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.status }}</div>
-                <input v-else v-model="pmRows[idx].status" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.remarks }}</div>
-                <textarea v-else v-model="pmRows[idx].remarks" class="cell-input" rows="2" />
-              </td>
-            </tr>
-            <tr v-for="n in Math.max(0, 5 - pmRows.length)" :key="'b'+n">
-              <td class="data-cell blank-row">&nbsp;</td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- WHY: Table removed from Page 1 per requirements.
+             The printable table is in Page 2 (Report Log) only. -->
 
         <div class="pmc-signatory-block">
           <div class="signatory-item">

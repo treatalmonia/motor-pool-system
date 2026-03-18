@@ -1164,7 +1164,7 @@ async function onConductedByUpdate(value) {
 //   Anything else              → 'ok'
 
 function getDateStatus(record) {
-  // Only Scheduled records have a meaningful due status
+  // Only Scheduled records have a meaningful due status 
   if (record.status !== 'Scheduled') return 'ok'
   if (!record.next_due_date) return 'ok'
 

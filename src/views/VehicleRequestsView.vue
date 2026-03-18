@@ -205,17 +205,13 @@
           <!-- WHAT: Formats mileage with commas and km unit in the table -->
           <!-- WHY: Raw numbers like 43117 are hard to read — 43,117 km is clear -->
           <template v-slot:item.mileage="{ item }">
-            <span v-if="item.mileage">
-              {{ Number(item.mileage).toLocaleString() }} km
-            </span>
+            <span v-if="item.mileage"> {{ Number(item.mileage).toLocaleString() }} km </span>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
 
           <!-- WHAT: Formats cost with peso sign and commas in the table -->
           <template v-slot:item.cost="{ item }">
-            <span v-if="item.cost">
-              ₱{{ Number(item.cost).toLocaleString() }}
-            </span>
+            <span v-if="item.cost"> ₱{{ Number(item.cost).toLocaleString() }} </span>
             <span v-else class="text-medium-emphasis">—</span>
           </template>
 
@@ -882,12 +878,8 @@ const cancelledCount = computed(() => requests.value.filter((r) => r.status === 
 //      This is the Vuetify 4 stable way — using :item-props with a function
 //      causes render crashes with virtual scroll.
 const groupedAssetItems = computed(() => {
-  const vehicles = assetList.value.filter(
-    (a) => a.asset_type?.toLowerCase() === 'vehicle'
-  )
-  const nonVehicles = assetList.value.filter(
-    (a) => a.asset_type === 'Non-Vehicular'
-  )
+  const vehicles = assetList.value.filter((a) => a.asset_type?.toLowerCase() === 'vehicle')
+  const nonVehicles = assetList.value.filter((a) => a.asset_type === 'Non-Vehicular')
   const items = []
 
   if (vehicles.length > 0) {
@@ -902,7 +894,7 @@ const groupedAssetItems = computed(() => {
       items.push({
         title: v.asset_name,
         value: v.id,
-      })
+      }),
     )
   }
 
@@ -917,7 +909,7 @@ const groupedAssetItems = computed(() => {
       items.push({
         title: v.asset_name,
         value: v.id,
-      })
+      }),
     )
   }
 
@@ -935,7 +927,7 @@ const filteredRequests = computed(() => {
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
-   if (yearFilter.value !== null) {
+  if (yearFilter.value !== null) {
     result = result.filter((r) => {
       const yr = r.date_of_request ? new Date(r.date_of_request + 'T00:00:00').getFullYear() : null
       return yr === yearFilter.value
@@ -998,7 +990,6 @@ function onAssetSelected(assetId) {
     mileageDisplay.value = ''
   }
 }
-
 
 async function generateRequestNo() {
   const year = new Date().getFullYear()
@@ -1181,11 +1172,11 @@ async function fetchRequests() {
 }
 
 async function fetchAssets() {
-   const { data, error } = await supabase
-  .from('vehicles')
-  .select('id, asset_name, asset_type')
-  .ilike('status', 'active')   // WHY: ilike = case-insensitive match, catches 'active', 'Active', 'ACTIVE'
-  .order('asset_type')
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('id, asset_name, asset_type')
+    .ilike('status', 'active') // WHY: ilike = case-insensitive match, catches 'active', 'Active', 'ACTIVE'
+    .order('asset_type')
 
   if (!error) assetList.value = data
 }

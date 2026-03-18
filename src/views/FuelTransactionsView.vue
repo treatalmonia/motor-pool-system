@@ -398,22 +398,24 @@
                 @update:modelValue="onFundChange"
               />
             </v-col>
-            <!-- Contract dropdown -->
-            <v-col cols="12" sm="9">
-              <v-select
-                v-model="form.contract_id"
-                :items="filteredContractOptions"
-                item-title="label"
-                item-value="id"
-                label="Charge To (Cost Center / PO) *"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="errors.contract_id"
-                :disabled="filteredContractOptions.length === 0"
-                @update:modelValue="onContractSelected"
-              />
-            </v-col>
 
+<!-- Contract dropdown — FEATURE 1: searchable by PO Number or Account Code Name -->
+<v-col cols="12" sm="9">
+  <v-autocomplete
+    v-model="form.contract_id"
+    :items="filteredContractOptions"
+    item-title="label"
+    item-value="id"
+    label="Charge To (Cost Center / PO) *"
+    variant="outlined"
+    density="comfortable"
+    :error-messages="errors.contract_id"
+    :disabled="filteredContractOptions.length === 0"
+    clearable
+    no-data-text="No contracts found for this year/fund"
+    @update:modelValue="onContractSelected"
+  />
+</v-col>
             <!-- PO Number (readonly, auto-filled) -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -764,7 +766,7 @@ const filteredContractOptions = computed(() => {
     .filter((c) => !form.value.fund_cluster || c.fund_cluster === form.value.fund_cluster)
     .map((c) => ({
       id: c.id,
-      label: `[${c.fund_cluster}] ${c.account_code} — ${c.po_number}`,
+      label: `${c.po_number} - ${c.account_code}`,   // ← FEATURE 1: "PO-2025-001 - Motorpool Fuel"
       po_number: c.po_number,
       fund_cluster: c.fund_cluster,
       account_code: c.account_code,
@@ -827,6 +829,7 @@ async function fetchContracts() {
   const { data } = await supabase
     .from('fuel_contracts')
     .select('*')
+    .eq('year', filterYear.value)   // ← FEATURE 2: only contracts for selected year
     .order('fund_cluster')
     .order('account_code')
   if (data) contracts.value = data
@@ -1037,7 +1040,10 @@ function showSnackbar(message, color = 'success') {
 }
 
 // Re-fetch when year filter changes
-watch(filterYear, fetchTransactions)
+watch(filterYear, () => {
+  fetchContracts()       // ← FEATURE 2: reload contracts for new year
+  fetchTransactions()
+})
 
 onMounted(async () => {
   await Promise.all([fetchContracts(), fetchAssets()])

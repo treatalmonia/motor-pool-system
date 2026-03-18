@@ -5,7 +5,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between flex-wrap ga-2">
           <div>
-            <h2 class="text-h5 font-weight-bold">Fuel Contracts & Cost Centers</h2>
+            <h2 class="text-h5 font-weight-bold">Fuel Allocation Monitoring</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
               Manage annual fuel contracts per cost center
             </p>
@@ -38,19 +38,34 @@
       </v-col>
     </v-row>
 
-    <!-- Summary Cards -->
+    <!-- Summary Cards — FEATURE 4 & 5 -->
     <v-row class="mb-4">
-      <!-- Total Contract Amount -->
+      <!-- Total Contract Amount + Remaining Balance -->
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="orange-darken-2" variant="tonal" size="44">
-              <v-icon>mdi-cash-multiple</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Contract Amount</p>
-              <p class="text-h5 font-weight-bold">{{ formatCurrency(totalContractAmount) }}</p>
+          <v-card-text class="ga-2">
+            <div class="d-flex align-center ga-3 mb-2">
+              <v-avatar color="orange-darken-2" variant="tonal" size="44">
+                <v-icon>mdi-cash-multiple</v-icon>
+              </v-avatar>
+              <p class="text-body-2 font-weight-bold">Contract Amount</p>
             </div>
+            <v-row>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">TOTAL CONTRACT AMOUNT</p>
+                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalContractAmount) }}</p>
+              </v-col>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">REMAINING BALANCE</p>
+                <p
+                  class="text-h6 font-weight-bold"
+                  :class="totalRemainingAmount >= 0 ? 'text-success' : 'text-error'"
+                >
+                  {{ formatCurrency(Math.abs(totalRemainingAmount)) }}
+                  <span v-if="totalRemainingAmount < 0" class="text-caption">(over)</span>
+                </p>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
       </v-col>
@@ -58,7 +73,7 @@
       <!-- Diesel -->
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="ga-3">
+          <v-card-text class="ga-2">
             <div class="d-flex align-center ga-3 mb-2">
               <v-avatar color="blue-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-fuel</v-icon>
@@ -67,14 +82,32 @@
             </div>
             <v-row>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total No. of (L)</p>
+                <p class="text-caption text-medium-emphasis">Total Liters Used</p>
                 <p class="text-h6 font-weight-bold text-blue-darken-2">
-                  {{ formatNumber(totalDiesel) }}
+                  {{ formatNumber(usedDieselLiters) }} L
                 </p>
+                <p class="text-caption text-medium-emphasis mt-1">Total Amount Used</p>
+                <p class="font-weight-medium">{{ formatCurrency(totalDieselAmount) }}</p>
               </v-col>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total Amount</p>
-                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalDieselAmount) }}</p>
+                <p class="text-caption text-medium-emphasis">Remaining Liters</p>
+                <p
+                  class="text-h6 font-weight-bold"
+                  :class="remainingDieselLiters >= 0 ? 'text-blue-darken-2' : 'text-error'"
+                >
+                  {{ formatNumber(remainingDieselLiters) }} L
+                </p>
+                <p class="text-caption text-medium-emphasis mt-1">Remaining Amount</p>
+                <p
+                  class="font-weight-medium"
+                  :class="totalRemainingAmount >= 0 ? '' : 'text-error'"
+                >
+                  {{
+                    formatCurrency(
+                      Math.max(totalContractAmount - totalDieselAmount - totalGasolineAmount, 0),
+                    )
+                  }}
+                </p>
               </v-col>
             </v-row>
           </v-card-text>
@@ -84,24 +117,38 @@
       <!-- Gasoline -->
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="ga-3">
+          <v-card-text class="ga-2">
             <div class="d-flex align-center ga-3 mb-2">
               <v-avatar color="green-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-gas-station</v-icon>
               </v-avatar>
               <p class="text-body-2 font-weight-bold">Gasoline</p>
             </div>
-
             <v-row>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total No. of (L)</p>
+                <p class="text-caption text-medium-emphasis">Total Liters Used</p>
                 <p class="text-h6 font-weight-bold text-green-darken-2">
-                  {{ formatNumber(totalGasoline) }}
+                  {{ formatNumber(usedGasolineLiters) }} L
                 </p>
+                <p class="text-caption text-medium-emphasis mt-1">Total Amount Used</p>
+                <p class="font-weight-medium">{{ formatCurrency(totalGasolineAmount) }}</p>
               </v-col>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total Amount</p>
-                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalGasolineAmount) }}</p>
+                <p class="text-caption text-medium-emphasis">Remaining Liters</p>
+                <p
+                  class="text-h6 font-weight-bold"
+                  :class="remainingGasolineLiters >= 0 ? 'text-green-darken-2' : 'text-error'"
+                >
+                  {{ formatNumber(remainingGasolineLiters) }} L
+                </p>
+                <p class="text-caption text-medium-emphasis mt-1">Remaining Amount</p>
+                <p class="font-weight-medium">
+                  {{
+                    formatCurrency(
+                      Math.max(totalContractAmount - totalDieselAmount - totalGasolineAmount, 0),
+                    )
+                  }}
+                </p>
               </v-col>
             </v-row>
           </v-card-text>
@@ -131,6 +178,19 @@
           hide-details
           style="min-width: 140px"
         />
+
+        <!-- FEATURE 5: filter by cost center, updates summary cards -->
+        <v-autocomplete
+          v-model="filterCostCenter"
+          :items="costCenterOptions"
+          label="Cost Center"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+          style="min-width: 220px"
+        />
+
         <v-spacer />
         <p class="text-medium-emphasis text-body-2">
           Showing {{ filteredContracts.length }} of {{ contracts.length }} contracts
@@ -410,7 +470,7 @@
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
               CONTRACT INFORMATION
             </p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">PO Number</p>
                 <p class="font-weight-medium">{{ selectedContract.po_number }}</p>
@@ -433,7 +493,7 @@
           <!-- Peso Balance -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">PESO BALANCE</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Contract Amount</p>
                 <p class="font-weight-bold text-orange-darken-3">
@@ -486,7 +546,7 @@
           <!-- Liter Balance -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">LITER BALANCE</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <!-- Diesel -->
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis font-weight-bold mb-1">
@@ -723,6 +783,7 @@ const selectedYear = ref(new Date().getFullYear())
 const addYearDialog = ref(false)
 const newYear = ref(new Date().getFullYear() + 1)
 const availableYears = ref([new Date().getFullYear()])
+const filterCostCenter = ref('All Cost Centers') // ← FEATURE 5
 const search = ref('')
 const filterFund = ref('All Funds')
 const allTransactions = ref([])
@@ -784,27 +845,66 @@ const filteredContracts = computed(() => {
   })
 })
 
-const totalContractAmount = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
-)
-const totalDiesel = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
-)
-const totalGasoline = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+// FEATURE 5: contracts scoped to the selected cost center filter
+const summaryContracts = computed(() => {
+  if (filterCostCenter.value === 'All Cost Centers') return enrichedContracts.value
+  return enrichedContracts.value.filter((c) => c.account_code === filterCostCenter.value)
+})
+
+// FEATURE 5: transactions scoped to the filtered contracts
+const summaryContractIds = computed(() => new Set(summaryContracts.value.map((c) => c.id)))
+
+const summaryTransactions = computed(() =>
+  allTransactions.value.filter((t) => summaryContractIds.value.has(t.contract_id)),
 )
 
-// Correct: sum actual transaction amounts by fuel type
+// FEATURE 4 & 5: summary totals derived from filtered scope
+const totalContractAmount = computed(() =>
+  summaryContracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
+)
+const totalRemainingAmount = computed(() =>
+  summaryContracts.value.reduce((s, c) => s + (c.balance || 0), 0),
+)
+
+const totalDiesel = computed(() =>
+  summaryContracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
+)
+const totalGasoline = computed(() =>
+  summaryContracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+)
+
 const totalDieselAmount = computed(() =>
-  allTransactions.value
+  summaryTransactions.value
     .filter((t) => t.fuel_type === 'Diesel')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 const totalGasolineAmount = computed(() =>
-  allTransactions.value
+  summaryTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
+
+// FEATURE 4: used liters per fuel type (from transactions)
+const usedDieselLiters = computed(() =>
+  summaryTransactions.value
+    .filter((t) => t.fuel_type === 'Diesel')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
+const usedGasolineLiters = computed(() =>
+  summaryTransactions.value
+    .filter((t) => t.fuel_type === 'Gasoline')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
+
+// FEATURE 4: remaining = allocated - used
+const remainingDieselLiters = computed(() => totalDiesel.value - usedDieselLiters.value)
+const remainingGasolineLiters = computed(() => totalGasoline.value - usedGasolineLiters.value)
+
+// Options list for the cost center filter dropdown
+const costCenterOptions = computed(() => [
+  'All Cost Centers',
+  ...new Set(contracts.value.map((c) => c.account_code).filter(Boolean)),
+])
 
 // Per-contract consumption stats keyed by contract_id
 const contractStats = computed(() => {
@@ -1084,4 +1184,3 @@ onMounted(async () => {
   await refreshData()
 })
 </script>
-

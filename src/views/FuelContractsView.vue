@@ -1,6 +1,7 @@
 <template>
   <v-container fluid>
     <!-- Page Header -->
+    <!-- PHASE 2: Renamed from "Fuel Contracts & Cost Centers" to "Fuel Allocation Monitoring" -->
     <v-row class="mb-4">
       <v-col>
         <div class="d-flex align-center justify-space-between flex-wrap ga-2">
@@ -40,17 +41,19 @@
 
     <!-- ── SUMMARY CARDS ──────────────────────────────────────────────────────
          Three cards showing the fuel allocation health for the selected year.
-         Card 1: Budget overview (contract total, consumed, remaining balance)
-         Card 2: Diesel        (allocated L, consumed L, remaining L)
-         Card 3: Gasoline      (allocated L, consumed L, remaining L)
+         Card 1: Budget overview  (contract total, consumed, remaining balance)
+         Card 2: Diesel           (allocated L, consumed L, remaining L)
+         Card 3: Gasoline         (allocated L, consumed L, remaining L)
          All values come from computed properties defined in <script setup>.
-         Remaining values turn red when negative (over-budget/over-allocated).
+         Remaining values turn red when negative (over-budget / over-allocated).
     ─────────────────────────────────────────────────────────────────────────-->
     <v-row class="mb-4">
+
       <!-- ── CARD 1: Contract Budget Overview ── -->
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
+
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="orange-darken-2" variant="tonal" size="44">
@@ -77,17 +80,17 @@
             <!-- Row: remaining balance = contract total minus consumed.
                  Turns red with a "−" prefix when the balance is negative.
                  A negative balance is VALID — it means the office spent
-                 slightly more than the contract allows (see Image 5). -->
+                 slightly more than the contract allows. -->
             <div class="d-flex justify-space-between align-center">
               <p class="text-caption text-medium-emphasis">Remaining balance</p>
               <p
                 class="text-body-2 font-weight-bold"
                 :class="totalRemainingBalance < 0 ? 'text-error' : 'text-success'"
               >
-                {{ totalRemainingBalance < 0 ? '−' : ''
-                }}{{ formatCurrency(Math.abs(totalRemainingBalance)) }}
+                {{ totalRemainingBalance < 0 ? '−' : '' }}{{ formatCurrency(Math.abs(totalRemainingBalance)) }}
               </p>
             </div>
+
           </v-card-text>
         </v-card>
       </v-col>
@@ -96,6 +99,7 @@
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
+
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="blue-darken-2" variant="tonal" size="44">
@@ -124,7 +128,7 @@
 
             <v-divider class="mb-2" />
 
-            <!-- Bottom section: REMAINING BALANCE (what the end user requested) -->
+            <!-- Bottom section: REMAINING BALANCE (requested by end user) -->
             <p class="text-caption text-medium-emphasis mb-1">Remaining balance</p>
             <v-row>
               <v-col cols="6">
@@ -134,8 +138,7 @@
                   class="text-body-2 font-weight-bold"
                   :class="totalRemainingDiesel < 0 ? 'text-error' : ''"
                 >
-                  {{ totalRemainingDiesel < 0 ? '−' : ''
-                  }}{{ formatNumber(Math.abs(totalRemainingDiesel)) }} L
+                  {{ totalRemainingDiesel < 0 ? '−' : '' }}{{ formatNumber(Math.abs(totalRemainingDiesel)) }} L
                 </p>
               </v-col>
               <v-col cols="6">
@@ -146,6 +149,7 @@
                 </p>
               </v-col>
             </v-row>
+
           </v-card-text>
         </v-card>
       </v-col>
@@ -154,6 +158,7 @@
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
+
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="green-darken-2" variant="tonal" size="44">
@@ -192,8 +197,7 @@
                   class="text-body-2 font-weight-bold"
                   :class="totalRemainingGasoline < 0 ? 'text-error' : ''"
                 >
-                  {{ totalRemainingGasoline < 0 ? '−' : ''
-                  }}{{ formatNumber(Math.abs(totalRemainingGasoline)) }} L
+                  {{ totalRemainingGasoline < 0 ? '−' : '' }}{{ formatNumber(Math.abs(totalRemainingGasoline)) }} L
                 </p>
               </v-col>
               <v-col cols="6">
@@ -204,9 +208,11 @@
                 </p>
               </v-col>
             </v-row>
+
           </v-card-text>
         </v-card>
       </v-col>
+
     </v-row>
 
     <!-- Filters -->
@@ -231,19 +237,6 @@
           hide-details
           style="min-width: 140px"
         />
-
-        <!-- FEATURE 5: filter by cost center, updates summary cards -->
-        <v-autocomplete
-          v-model="filterCostCenter"
-          :items="costCenterOptions"
-          label="Cost Center"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-          style="min-width: 220px"
-        />
-
         <v-spacer />
         <p class="text-medium-emphasis text-body-2">
           Showing {{ filteredContracts.length }} of {{ contracts.length }} contracts
@@ -361,8 +354,19 @@
         <v-divider />
         <v-card-text class="pa-4">
           <v-row>
+            <!-- Year -->
+            <v-col cols="12" sm="3">
+              <v-text-field
+                v-model="form.year"
+                label="Year *"
+                variant="outlined"
+                density="comfortable"
+                type="number"
+                :error-messages="errors.year"
+              />
+            </v-col>
             <!-- Fund Cluster -->
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="3">
               <v-combobox
                 v-model="form.fund_cluster"
                 :items="existingFundClusters"
@@ -370,11 +374,11 @@
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.fund_cluster"
-                placeholder="e.g. RAF, IGF, BRF, TRF"
+                placeholder="e.g. RAF, IGF, BRF"
               />
             </v-col>
             <!-- PO Number -->
-            <v-col cols="12" sm="4">
+            <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.po_number"
                 :items="existingPONumbers"
@@ -385,69 +389,39 @@
                 placeholder="e.g. 101-25-01-002"
               />
             </v-col>
-            <!-- Mode of Procurement -->
-            <v-col cols="12" sm="4">
-              <v-text-field
-                v-model="form.mode_of_procurement"
-                label="Mode of Procurement"
-                variant="outlined"
-                density="comfortable"
-                placeholder="CONTRACT"
-              />
-            </v-col>
 
             <!-- Account Code -->
-            <v-col cols="12" sm="8">
+            <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.account_code"
-                label="Account Code *"
+                label="Account Code / Cost Center *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.account_code"
-                placeholder="e.g. CAA LABSHARE"
+                placeholder="e.g. MC - GENERAL ADMINISTRATION AND SUPPORT"
               />
             </v-col>
-            <!-- Year -->
-            <v-col cols="12" sm="4">
-              <v-text-field
-                v-model="form.year"
-                label="Year *"
-                variant="outlined"
-                density="comfortable"
-                type="number"
-                :error-messages="errors.year"
-              />
-            </v-col>
-
             <!-- Cost Center Head -->
-            <v-col cols="12">
+            <v-col cols="12" sm="6">
               <v-text-field
                 v-model="form.cost_center_head"
                 label="Cost Center Head *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.cost_center_head"
-                placeholder="e.g. ELIZABETH PARAC, PH.D"
+                placeholder="e.g. ALEXANDER T. DEMETILLO, D.Eng"
               />
-            </v-col>
-
-            <v-col cols="12">
-              <v-divider class="mb-3" />
-              <p class="text-body-2 font-weight-medium text-medium-emphasis mb-3">
-                <v-icon size="16" class="mr-1">mdi-currency-php</v-icon>
-                Contract Financial Details
-              </p>
             </v-col>
 
             <!-- Contract Amount -->
             <v-col cols="12" sm="4">
               <v-text-field
                 v-model="form.contract_amount_display"
-                label="Contract Amount (₱) *"
+                label="Contract Amount *"
                 variant="outlined"
                 density="comfortable"
+                prefix="₱"
                 :error-messages="errors.contract_amount"
-                placeholder="0.00"
                 @input="onAmountInput"
                 @blur="onAmountBlur"
               />
@@ -459,7 +433,6 @@
                 label="Allocated Diesel (L)"
                 variant="outlined"
                 density="comfortable"
-                placeholder="0.00"
                 suffix="L"
                 @input="onDieselInput"
                 @blur="onDieselBlur"
@@ -472,21 +445,29 @@
                 label="Allocated Gasoline (L)"
                 variant="outlined"
                 density="comfortable"
-                placeholder="0.00"
                 suffix="L"
                 @input="onGasolineInput"
                 @blur="onGasolineBlur"
               />
             </v-col>
 
+            <!-- Mode of Procurement -->
+            <v-col cols="12" sm="6">
+              <v-select
+                v-model="form.mode_of_procurement"
+                :items="['CONTRACT', 'SMALL VALUE', 'SHOPPING', 'DIRECT']"
+                label="Mode of Procurement"
+                variant="outlined"
+                density="comfortable"
+              />
+            </v-col>
             <!-- Remarks -->
-            <v-col cols="12">
-              <v-textarea
+            <v-col cols="12" sm="6">
+              <v-text-field
                 v-model="form.remarks"
                 label="Remarks"
                 variant="outlined"
                 density="comfortable"
-                rows="2"
               />
             </v-col>
           </v-row>
@@ -503,260 +484,102 @@
     </v-dialog>
 
     <!-- ── VIEW DIALOG ── -->
-    <v-dialog v-model="viewDialog" max-width="680">
+    <v-dialog v-model="viewDialog" max-width="600">
       <v-card rounded="lg" v-if="selectedContract">
         <v-card-title class="pa-4 pb-2 d-flex align-center justify-space-between">
           <span>Contract Details</span>
-          <v-chip
-            :color="fundColor(selectedContract.fund_cluster)"
-            variant="tonal"
-            size="small"
-            class="font-weight-bold"
-          >
+          <v-chip :color="fundColor(selectedContract.fund_cluster)" variant="tonal" size="small" class="font-weight-bold">
             {{ selectedContract.fund_cluster }}
           </v-chip>
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
+
           <!-- Contract Info -->
-          <v-card rounded="lg" variant="tonal" color="grey" class="pa-3 mb-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
-              CONTRACT INFORMATION
-            </p>
+          <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
+            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CONTRACT</p>
             <v-row density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">PO Number</p>
                 <p class="font-weight-medium">{{ selectedContract.po_number }}</p>
               </v-col>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Mode of Procurement</p>
-                <p class="font-weight-medium">{{ selectedContract.mode_of_procurement || '—' }}</p>
+                <p class="text-caption text-medium-emphasis">Year</p>
+                <p class="font-weight-medium">{{ selectedContract.year }}</p>
               </v-col>
-              <v-col cols="12" class="mt-1">
-                <p class="text-caption text-medium-emphasis">Account Code</p>
+              <v-col cols="12">
+                <p class="text-caption text-medium-emphasis">Account Code / Cost Center</p>
                 <p class="font-weight-medium">{{ selectedContract.account_code }}</p>
               </v-col>
-              <v-col cols="12" class="mt-1">
+              <v-col cols="12">
                 <p class="text-caption text-medium-emphasis">Cost Center Head</p>
                 <p class="font-weight-medium">{{ selectedContract.cost_center_head }}</p>
               </v-col>
             </v-row>
           </v-card>
 
-          <!-- Peso Balance -->
-          <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">PESO BALANCE</p>
+          <!-- Budget Info -->
+          <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
+            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">BUDGET</p>
             <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Contract Amount</p>
-                <p class="font-weight-bold text-orange-darken-3">
-                  ₱{{ formatNumber(selectedContract.contract_amount) }}
-                </p>
+                <p class="font-weight-bold">₱{{ formatNumber(selectedContract.contract_amount) }}</p>
               </v-col>
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Consumed</p>
-                <p class="font-weight-medium">
-                  ₱{{ formatNumber(selectedContract.consumed_amount) }}
-                </p>
+                <p class="font-weight-medium">₱{{ formatNumber(selectedContract.consumed_amount) }}</p>
               </v-col>
               <v-col cols="4">
-                <p class="text-caption text-medium-emphasis">Remaining</p>
+                <p class="text-caption text-medium-emphasis">Balance</p>
                 <p
-                  :class="
-                    selectedContract.balance >= 0
-                      ? 'font-weight-bold text-success'
-                      : 'font-weight-bold text-error'
-                  "
+                  class="font-weight-bold"
+                  :class="selectedContract.balance < 0 ? 'text-error' : 'text-success'"
                 >
-                  ₱{{ formatNumber(Math.abs(selectedContract.balance)) }}
-                  {{ selectedContract.balance < 0 ? '(OVER)' : '' }}
+                  {{ selectedContract.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(selectedContract.balance)) }}
                 </p>
               </v-col>
             </v-row>
-            <v-progress-linear
-              class="mt-2"
-              :model-value="
-                selectedContract.contract_amount > 0
-                  ? Math.min(
-                      (selectedContract.consumed_amount / selectedContract.contract_amount) * 100,
-                      100,
-                    )
-                  : 0
-              "
-              :color="
-                selectedContract.balance < 0
-                  ? 'error'
-                  : selectedContract.balance / selectedContract.contract_amount < 0.1
-                    ? 'warning'
-                    : 'success'
-              "
-              bg-color="grey-lighten-3"
-              rounded
-              height="6"
-            />
           </v-card>
 
-          <!-- Liter Balance -->
-          <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">LITER BALANCE</p>
+          <!-- Fuel Allocation -->
+          <v-card rounded="lg" variant="tonal" color="green" class="pa-3">
+            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">FUEL ALLOCATION</p>
             <v-row density="comfortable">
-              <!-- Diesel -->
-              <v-col cols="6">
-                <p class="text-caption text-medium-emphasis font-weight-bold mb-1">
-                  <v-icon size="12" class="mr-1">mdi-fuel</v-icon>DIESEL
-                </p>
-                <div class="d-flex justify-space-between text-caption mb-1">
-                  <span>Allocated: {{ formatNumber(selectedContract.allocated_diesel) }} L</span>
-                  <span>Used: {{ formatNumber(selectedContract.consumed_diesel) }} L</span>
-                </div>
-                <v-progress-linear
-                  :model-value="
-                    selectedContract.allocated_diesel > 0
-                      ? Math.min(
-                          (selectedContract.consumed_diesel / selectedContract.allocated_diesel) *
-                            100,
-                          100,
-                        )
-                      : 0
-                  "
-                  :color="selectedContract.remaining_diesel < 0 ? 'error' : 'blue-darken-2'"
-                  bg-color="grey-lighten-3"
-                  rounded
-                  height="5"
-                />
+              <v-col cols="3">
+                <p class="text-caption text-medium-emphasis">Diesel (L)</p>
+                <p class="font-weight-medium">{{ formatNumber(selectedContract.allocated_diesel) }}</p>
+              </v-col>
+              <v-col cols="3">
+                <p class="text-caption text-medium-emphasis">Rem. Diesel</p>
                 <p
-                  class="text-caption mt-1"
-                  :class="
-                    selectedContract.remaining_diesel < 0
-                      ? 'text-error font-weight-bold'
-                      : 'text-medium-emphasis'
-                  "
+                  class="font-weight-bold"
+                  :class="selectedContract.remaining_diesel < 0 ? 'text-error' : ''"
                 >
-                  Remaining: {{ formatNumber(selectedContract.remaining_diesel) }} L
-                  {{ selectedContract.remaining_diesel < 0 ? '(OVER)' : '' }}
+                  {{ formatNumber(selectedContract.remaining_diesel) }} L
                 </p>
               </v-col>
-              <!-- Gasoline -->
-              <v-col cols="6">
-                <p class="text-caption text-medium-emphasis font-weight-bold mb-1">
-                  <v-icon size="12" class="mr-1">mdi-gas-station</v-icon>GASOLINE
-                </p>
-                <div class="d-flex justify-space-between text-caption mb-1">
-                  <span>Allocated: {{ formatNumber(selectedContract.allocated_gasoline) }} L</span>
-                  <span>Used: {{ formatNumber(selectedContract.consumed_gasoline) }} L</span>
-                </div>
-                <v-progress-linear
-                  :model-value="
-                    selectedContract.allocated_gasoline > 0
-                      ? Math.min(
-                          (selectedContract.consumed_gasoline /
-                            selectedContract.allocated_gasoline) *
-                            100,
-                          100,
-                        )
-                      : 0
-                  "
-                  :color="selectedContract.remaining_gasoline < 0 ? 'error' : 'green-darken-2'"
-                  bg-color="grey-lighten-3"
-                  rounded
-                  height="5"
-                />
+              <v-col cols="3">
+                <p class="text-caption text-medium-emphasis">Gasoline (L)</p>
+                <p class="font-weight-medium">{{ formatNumber(selectedContract.allocated_gasoline) }}</p>
+              </v-col>
+              <v-col cols="3">
+                <p class="text-caption text-medium-emphasis">Rem. Gasoline</p>
                 <p
-                  class="text-caption mt-1"
-                  :class="
-                    selectedContract.remaining_gasoline < 0
-                      ? 'text-error font-weight-bold'
-                      : 'text-medium-emphasis'
-                  "
+                  class="font-weight-bold"
+                  :class="selectedContract.remaining_gasoline < 0 ? 'text-error' : ''"
                 >
-                  Remaining: {{ formatNumber(selectedContract.remaining_gasoline) }} L
-                  {{ selectedContract.remaining_gasoline < 0 ? '(OVER)' : '' }}
+                  {{ formatNumber(selectedContract.remaining_gasoline) }} L
                 </p>
               </v-col>
             </v-row>
           </v-card>
 
-          <!-- Transactions charged to this contract -->
-          <v-card rounded="lg" variant="tonal" color="grey" class="pa-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">
-              TRANSACTIONS ({{ selectedContract.transactions?.length || 0 }})
-            </p>
-            <div
-              v-if="!selectedContract.transactions?.length"
-              class="text-caption text-medium-emphasis pa-2 text-center"
-            >
-              No transactions recorded for this contract.
-            </div>
-            <v-table v-else density="compact" class="text-caption">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>OR #</th>
-                  <th>Billing Period</th>
-                  <th>Type</th>
-                  <th class="text-right">Qty (L)</th>
-                  <th class="text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="t in [...(selectedContract.transactions || [])].sort((a, b) =>
-                    a.date.localeCompare(b.date),
-                  )"
-                  :key="t.id"
-                >
-                  <td>{{ formatDate(t.date) }}</td>
-                  <td>{{ t.or_number }}</td>
-                  <td class="text-caption">{{ t.billing_period }}</td>
-                  <td>
-                    <v-chip
-                      :color="t.fuel_type === 'Diesel' ? 'blue-darken-2' : 'green-darken-2'"
-                      variant="tonal"
-                      size="x-small"
-                      >{{ t.fuel_type }}</v-chip
-                    >
-                  </td>
-                  <td class="text-right">{{ formatNumber(t.quantity) }}</td>
-                  <td class="text-right font-weight-medium">₱{{ formatNumber(t.total_amount) }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="font-weight-bold">
-                  <td colspan="4" class="text-right text-caption">TOTAL</td>
-                  <td class="text-right">
-                    {{
-                      formatNumber(
-                        selectedContract.consumed_diesel + selectedContract.consumed_gasoline,
-                      )
-                    }}
-                    L
-                  </td>
-                  <td class="text-right text-orange-darken-3">
-                    ₱{{ formatNumber(selectedContract.consumed_amount) }}
-                  </td>
-                </tr>
-              </tfoot>
-            </v-table>
-          </v-card>
-
-          <div v-if="selectedContract.remarks" class="mt-3">
-            <p class="text-caption text-medium-emphasis">Remarks</p>
-            <p class="text-body-2">{{ selectedContract.remarks }}</p>
-          </div>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="viewDialog = false">Close</v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="
-              () => {
-                viewDialog = false
-                openEditDialog(selectedContract)
-              }
-            "
-          >
+          <v-btn color="primary" variant="flat" @click="() => { viewDialog = false; openEditDialog(selectedContract) }">
             Edit
           </v-btn>
         </v-card-actions>
@@ -770,20 +593,18 @@
           <v-icon color="error" size="56" class="mb-3">mdi-alert-circle</v-icon>
           <h3 class="text-h6 mb-2">Delete Contract?</h3>
           <p class="text-medium-emphasis">
-            Delete <strong>{{ selectedContract?.account_code }}</strong
-            >? This cannot be undone.
+            Delete <strong>{{ selectedContract?.account_code }}</strong>? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteContract">
-            Delete
-          </v-btn>
+          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteContract">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
+    <!-- ── ADD YEAR DIALOG ── -->
     <v-dialog v-model="addYearDialog" max-width="360">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0">
@@ -798,7 +619,7 @@
             density="comfortable"
             type="number"
             placeholder="e.g. 2027"
-            hint="Starts blank with no data"
+            hint="Starts blank — add contracts after"
             persistent-hint
           />
         </v-card-text>
@@ -819,6 +640,7 @@
     >
       {{ snackbar.message }}
     </v-snackbar>
+
   </v-container>
 </template>
 
@@ -836,7 +658,6 @@ const selectedYear = ref(new Date().getFullYear())
 const addYearDialog = ref(false)
 const newYear = ref(new Date().getFullYear() + 1)
 const availableYears = ref([new Date().getFullYear()])
-const filterCostCenter = ref('All Cost Centers') // ← FEATURE 5
 const search = ref('')
 const filterFund = ref('All Funds')
 const allTransactions = ref([])
@@ -898,97 +719,78 @@ const filteredContracts = computed(() => {
   })
 })
 
-// FEATURE 5: contracts scoped to the selected cost center filter
-const summaryContracts = computed(() => {
-  if (filterCostCenter.value === 'All Cost Centers') return enrichedContracts.value
-  return enrichedContracts.value.filter((c) => c.account_code === filterCostCenter.value)
-})
-
-// FEATURE 5: transactions scoped to the filtered contracts
-const summaryContractIds = computed(() => new Set(summaryContracts.value.map((c) => c.id)))
-
-const summaryTransactions = computed(() =>
-  allTransactions.value.filter((t) => summaryContractIds.value.has(t.contract_id)),
-)
-
-// FEATURE 4 & 5: summary totals derived from filtered scope
+// totalContractAmount: sum of all contract amounts for the selected year.
 const totalContractAmount = computed(() =>
-  summaryContracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
-)
-const totalRemainingAmount = computed(() =>
-  summaryContracts.value.reduce((s, c) => s + (c.balance || 0), 0),
+  contracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
 )
 
+// totalDiesel: sum of allocated diesel liters from all contracts this year.
 const totalDiesel = computed(() =>
-  summaryContracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
-)
-const totalGasoline = computed(() =>
-  summaryContracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+  contracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
 )
 
+// totalGasoline: sum of allocated gasoline liters from all contracts this year.
+const totalGasoline = computed(() =>
+  contracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+)
+
+// totalDieselAmount: sum of actual transaction amounts for diesel this year.
 const totalDieselAmount = computed(() =>
-  summaryTransactions.value
+  allTransactions.value
     .filter((t) => t.fuel_type === 'Diesel')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
+
+// totalGasolineAmount: sum of actual transaction amounts for gasoline this year.
 const totalGasolineAmount = computed(() =>
   allTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-// totalConsumedAmount: total peso amount spent across ALL cost centers this year.
-// This is calculated from actual transactions, not from contract amounts.
+// totalConsumedAmount: the total peso amount actually spent this year across
+// ALL cost centers. Calculated from real transaction records, not from the
+// contract amounts. Think of it as "how much of the budget is already used".
 const totalConsumedAmount = computed(() =>
   allTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-// totalRemainingBalance: total contract budget minus total amount actually spent.
-// This can be negative if any cost centers went over budget.
-const totalRemainingBalance = computed(() => totalContractAmount.value - totalConsumedAmount.value)
+// totalRemainingBalance: total contract budget minus total amount spent.
+// WHY: this is the single most important number — it answers "do we still
+// have money left in the fuel budget?"
+// NOTE: this CAN be negative. A negative number means the office has spent
+// more than the total contract allows. This is valid in real operations.
+const totalRemainingBalance = computed(
+  () => totalContractAmount.value - totalConsumedAmount.value,
+)
 
 // totalConsumedDiesel: total liters of diesel actually withdrawn this year.
-// Sourced from transactions, not from the allocated amount in contracts.
+// Sourced from fuel_transactions, NOT from the allocated_diesel column
+// in fuel_contracts. The contract column is the plan — transactions are reality.
 const totalConsumedDiesel = computed(() =>
   allTransactions.value
     .filter((t) => t.fuel_type === 'Diesel')
     .reduce((s, t) => s + (t.quantity || 0), 0),
 )
 
-// totalConsumedGasoline: total liters of gasoline actually withdrawn this year.
+// totalConsumedGasoline: same as totalConsumedDiesel but for gasoline.
 const totalConsumedGasoline = computed(() =>
   allTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.quantity || 0), 0),
 )
 
-// totalRemainingDiesel: allocated diesel liters minus consumed diesel liters.
-// Negative means the office used more diesel than was allocated.
-const totalRemainingDiesel = computed(() => totalDiesel.value - totalConsumedDiesel.value)
-
-// totalRemainingGasoline: allocated gasoline liters minus consumed gasoline liters.
-const totalRemainingGasoline = computed(() => totalGasoline.value - totalConsumedGasoline.value)
-// FEATURE 4: used liters per fuel type (from transactions)
-const usedDieselLiters = computed(() =>
-  summaryTransactions.value
-    .filter((t) => t.fuel_type === 'Diesel')
-    .reduce((s, t) => s + (t.quantity || 0), 0),
-)
-const usedGasolineLiters = computed(() =>
-  summaryTransactions.value
-    .filter((t) => t.fuel_type === 'Gasoline')
-    .reduce((s, t) => s + (t.quantity || 0), 0),
+// totalRemainingDiesel: how many diesel liters are still available.
+// Formula: allocated liters (from contracts) minus consumed liters (from transactions).
+// Can be negative if more was consumed than allocated.
+const totalRemainingDiesel = computed(
+  () => totalDiesel.value - totalConsumedDiesel.value,
 )
 
-// FEATURE 4: remaining = allocated - used
-const remainingDieselLiters = computed(() => totalDiesel.value - usedDieselLiters.value)
-const remainingGasolineLiters = computed(() => totalGasoline.value - usedGasolineLiters.value)
-
-// Options list for the cost center filter dropdown
-const costCenterOptions = computed(() => [
-  'All Cost Centers',
-  ...new Set(contracts.value.map((c) => c.account_code).filter(Boolean)),
-])
+// totalRemainingGasoline: same logic as totalRemainingDiesel but for gasoline.
+const totalRemainingGasoline = computed(
+  () => totalGasoline.value - totalConsumedGasoline.value,
+)
 
 // Per-contract consumption stats keyed by contract_id
 const contractStats = computed(() => {
@@ -1012,7 +814,9 @@ const contractStats = computed(() => {
   return map
 })
 
-// Enrich contracts with live balance and remaining liters
+// enrichedContracts: adds live balance and remaining liters to each contract row.
+// This is what the table actually displays — it combines contract data with
+// transaction data to show real-time balances.
 const enrichedContracts = computed(() =>
   contracts.value.map((c) => {
     const stats = contractStats.value.get(c.id) || {
@@ -1071,6 +875,7 @@ async function fetchContracts() {
   else contracts.value = data
   loading.value = false
 }
+
 function openAddYearDialog() {
   newYear.value = new Date().getFullYear() + 1
   addYearDialog.value = true
@@ -1088,6 +893,9 @@ function confirmAddYear() {
 }
 
 async function fetchAllTransactions() {
+  // Only fetch transactions for the currently selected year.
+  // This is important: it prevents transactions from other years
+  // from affecting the balance calculations on this screen.
   const startDate = `${selectedYear.value}-01-01`
   const endDate = `${selectedYear.value}-12-31`
   const { data } = await supabase
@@ -1236,27 +1044,19 @@ function formatNumber(val) {
   if (val === null || val === undefined || val === '') return '0'
   return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
 }
-// formatCurrency: always shows the full exact peso amount with 2 decimal places.
-// Why: This is a government accounting system — abbreviating ₱385,785 as "₱385.8K"
-// hides the real number and can cause confusion during audits.
-// How it works: it reuses formatNumber (which adds commas) then adds the ₱ sign.
 
 // formatCurrency: always shows the exact peso amount with 2 decimal places.
-// WHY this exists: government accounting requires exact amounts — never abbreviations.
-// PROBLEM it solves: the old version showed ₱385,785.00 as "₱385.8K" which is
+// WHY: government accounting requires exact amounts — never abbreviations.
+// PROBLEM solved: the old version showed ₱385,785.00 as "₱385.8K" which is
 //   misleading and wrong for official financial records.
-// HOW it works: it uses the same number formatter as formatNumber, but forces
-//   exactly 2 decimal places so ₱200,450.00 never shows as ₱200,450.
 function formatCurrency(val) {
   if (val === null || val === undefined || val === '') return '₱0.00'
-  return (
-    '₱' +
-    Number(val).toLocaleString('en-PH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  )
+  return '₱' + Number(val).toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -1265,15 +1065,16 @@ function formatDate(dateStr) {
   const yy = String(d.getFullYear()).slice(-2)
   return `${mm}/${dd}/${yy}`
 }
+
 function fundColor(fund) {
   const map = { RAF: 'blue', IGF: 'green', BRF: 'orange', TRF: 'purple' }
   if (map[fund]) return map[fund]
-  // Auto-assign color for new fund clusters based on name
   const colors = ['teal', 'pink', 'indigo', 'cyan', 'deep-orange', 'lime', 'brown', 'blue-grey']
   let hash = 0
   for (let i = 0; i < fund.length; i++) hash += fund.charCodeAt(i)
   return colors[hash % colors.length]
 }
+
 function showSnackbar(message, color = 'success') {
   snackbar.value = { show: true, message, color }
 }

@@ -19,7 +19,7 @@
               density="compact"
               hide-details
               style="min-width: 110px"
-              @update:modelValue="fetchTransactions"
+              @update:modelValue="onYearChange"
             />
             <v-btn
               color="secondary"
@@ -106,7 +106,6 @@
           clearable
           style="min-width: 260px"
         />
-
         <v-select
           v-model="filterPeriod"
           :items="['All Periods', ...billingPeriods]"
@@ -234,17 +233,30 @@
     </v-card>
 
     <!-- ── ADD / EDIT DIALOG ── -->
-    <v-dialog v-model="formDialog" max-width="720" persistent>
+    <v-dialog v-model="formDialog" max-width="760" persistent>
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-2">
           <v-icon start :color="isEditing ? 'primary' : 'success'">
             {{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}
           </v-icon>
           {{ isEditing ? 'Edit Transaction' : 'Add Transaction' }}
+          <!-- Shows which year this transaction belongs to -->
+          <v-chip size="small" variant="tonal" color="primary" class="ml-2">
+            FY {{ filterYear }}
+          </v-chip>
         </v-card-title>
         <v-divider />
+
         <v-card-text class="pa-4">
           <v-row>
+            <!-- ── SECTION 1: Receipt Details ── -->
+            <v-col cols="12">
+              <p class="text-body-2 font-weight-medium text-medium-emphasis mb-1">
+                <v-icon size="16" class="mr-1">mdi-receipt</v-icon>
+                Receipt Details
+              </p>
+            </v-col>
+
             <!-- Date -->
             <v-col cols="12" sm="4">
               <v-text-field
@@ -268,7 +280,10 @@
                 :error-messages="errors.or_number"
               />
             </v-col>
-            <!-- Billing Period (auto) -->
+            <!-- Billing Period (auto-computed, read-only) -->
+            <!-- WHY read-only: staff should never type this manually.
+                 One typo breaks the billing period grouping in reports.
+                 It is always computed from the date automatically. -->
             <v-col cols="12" sm="4">
               <v-text-field
                 v-model="form.billing_period"
@@ -280,6 +295,15 @@
                 hint="Auto-detected from date"
                 persistent-hint
               />
+            </v-col>
+
+            <!-- ── SECTION 2: Fuel Details ── -->
+            <v-col cols="12">
+              <v-divider class="mb-1" />
+              <p class="text-body-2 font-weight-medium text-medium-emphasis my-2">
+                <v-icon size="16" class="mr-1">mdi-fuel</v-icon>
+                Fuel Details
+              </p>
             </v-col>
 
             <!-- Fuel Type -->
@@ -325,52 +349,94 @@
                 variant="outlined"
                 density="comfortable"
                 prefix="₱"
+                hint="No VAT — enter base price only"
+                persistent-hint
                 :error-messages="errors.unit_price"
                 @input="onUnitPriceInput"
                 @blur="onUnitPriceBlur"
               />
             </v-col>
-            <!-- Total Amount (auto) -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.total_amount_display"
-                label="Total Amount"
-                variant="outlined"
-                density="comfortable"
-                prefix="₱"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-computed (Qty × Unit Price)"
-                persistent-hint
-              />
+            <!-- Total Amount — displayed as a prominent summary row, not a text field.
+                 WHY: a styled box makes the total stand out visually so staff can
+                 confirm the amount before saving. It is always auto-computed from
+                 Quantity × Unit Price and is never editable. -->
+            <v-col cols="12">
+              <v-card rounded="lg" variant="tonal" color="grey" class="pa-3">
+                <div class="d-flex align-center justify-space-between">
+                  <p class="text-body-2 text-medium-emphasis">Total amount due</p>
+                  <p class="text-h5 font-weight-bold">₱{{ form.total_amount_display || '0.00' }}</p>
+                </div>
+              </v-card>
             </v-col>
 
+            <!-- ── SECTION 3: Vehicle / Equipment ── -->
             <v-col cols="12">
               <v-divider class="mb-1" />
               <p class="text-body-2 font-weight-medium text-medium-emphasis my-2">
                 <v-icon size="16" class="mr-1">mdi-car</v-icon>
-                Usage Details
+                Vehicle / Equipment
               </p>
             </v-col>
 
-            <!-- Vehicle / Equipment -->
-            <v-col cols="12" sm="6">
+            <!-- Vehicular / Non-vehicular toggle.
+                 WHY: separating these two types allows the dashboard and vehicle
+                 consumption report to correctly group cars/vans separately from
+                 farm equipment, generators, and other non-vehicular assets.
+                 This sets the utilization_type column in fuel_transactions. -->
+            <v-col cols="12">
+              <v-btn-toggle
+                v-model="form.utilization_type"
+                mandatory
+                rounded="lg"
+                density="compact"
+                color="primary"
+              >
+                <v-btn value="Vehicular" prepend-icon="mdi-car"> Vehicular </v-btn>
+                <v-btn value="Non-Vehicular" prepend-icon="mdi-tractor">
+                  Non-vehicular equipment
+                </v-btn>
+              </v-btn-toggle>
+            </v-col>
+
+            <!-- Vehicle / Equipment — label changes based on the toggle above -->
+            <v-col cols="12" sm="4">
               <v-combobox
                 v-model="form.vehicle"
                 :items="vehicleOptions"
-                label="Vehicle / Equipment *"
+                :label="form.utilization_type === 'Non-Vehicular' ? 'Equipment *' : 'Vehicle *'"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle"
-                placeholder="e.g. COASTER, FORTUNER, FARMALL"
+                :placeholder="
+                  form.utilization_type === 'Non-Vehicular'
+                    ? 'e.g. FARMALL, BRUSHCUTTER, GENERATOR'
+                    : 'e.g. COASTER, FORTUNER, VAN'
+                "
               />
             </v-col>
-            <!-- Utilized By -->
-            <v-col cols="12" sm="6">
+
+            <!-- Plate Number — shown for Vehicular only, hidden for Non-Vehicular.
+                 Read-only because it is auto-filled from the fleet system.
+                 For non-vehicular equipment there is no plate number. -->
+            <v-col v-if="form.utilization_type !== 'Non-Vehicular'" cols="12" sm="4">
+              <v-text-field
+                v-model="form.plate_number"
+                label="Plate Number"
+                variant="outlined"
+                density="comfortable"
+                readonly
+                bg-color="grey-lighten-4"
+                hint="Auto-filled from fleet data"
+                persistent-hint
+              />
+            </v-col>
+
+            <!-- Utilized By (office name) -->
+            <v-col cols="12" :sm="form.utilization_type !== 'Non-Vehicular' ? 4 : 8">
               <v-combobox
                 v-model="form.utilized_by"
                 :items="utilizedByOptions"
-                label="Utilized By *"
+                label="Utilized By (Office) *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.utilized_by"
@@ -378,6 +444,10 @@
               />
             </v-col>
 
+            <!-- ── SECTION 4: Charge To ── -->
+            <!-- This is the most critical section. The "Charge To" field links
+                 this transaction to a cost center's budget. Getting this wrong
+                 means the balance of the wrong cost center gets deducted. -->
             <v-col cols="12">
               <v-divider class="mb-1" />
               <p class="text-body-2 font-weight-medium text-medium-emphasis my-2">
@@ -386,21 +456,18 @@
               </p>
             </v-col>
 
-            <!-- Fund Cluster (filter) -->
-            <v-col cols="12" sm="3">
-              <v-select
-                v-model="form.fund_cluster"
-                :items="['', ...availableFunds]"
-                label="Fund Cluster"
-                variant="outlined"
-                density="comfortable"
-                clearable
-                @update:modelValue="onFundChange"
-              />
-            </v-col>
-            <!-- Contract dropdown -->
-            <v-col cols="12" sm="9">
-              <v-select
+            <!-- Charge To: searchable autocomplete showing fund chip + name + PO + balance.
+                 WHY: replaces the old Fund Cluster filter + plain dropdown combo.
+                 Staff can type any part of the cost center name, PO number, or
+                 account code to find it instantly — no scrolling through 30+ items.
+                 YEAR-LOCKED: only shows contracts from filterYear so a 2025 transaction
+                 can never be accidentally charged to a 2024 contract. -->
+            <v-col cols="12">
+              <p class="text-caption text-medium-emphasis mb-1">
+                Search by cost center name, PO number, or account code. Only showing FY
+                {{ filterYear }} contracts.
+              </p>
+              <v-autocomplete
                 v-model="form.contract_id"
                 :items="filteredContractOptions"
                 item-title="label"
@@ -410,32 +477,80 @@
                 density="comfortable"
                 :error-messages="errors.contract_id"
                 :disabled="filteredContractOptions.length === 0"
+                :hint="contractBalanceHint"
+                persistent-hint
+                clearable
+                no-data-text="No contracts found for this year"
                 @update:modelValue="onContractSelected"
-              />
+              >
+                <template #item="{ props, item }">
+                  <!-- Guard: item.raw can be undefined in Vuetify 4 when the
+                       autocomplete is filtering. Skip rendering if raw is missing. -->
+                  <v-list-item v-if="item.raw" v-bind="props" :title="undefined">
+                    <template #prepend>
+                      <v-chip
+                        :color="fundColor(item.raw.fund_cluster)"
+                        variant="tonal"
+                        size="x-small"
+                        class="mr-2 font-weight-bold"
+                      >
+                        {{ item.raw.fund_cluster }}
+                      </v-chip>
+                    </template>
+                    <v-list-item-title class="text-body-2">
+                      {{ item.raw.account_code }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">
+                      {{ item.raw.po_number }}
+                    </v-list-item-subtitle>
+                    <template #append>
+                      <span
+                        class="text-caption font-weight-medium"
+                        :class="item.raw.balance < 0 ? 'text-error' : 'text-success'"
+                      >
+                        {{ item.raw.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(item.raw.balance)) }} left
+                      </span>
+                    </template>
+                  </v-list-item>
+                  <!-- Fallback for when item.raw is not yet available -->
+                  <v-list-item v-else v-bind="props" />
+                </template>
+
+              </v-autocomplete>
+
+              <!-- Shows selected contract summary below the field -->
+              <p v-if="form.contract_id && selectedContractSummary" class="text-caption mt-1">
+                Selected: <strong>{{ selectedContractSummary.account_code }}</strong> ({{
+                  selectedContractSummary.fund_cluster
+                }}
+                · {{ selectedContractSummary.po_number }}) · Balance:
+                <span
+                  :class="selectedContractSummary.balance < 0 ? 'text-error' : 'text-success'"
+                  class="font-weight-medium"
+                >
+                  {{ selectedContractSummary.balance < 0 ? '−' : '' }}₱{{
+                    formatNumber(Math.abs(selectedContractSummary.balance))
+                  }}
+                </span>
+              </p>
             </v-col>
 
-            <!-- PO Number (readonly, auto-filled) -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.po_number"
-                label="PO Number"
-                variant="outlined"
-                density="comfortable"
-                readonly
-                bg-color="grey-lighten-4"
-              />
-            </v-col>
+            <!-- PO Number and Account Code are no longer shown as separate fields.
+                 They are auto-filled silently when a contract is selected and
+                 displayed in the summary line below the autocomplete instead.
+                 The values are still saved to the database via the payload. -->
             <!-- Remarks -->
-            <v-col cols="12" sm="6">
+            <v-col cols="12">
               <v-text-field
                 v-model="form.remarks"
-                label="Remarks"
+                label="Remarks (optional)"
                 variant="outlined"
                 density="comfortable"
               />
             </v-col>
           </v-row>
         </v-card-text>
+
         <v-divider />
         <v-card-actions class="pa-4">
           <v-spacer />
@@ -466,7 +581,7 @@
           <!-- Invoice Info -->
           <v-card rounded="lg" variant="tonal" color="grey" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">INVOICE</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Date</p>
                 <p class="font-weight-medium">{{ formatDate(selectedTx.date) }}</p>
@@ -484,7 +599,7 @@
           <!-- Fuel Info -->
           <v-card rounded="lg" variant="tonal" color="blue" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">FUEL</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Quantity</p>
                 <p class="font-weight-bold">{{ formatNumber(selectedTx.quantity) }} L</p>
@@ -504,7 +619,7 @@
           <!-- Usage Info -->
           <v-card rounded="lg" variant="tonal" color="green" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">USAGE</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="6">
                 <p class="text-caption text-medium-emphasis">Vehicle / Equipment</p>
                 <p class="font-weight-medium">{{ selectedTx.vehicle }}</p>
@@ -518,7 +633,7 @@
           <!-- Charge Info -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CHARGED TO</p>
-            <v-row  density="comfortable">
+            <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Fund</p>
                 <v-chip
@@ -583,6 +698,7 @@
       </v-card>
     </v-dialog>
 
+    <!-- ── ADD YEAR DIALOG ── -->
     <v-dialog v-model="addYearDialog" max-width="360">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0">
@@ -608,8 +724,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <!-- Snackbar -->
 
+    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -627,7 +743,13 @@ import { supabase } from '../supabase'
 
 // ── STATE ──
 const transactions = ref([])
+
+// contracts: stores ALL contracts for the selected year.
+// These are used to power the "Charge To" autocomplete dropdown.
+// IMPORTANT: fetched fresh whenever filterYear changes, so the
+// dropdown always shows only the current year's contracts.
 const contracts = ref([])
+
 const assets = ref([])
 const loading = ref(false)
 const saving = ref(false)
@@ -663,6 +785,12 @@ const defaultForm = {
   total_amount: 0,
   total_amount_display: '',
   vehicle: '',
+  // utilization_type: tracks whether this is a vehicle or equipment.
+  // Default is 'Vehicular' since most transactions are vehicle-based.
+  utilization_type: 'Vehicular',
+  // plate_number: auto-filled from fleet data for vehicular transactions.
+  // Stored as empty string for non-vehicular equipment.
+  plate_number: '',
   utilized_by: '',
   fund_cluster: '',
   contract_id: null,
@@ -707,6 +835,9 @@ const MONTH_NAMES = [
   'DECEMBER',
 ]
 
+// getBillingPeriod: converts a date string into the billing period label.
+// Rules: day 1-15 → "MONTH 1-15, YEAR" | day 16-end → "MONTH 16-{lastDay}, YEAR"
+// WHY: billing periods are always 15-day halves of each month.
 function getBillingPeriod(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -759,16 +890,65 @@ const availableFunds = computed(() =>
   [...new Set(contracts.value.map((c) => c.fund_cluster).filter(Boolean))].sort(),
 )
 
+// contractsWithBalance: enriches each contract with its live consumed amount
+// and remaining balance, calculated from the transactions already loaded.
+// WHY: this lets the "Charge To" dropdown show the remaining balance for each
+// cost center without making an extra database call.
+const contractsWithBalance = computed(() => {
+  // Build a map of consumed amounts per contract from the loaded transactions
+  const consumedMap = new Map()
+  transactions.value.forEach((t) => {
+    if (!t.contract_id) return
+    const prev = consumedMap.get(t.contract_id) || 0
+    consumedMap.set(t.contract_id, prev + (t.total_amount || 0))
+  })
+
+  return contracts.value.map((c) => {
+    const consumed = consumedMap.get(c.id) || 0
+    const balance = (c.contract_amount || 0) - consumed
+    return { ...c, consumed, balance }
+  })
+})
+
+// filteredContractOptions: the list shown in the "Charge To" autocomplete.
+// PHASE 3 KEY CHANGE: this now filters by filterYear (the year selected in the
+// page header). So if you're encoding a 2025 transaction, you only see 2025
+// contracts — never 2024 or 2026. This prevents the year-mismatch bug.
 const filteredContractOptions = computed(() => {
-  return contracts.value
-    .filter((c) => !form.value.fund_cluster || c.fund_cluster === form.value.fund_cluster)
+  return contractsWithBalance.value
+    .filter((c) => {
+      // Only show contracts for the currently selected year
+      const matchYear = c.year === filterYear.value
+      // If a fund cluster filter is selected in the form, apply it too
+      const matchFund = !form.value.fund_cluster || c.fund_cluster === form.value.fund_cluster
+      return matchYear && matchFund
+    })
     .map((c) => ({
       id: c.id,
+      // label: what appears in the text field after selection
       label: `[${c.fund_cluster}] ${c.account_code} — ${c.po_number}`,
       po_number: c.po_number,
       fund_cluster: c.fund_cluster,
       account_code: c.account_code,
+      balance: c.balance,
+      contract_amount: c.contract_amount,
     }))
+})
+
+// contractBalanceHint: hint text shown below the autocomplete field.
+// Empty string when a contract is selected because the summary line
+// below the field already shows the full detail.
+const contractBalanceHint = computed(() => {
+  if (!form.value.contract_id) return 'Only showing FY ' + filterYear.value + ' contracts'
+  return ''
+})
+
+// selectedContractSummary: the full contract object for the currently selected
+// contract. Used to render the "Selected: Name (Fund · PO) · Balance: ₱X" line
+// below the autocomplete, matching the design in the mockup image.
+const selectedContractSummary = computed(() => {
+  if (!form.value.contract_id) return null
+  return filteredContractOptions.value.find((c) => c.id === form.value.contract_id) || null
 })
 
 // Vehicle / Equipment options from assets + past transactions
@@ -807,6 +987,37 @@ async function fetchTransactions() {
   else transactions.value = data
   loading.value = false
 }
+
+// fetchContracts: loads contracts for the selected year ONLY.
+// PHASE 3 KEY CHANGE: added .eq('year', filterYear.value) so the contracts
+// list is always year-locked. The old version loaded all years at once,
+// which allowed a 2024 contract to appear when encoding a 2025 transaction.
+async function fetchContracts() {
+  const { data } = await supabase
+    .from('fuel_contracts')
+    .select('*')
+    .eq('year', filterYear.value)
+    .order('fund_cluster')
+    .order('account_code')
+  if (data) contracts.value = data
+}
+
+async function fetchAssets() {
+  const { data } = await supabase
+    .from('vehicles')
+    .select('asset_name, asset_type')
+    .eq('status', 'Active')
+    .order('asset_name')
+  if (data) assets.value = data
+}
+
+// onYearChange: called when the user changes the year in the header selector.
+// It re-fetches BOTH transactions AND contracts so both lists stay in sync
+// with the selected year. This is critical for the year-lock to work.
+async function onYearChange() {
+  await Promise.all([fetchTransactions(), fetchContracts()])
+}
+
 function openAddYearDialog() {
   newYear.value = new Date().getFullYear() + 1
   addYearDialog.value = true
@@ -820,25 +1031,7 @@ function confirmAddYear() {
   }
   filterYear.value = y
   addYearDialog.value = false
-  fetchTransactions()
-}
-
-async function fetchContracts() {
-  const { data } = await supabase
-    .from('fuel_contracts')
-    .select('*')
-    .order('fund_cluster')
-    .order('account_code')
-  if (data) contracts.value = data
-}
-
-async function fetchAssets() {
-  const { data } = await supabase
-    .from('vehicles')
-    .select('asset_name, asset_type')
-    .eq('status', 'Active')
-    .order('asset_name')
-  if (data) assets.value = data
+  onYearChange()
 }
 
 // ── DIALOGS ──
@@ -881,7 +1074,7 @@ function closeFormDialog() {
 
 // ── FORM HANDLERS ──
 function onDateBlur() {
-  // Parse MM/DD/YY → ISO YYYY-MM-DD
+  // Parse MM/DD/YY → ISO YYYY-MM-DD format (what the database expects)
   const val = form.value.date_display?.trim()
   if (!val) return
   const parts = val.split('/')
@@ -890,16 +1083,14 @@ function onDateBlur() {
     const dd = parts[1].padStart(2, '0')
     const yy = parts[2].length === 2 ? '20' + parts[2] : parts[2]
     form.value.date = `${yy}-${mm}-${dd}`
+    // Auto-compute the billing period from the parsed date
     form.value.billing_period = getBillingPeriod(form.value.date)
   }
 }
 
-function onFundChange() {
-  form.value.contract_id = null
-  form.value.po_number = ''
-  form.value.account_code = ''
-}
-
+// onContractSelected: auto-fills PO number and account code when a contract is chosen.
+// WHY: staff should not type these manually. They come from the contract record.
+// This also prevents typos in PO numbers which would break reports.
 function onContractSelected(id) {
   const contract = filteredContractOptions.value.find((c) => c.id === id)
   if (contract) {
@@ -968,6 +1159,10 @@ async function saveTransaction() {
     unit_price: form.value.unit_price,
     total_amount: form.value.total_amount,
     vehicle: form.value.vehicle,
+    // Save utilization_type and plate_number — added in the Supabase migration.
+    // These columns already exist in fuel_transactions from the migration SQL.
+    utilization_type: form.value.utilization_type || 'Vehicular',
+    plate_number: form.value.plate_number || '',
     utilized_by: form.value.utilized_by,
     fund_cluster: form.value.fund_cluster,
     contract_id: form.value.contract_id,
@@ -1036,13 +1231,14 @@ function showSnackbar(message, color = 'success') {
   snackbar.value = { show: true, message, color }
 }
 
-// Re-fetch when year filter changes
-watch(filterYear, fetchTransactions)
+// Watch filterYear: if the year selector changes from outside (e.g. browser back),
+// re-fetch everything. The actual handler is onYearChange() called by the select.
+watch(filterYear, onYearChange)
 
 onMounted(async () => {
-  await Promise.all([fetchContracts(), fetchAssets()])
+  await fetchAssets()
   await fetchAvailableYears()
-  await fetchTransactions()
+  // Fetch transactions and contracts in parallel for faster page load
+  await Promise.all([fetchTransactions(), fetchContracts()])
 })
 </script>
-

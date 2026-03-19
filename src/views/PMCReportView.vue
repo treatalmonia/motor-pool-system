@@ -109,57 +109,52 @@
           </div>
         </div>
 
-        <div class="pmc-note">Note: Put the actual date of maintenance and name of the mechanic.</div>
+        <!-- WHY: Table removed from Page 1 per requirements.
+             The printable table is in Page 2 (Report Log) only. -->
 
-        <!-- Service-type based table -->
-        <table class="pmc-checklist-table">
+        <!-- ── Maintenance Overview Matrix Table ── -->
+        <!-- WHAT: Month-by-month service completion matrix for this vehicle -->
+        <!-- WHY: Inserted before signatories per requirements.
+                  No Asset column — this is already per-vehicle.
+                  First column is "Service Type" (renamed from Performance Task). -->
+        <div class="pmc-section-title" style="margin-top: 14px; margin-bottom: 6px;">
+          MAINTENANCE OVERVIEW — {{ selectedYear }}
+        </div>
+        <div class="pmc-note">Dates shown are the actual dates maintenance was performed.</div>
+
+        <table class="pmc-matrix-table">
           <thead>
             <tr>
-              <th class="col-no">No.</th>
-              <th class="col-stype">Service Type / Performance Task</th>
-              <th class="col-dperf">Date Performed</th>
-              <th class="col-ddue">Next Due Date</th>
-              <th class="col-conducted">Conducted By</th>
-              <th class="col-status">Status</th>
-              <th class="col-remarks">Remarks</th>
+              <!-- WHY: Column renamed from "Performance Task" to "Service Type" per requirements -->
+              <th class="matrix-col-stype">Service Type</th>
+              <th
+                v-for="m in matrixMonths"
+                :key="m.value"
+                class="matrix-col-month"
+              >
+                {{ m.label }}
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, idx) in pmRows" :key="idx">
-              <td class="data-cell text-center">{{ idx + 1 }}</td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.service_type }}</div>
-                <input v-else v-model="pmRows[idx].service_type" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.date_performed }}</div>
-                <input v-else v-model="pmRows[idx].date_performed" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.next_due_date }}</div>
-                <input v-else v-model="pmRows[idx].next_due_date" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.conducted_by }}</div>
-                <input v-else v-model="pmRows[idx].conducted_by" class="edit-input" />
-              </td>
-              <td class="data-cell text-center">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.status }}</div>
-                <input v-else v-model="pmRows[idx].status" class="edit-input" />
-              </td>
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">{{ row.remarks }}</div>
-                <textarea v-else v-model="pmRows[idx].remarks" class="cell-input" rows="2" />
+            <tr v-for="(row, idx) in matrixRows" :key="idx">
+              <td class="matrix-td-stype">{{ row.service_type }}</td>
+              <td
+                v-for="m in matrixMonths"
+                :key="m.value"
+                class="matrix-td-month"
+              >
+                {{ row.monthCells[m.value]?.display || '' }}
               </td>
             </tr>
-            <tr v-for="n in Math.max(0, 5 - pmRows.length)" :key="'b'+n">
-              <td class="data-cell blank-row">&nbsp;</td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
-              <td class="data-cell blank-row"></td>
+            <!-- Blank rows if fewer than 5 service types -->
+            <tr v-for="n in Math.max(0, 5 - matrixRows.length)" :key="'bm' + n">
+              <td class="matrix-td-stype matrix-blank">&nbsp;</td>
+              <td
+                v-for="m in matrixMonths"
+                :key="m.value"
+                class="matrix-td-month matrix-blank"
+              ></td>
             </tr>
           </tbody>
         </table>
@@ -317,6 +312,20 @@ const yearOptions = computed(() => {
 const pmRows        = ref([])
 const reportLogRows = ref([])
 
+// WHAT: Holds the maintenance matrix data for the selected vehicle.
+// WHY: Used to build the month-by-month overview table in the print report.
+const matrixRows = ref([])
+
+// WHAT: The 12 months for the matrix column headers.
+const matrixMonths = [
+  { label: 'Jan', value: 1 }, { label: 'Feb', value: 2 },
+  { label: 'Mar', value: 3 }, { label: 'Apr', value: 4 },
+  { label: 'May', value: 5 }, { label: 'Jun', value: 6 },
+  { label: 'Jul', value: 7 }, { label: 'Aug', value: 8 },
+  { label: 'Sep', value: 9 }, { label: 'Oct', value: 10 },
+  { label: 'Nov', value: 11 }, { label: 'Dec', value: 12 },
+]
+
 // ✅ FIX: compare as strings on both sides so numeric DB ids match string route params
 const selectedVehicleObj = computed(() =>
   vehicles.value.find(v => String(v.id) === String(selectedVehicle.value))
@@ -364,8 +373,57 @@ async function loadData() {
   if (!selectedVehicle.value) return
   loading.value = true
   editMode.value = false
-  await Promise.all([loadPMRows(), loadReportLog()])
+  await Promise.all([loadPMRows(), loadReportLog(), loadMatrixRows()])
   loading.value = false
+}
+
+// WHAT: Loads all PM log records for the selected vehicle and year,
+//       then builds the month-by-month matrix for each service type.
+// WHY: This powers the overview table inserted before signatories.
+//      No Asset column — this is per-vehicle already.
+async function loadMatrixRows() {
+  // Step 1: Get all service types from the PM program
+  const { data: serviceTypes, error: stError } = await supabase
+    .from('pm_service_types')
+    .select('service_type')
+    .order('service_type')
+
+  if (stError || !serviceTypes) { matrixRows.value = []; return }
+
+  // Step 2: Get all PM records for this vehicle in the selected year
+  const { data: records, error: recError } = await supabase
+    .from('vehicle_pm_log')
+    .select('service_type, date_performed, date_accomplished, status, conducted_by')
+    .eq('vehicle_id', sid(selectedVehicle.value))
+    .gte('date_performed', `${selectedYear.value}-01-01`)
+    .lte('date_performed', `${selectedYear.value}-12-31`)
+    .order('date_performed')
+
+  if (recError) { matrixRows.value = []; return }
+
+  // Step 3: Build one row per service type
+  // Each row has a monthCells object: { 1: 'MM/DD', 3: 'MM/DD', ... }
+  matrixRows.value = serviceTypes.map((st) => {
+    const stRecords = (records || []).filter((r) => r.service_type === st.service_type)
+    const monthCells = {}
+
+    stRecords.forEach((r) => {
+      if (!r.date_performed) return
+      const month = new Date(r.date_performed + 'T00:00:00').getMonth() + 1
+      // Keep the latest record per month
+      if (!monthCells[month] || r.date_performed > (monthCells[month].date || '')) {
+        monthCells[month] = {
+          date: r.date_performed,
+          display: formatDate(r.date_performed),
+        }
+      }
+    })
+
+    return {
+      service_type: st.service_type,
+      monthCells,
+    }
+  })
 }
 
 async function loadPMRows() {
@@ -481,6 +539,16 @@ onMounted(async () => {
 .signatory-name { margin-top: 24px; border-top: 1px solid #333; font-weight: bold; font-size: 10px; padding-top: 2px; min-width: 240px; }
 .signatory-title { font-size: 9.5px; color: #333; margin-top: 2px; }
 .form-code { display: flex; flex-direction: column; font-size: 8px; color: #666; margin-top: 8px; }
+
+/* ── Maintenance Overview Matrix Table ── */
+.pmc-matrix-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 14px; }
+.pmc-matrix-table th { background: #333; color: white; padding: 3px 4px; border: 1px solid #333; text-align: center; font-size: 8px; }
+.pmc-matrix-table td { border: 1px solid #999; padding: 3px 4px; vertical-align: middle; }
+.matrix-col-stype { width: 160px; text-align: left !important; }
+.matrix-col-month { width: 38px; }
+.matrix-td-stype { font-weight: 500; }
+.matrix-td-month { text-align: center; font-size: 7.5px; }
+.matrix-blank { height: 18px; }
 
 @media print {
   .no-print { display: none !important; }

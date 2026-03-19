@@ -1,185 +1,200 @@
 <template>
-  <div class="ml-root">
-    <!-- ── Header ── -->
-    <div class="ml-header">
-      <div class="ml-header__left">
-        <p class="ml-header__eyebrow">Fleet Management</p>
-        <h2 class="ml-header__title">Maintenance Log</h2>
-        <p class="ml-header__sub">
-          Performance tasks are auto-logged when marked <em>Completed</em> from the Schedule tab.
-        </p>
-      </div>
-      <div class="ml-header__controls">
-        <div class="ml-control-group">
-          <label class="ml-label">Year</label>
-          <select v-model="selectedYear" class="ml-select">
-            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-          </select>
+  <v-container fluid>
+    <!-- Header -->
+    <v-row class="mb-4">
+      <v-col>
+        <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+          <div>
+            <h2 class="text-h5 font-weight-bold">Maintenance Log</h2>
+            <p class="text-medium-emphasis text-body-2 mt-1">
+              Performance tasks are auto-logged when marked Completed from the Schedule tab.
+            </p>
+          </div>
+          <!-- Year controls — Year Dropdown + Add Year button -->
+          <div class="d-flex align-center ga-2 flex-wrap">
+            <v-select
+              v-model="selectedYear"
+              :items="yearOptions"
+              item-title="title"
+              item-value="value"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="min-width: 130px"
+            />
+            <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
+            <!-- WHAT: Print button — triggers window.print() -->
+            <!-- WHY: Only the print-area div shows during print -->
+          <!-- WHY: Print moved to PMCReportView — navigate there instead -->
+            <v-btn
+              variant="outlined"
+              prepend-icon="mdi-clipboard-check"
+              @click="goToPMCReport"
+            >
+              PMC Report
+            </v-btn>
+          </div>
         </div>
-        <div class="ml-control-group">
-          <label class="ml-label">Filter Vehicle</label>
-          <select v-model="selectedVehicleId" class="ml-select ml-select--wide">
-            <option :value="null">All Vehicles</option>
-            <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">
-              {{ v.asset_name }}
-            </option>
-          </select>
+      </v-col>
+    </v-row>
+
+    <!-- WHY: Summary Cards removed — performance tasks are already logged
+         automatically when marked Completed in VehiclePMView and VehicleRequestsView -->
+
+    <!-- Filters + Matrix Table -->
+    <v-card rounded="lg" elevation="0" border>
+      <v-card-text>
+        <!-- Filters -->
+        <v-row class="mb-2" align="center">
+          <!-- Filter Asset — includes both vehicles and non-vehicular -->
+          <v-col cols="12" sm="4">
+            <v-select
+              v-model="selectedVehicleId"
+              :items="assetOptions"
+              item-title="asset_name"
+              item-value="id"
+              label="Filter Asset"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              placeholder="All Assets"
+            />
+          </v-col>
+          <v-col cols="12" sm="3">
+            <v-select
+              v-model="sortBy"
+              :items="[
+                { title: 'Sort by Asset', value: 'vehicle' },
+                { title: 'Sort by Status', value: 'status' },
+              ]"
+              item-title="title"
+              item-value="value"
+              label="Sort By"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+          </v-col>
+        </v-row>
+
+        <!-- Loading -->
+        <div v-if="loading" class="d-flex flex-column align-center justify-center pa-8 ga-3">
+          <v-progress-circular indeterminate color="primary" />
+          <p class="text-medium-emphasis">Loading maintenance data…</p>
         </div>
-        <div class="ml-control-group">
-          <label class="ml-label">Sort By</label>
-          <select v-model="sortBy" class="ml-select">
-            <option value="vehicle">Vehicle</option>
-            <option value="status">Status</option>
-          </select>
-        </div>
-      </div>
-    </div>
 
-    <!-- ── Summary Bar ── -->
-    <div class="ml-summary">
-      <div class="ml-stat ml-stat--ok">
-        <span class="ml-stat__num">{{ summaryTotals.ok }}</span>
-        <span class="ml-stat__label">OK</span>
-      </div>
-      <div class="ml-stat ml-stat--soon">
-        <span class="ml-stat__num">{{ summaryTotals.soon }}</span>
-        <span class="ml-stat__label">Due Soon</span>
-      </div>
-      <div class="ml-stat ml-stat--overdue">
-        <span class="ml-stat__num">{{ summaryTotals.overdue }}</span>
-        <span class="ml-stat__label">Overdue</span>
-      </div>
-      <div class="ml-stat ml-stat--none">
-        <span class="ml-stat__num">{{ summaryTotals.none }}</span>
-        <span class="ml-stat__label">No Record</span>
-      </div>
-    </div>
-
-    <!-- ── Loading ── -->
-    <div v-if="loading" class="ml-empty">
-      <div class="ml-spinner"></div>
-      <p>Loading maintenance data…</p>
-    </div>
-
-    <!-- ── Matrix ── -->
-    <div v-else class="ml-matrix-wrap">
-      <div class="ml-matrix-scroll">
-        <table class="ml-matrix">
-          <thead>
-            <tr>
-              <th class="ml-col-vehicle ml-sticky-l">Vehicle</th>
-              <th class="ml-col-task ml-sticky-l2">Performance Task</th>
-              <th
-                v-for="m in months"
-                :key="m.value"
-                class="ml-col-month"
-                :class="{
-                  'ml-col-month--current': m.value === currentMonth && selectedYear === currentYear,
-                }"
-              >
-                {{ m.label }}
-              </th>
-              <th class="ml-col-status">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
-              <tr
-                v-for="(row, ri) in group.rows"
-                :key="row.service_type"
-                class="ml-row"
-                :class="rowStatusClass(row)"
-              >
-                <!-- Vehicle cell — only on first row of group -->
-                <td v-if="ri === 0" :rowspan="group.rows.length" class="ml-td-vehicle ml-sticky-l">
-                  <div class="ml-vehicle-badge">
-                    <span class="ml-vehicle-badge__icon">🚗</span>
-                    <div>
-                      <p class="ml-vehicle-name">{{ group.vehicleName }}</p>
-                      <p class="ml-vehicle-plate">{{ group.plate || '—' }}</p>
-                    </div>
-                  </div>
-                </td>
-                <!-- Task name -->
-                <td class="ml-td-task ml-sticky-l2">
-                  <span class="ml-task-name">{{ row.service_type }}</span>
-                  <span
-                    class="ml-task-interval"
-                    v-if="row.km_between_service || row.months_between_service"
+        <!-- Matrix -->
+        <div v-else class="ml-matrix-wrap">
+          <div class="ml-matrix-scroll">
+            <table class="ml-matrix">
+              <thead>
+                <tr>
+                  <th class="ml-col-vehicle ml-sticky-l">Vehicle</th>
+                  <th class="ml-col-task ml-sticky-l2">Performance Task</th>
+                  <th
+                    v-for="m in months"
+                    :key="m.value"
+                    class="ml-col-month"
+                    :class="{
+                      'ml-col-month--current':
+                        m.value === currentMonth && selectedYear === currentYear,
+                    }"
                   >
-                    <template v-if="row.km_between_service"
-                      >every {{ Number(row.km_between_service).toLocaleString() }} km</template
+                    {{ m.label }}
+                  </th>
+                  <!-- WHY: Status column removed per requirements -->
+                </tr>
+              </thead>
+              <tbody>
+                <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
+                  <!-- WHY: rowStatusClass removed — no more overdue row color highlighting -->
+                  <tr v-for="(row, ri) in group.rows" :key="row.service_type" class="ml-row">
+                    <!-- Vehicle cell — only on first row of group -->
+                    <td
+                      v-if="ri === 0"
+                      :rowspan="group.rows.length"
+                      class="ml-td-vehicle ml-sticky-l"
                     >
-                    <template v-if="row.km_between_service && row.months_between_service">
-                      ·
-                    </template>
-                    <template v-if="row.months_between_service"
-                      >{{ row.months_between_service }} mo</template
+                      <div class="ml-vehicle-badge">
+                        <span class="ml-vehicle-badge__icon">🚗</span>
+                        <div>
+                          <p class="ml-vehicle-name">{{ group.vehicleName }}</p>
+                          <p class="ml-vehicle-plate">{{ group.plate || '—' }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- Task name -->
+                    <td class="ml-td-task ml-sticky-l2">
+                      <span class="ml-task-name">{{ row.service_type }}</span>
+                      <span
+                        class="ml-task-interval"
+                        v-if="row.km_between_service || row.months_between_service"
+                      >
+                        <template v-if="row.km_between_service"
+                          >every {{ Number(row.km_between_service).toLocaleString() }} km</template
+                        >
+                        <template v-if="row.km_between_service && row.months_between_service">
+                          ·
+                        </template>
+                        <template v-if="row.months_between_service"
+                          >{{ row.months_between_service }} mo</template
+                        >
+                      </span>
+                    </td>
+                    <!-- Month cells -->
+                    <td
+                      v-for="m in months"
+                      :key="m.value"
+                      class="ml-td-month"
+                      :class="{
+                        'ml-td-month--current':
+                          m.value === currentMonth && selectedYear === currentYear,
+                      }"
                     >
-                  </span>
-                </td>
-                <!-- Month cells -->
-                <td
-                  v-for="m in months"
-                  :key="m.value"
-                  class="ml-td-month"
-                  :class="{
-                    'ml-td-month--current':
-                      m.value === currentMonth && selectedYear === currentYear,
-                  }"
-                >
-                  <button
-                    v-if="row.monthCells[m.value]"
-                    class="ml-cell-done"
-                    @click="
-                      openDetail(
-                        row.monthCells[m.value],
-                        group.vehicleName,
-                        row.service_type,
-                        group.currentOdometer,
-                      )
-                    "
-                    :title="
-                      'View details for ' + formatDate(row.monthCells[m.value].date_performed)
-                    "
-                  >
-                    <span class="ml-cell-done__date">{{
-                      formatShortDate(row.monthCells[m.value].date_performed)
-                    }}</span>
-                    <span class="ml-cell-done__dot"></span>
-                  </button>
-                  <span v-else class="ml-cell-empty">—</span>
-                </td>
-                <!-- Status -->
-                <td class="ml-td-status">
-                  <span class="ml-status-pill" :class="'ml-status-pill--' + statusKey(row)">
-                    {{ statusLabel(row) }}
-                  </span>
-                </td>
-              </tr>
-              <!-- Group separator -->
-              <tr v-if="gi < matrixGroups.length - 1" class="ml-row-sep">
-                <td :colspan="months.length + 3"></td>
-              </tr>
-            </template>
-            <tr v-if="matrixGroups.length === 0">
-              <td :colspan="months.length + 3" class="ml-empty-row">No records found.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+                      <button
+                        v-if="row.monthCells[m.value]"
+                        class="ml-cell-done"
+                          @click="
+                          openDetail(
+                            row.monthCells[m.value],
+                            group.vehicleName,
+                            row.service_type,
+                          )
+                        "
+                        :title="
+                          'View details for ' + formatDate(row.monthCells[m.value].date_performed)
+                        "
+                      >
+                        <span class="ml-cell-done__date">{{
+                          formatShortDate(row.monthCells[m.value].date_performed)
+                        }}</span>
+                        <span class="ml-cell-done__dot"></span>
+                      </button>
+                      <span v-else class="ml-cell-empty">—</span>
+                    </td>
+                    <!-- WHY: Status column removed per requirements -->
+                  </tr>
+                  <!-- Group separator -->
+                  <tr v-if="gi < matrixGroups.length - 1" class="ml-row-sep">
+                    <!-- WHY: colspan reduced by 1 — Status column removed -->
+                    <td :colspan="months.length + 2"></td>
+                  </tr>
+                </template>
+                <tr v-if="matrixGroups.length === 0">
+                  <td :colspan="months.length + 2" class="ml-empty-row">No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-    <!-- ── Legend ── -->
-    <div class="ml-legend">
-      <span class="ml-legend__label">Legend:</span>
-      <span class="ml-pill ml-pill--ok">OK</span>
-      <span class="ml-pill ml-pill--soon">Due Soon (30 days)</span>
-      <span class="ml-pill ml-pill--overdue">Overdue</span>
-      <span class="ml-pill ml-pill--none">No Record</span>
-    </div>
+        <!-- WHY: Legend removed per requirements -->
+      </v-card-text>
+    </v-card>
 
-    <!-- ── Detail Popup ── -->
+    <!-- Detail Popup -->
     <transition name="ml-fade">
       <div v-if="detailOpen" class="ml-overlay" @click.self="detailOpen = false">
         <div class="ml-detail">
@@ -187,19 +202,13 @@
           <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
           <h3 class="ml-detail__title">Service Record</h3>
           <div class="ml-detail__grid">
-
+            <!-- WHAT: Shows the date this maintenance was performed -->
+            <!-- WHY: current_odometer removed — it was redundant and the field no longer exists -->
             <div class="ml-detail__item">
               <span class="ml-detail__key">Date Conducted</span>
-              <div class="ml-detail__item">
-                <span class="ml-detail__key">Current Odometer</span>
-                <span class="ml-detail__val">
-                  {{
-                    detailRecord?.current_odometer
-                      ? Number(detailRecord.current_odometer).toLocaleString() + ' km'
-                      : '—'
-                  }}
-                </span>
-              </div>
+              <span class="ml-detail__val">
+                {{ formatDate(detailRecord?.date_performed) || '—' }}
+              </span>
             </div>
 
             <div class="ml-detail__item">
@@ -243,12 +252,27 @@
         </div>
       </div>
     </transition>
-  </div>
+
+<!-- WHY: Print area removed — printing is now handled by PMCReportView -->
+
+    <!-- Snackbar -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      location="bottom right"
+      :timeout="3000"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
+  </v-container>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const today = new Date().toISOString().split('T')[0]
 const currentYear = new Date().getFullYear()
@@ -260,7 +284,8 @@ const vehicles = ref([])
 const pmServiceTypes = ref([])
 const pmRecords = ref([])
 const selectedVehicleId = ref(null)
-const selectedYear = ref(currentYear)
+// WHY: Default null = "All Years" so records from previous years are visible
+const selectedYear = ref(null)
 const sortBy = ref('vehicle')
 
 // ── Detail popup ──
@@ -269,19 +294,40 @@ const detailRecord = ref(null)
 const detailVehicle = ref('')
 const detailTask = ref('')
 
-function openDetail(record, vehicleName, taskName, vehicleOdometer) {
-  detailRecord.value = { ...record, current_odometer: vehicleOdometer }
+// WHY: vehicleOdometer param removed — current_odometer was deleted from the system.
+//      The detail popup now shows only what's in the record itself.
+function openDetail(record, vehicleName, taskName) {
+  detailRecord.value = { ...record }
   detailVehicle.value = vehicleName
   detailTask.value = taskName
   detailOpen.value = true
 }
 
 // ── Options ──
+// WHY: "All Years" option (null) is the default so no records are hidden
 const yearOptions = computed(() => {
-  const years = []
-  for (let y = currentYear + 1; y >= currentYear - 4; y--) years.push(y)
-  return years
+  const options = [{ title: 'All Years', value: null }]
+  for (let y = currentYear + 1; y >= currentYear - 4; y--) {
+    options.push({ title: String(y), value: y })
+  }
+  return options
 })
+
+// WHAT: Stub for Add Year button
+function addYear() {
+  showSnackbar('Add Year feature coming soon', 'info')
+}
+
+// WHAT: Navigates to PMCReportView with the selected vehicle pre-filled.
+// WHY: Print is now handled by PMCReportView which has the full layout.
+//      If an asset is selected, pass it as a query param so PMCReport
+//      opens with that vehicle already loaded.
+function goToPMCReport() {
+  const query = {}
+  if (selectedVehicleId.value) query.vehicleId = selectedVehicleId.value
+  if (selectedYear.value) query.year = selectedYear.value
+  router.push({ path: '/pmc-report', query })
+}
 
 const months = [
   { label: 'Jan', value: 1 },
@@ -298,26 +344,36 @@ const months = [
   { label: 'Dec', value: 12 },
 ]
 
-const vehicleOptions = computed(() => vehicles.value.filter((v) => v.asset_type === 'Vehicle'))
+// WHY: Renamed from vehicleOptions — now includes ALL assets (vehicles + non-vehicular)
+// WHAT: Used to populate the "Filter Asset" dropdown
+const assetOptions = computed(() => vehicles.value)
 
-const filteredVehicles = computed(() => {
-  const list = vehicleOptions.value
-  if (selectedVehicleId.value) return list.filter((v) => v.id === selectedVehicleId.value)
-  return list
+// WHAT: The filtered list of assets shown in the matrix
+// WHY: When an asset is selected in the filter, only show that asset's rows
+const filteredAssets = computed(() => {
+  if (selectedVehicleId.value) {
+    return vehicles.value.filter((v) => v.id === selectedVehicleId.value)
+  }
+  return vehicles.value
 })
 
 // ── Matrix groups (one per vehicle) ──
 const matrixGroups = computed(() => {
   if (!pmServiceTypes.value.length) return []
 
-  const groups = filteredVehicles.value.map((vehicle) => {
+  // WHY: Now uses filteredAssets instead of filteredVehicles
+  //      so non-vehicular assets appear in the matrix too
+  const groups = filteredAssets.value.map((vehicle) => {
     const vehicleRecords = pmRecords.value.filter((r) => r.vehicle_id === vehicle.id)
 
     const rows = pmServiceTypes.value.map((st) => {
       const records = vehicleRecords.filter((r) => r.service_type === st.service_type)
 
+      // WHY: If selectedYear is null (All Years), show all records
+      //      Otherwise filter by the selected year
       const yearRecords = records.filter((r) => {
         if (!r.date_performed) return false
+        if (selectedYear.value === null) return true
         return new Date(r.date_performed).getFullYear() === selectedYear.value
       })
 
@@ -368,16 +424,7 @@ const matrixGroups = computed(() => {
   return groups
 })
 
-// ── Summary totals (across all shown groups) ──
-const summaryTotals = computed(() => {
-  const counts = { ok: 0, soon: 0, overdue: 0, none: 0 }
-  matrixGroups.value.forEach((g) => {
-    g.rows.forEach((row) => {
-      counts[statusKey(row)]++
-    })
-  })
-  return counts
-})
+// WHY: summaryTotals removed — summary cards were removed per requirements
 
 // ── Helpers ──
 function formatDate(dateStr) {
@@ -403,16 +450,9 @@ function statusKey(row) {
   return 'ok'
 }
 
-function statusLabel(row) {
-  return { overdue: 'Overdue', soon: 'Due Soon', ok: 'OK', none: 'No Record' }[statusKey(row)]
-}
+// WHY: statusLabel removed — Status column was removed per requirements
 
-function rowStatusClass(row) {
-  return {
-    'ml-row--overdue': statusKey(row) === 'overdue',
-    'ml-row--soon': statusKey(row) === 'soon',
-  }
-}
+// WHY: rowStatusClass removed — row highlight colors were removed per requirements
 
 // ── Fetch ──
 async function fetchAll() {
@@ -420,28 +460,39 @@ async function fetchAll() {
   const [vRes, stRes] = await Promise.all([
     supabase
       .from('vehicles')
-      .select('id,asset_name,asset_type,plate_number,model,year_model,current_odometer')
-      .eq('status', 'Active')
+      // WHY: Removed current_odometer — field no longer used
+      .select('id, asset_name, asset_type, plate_number, model, year_model')
+      // WHY: ilike used for case-insensitive match — catches 'active', 'Active', 'ACTIVE'
+      .ilike('status', 'active')
       .order('asset_name'),
     supabase.from('pm_service_types').select('*').order('service_type'),
   ])
   if (!vRes.error) vehicles.value = vRes.data
   if (!stRes.error) pmServiceTypes.value = stRes.data
 
-  const vIds = vehicles.value.filter((v) => v.asset_type === 'Vehicle').map((v) => v.id)
-  if (vIds.length) {
+  // WHY: Now fetches PM records for ALL assets (vehicles + non-vehicular)
+  //      Previously only fetched for vehicles — non-vehicular was invisible
+  const allIds = vehicles.value.map((v) => v.id)
+  if (allIds.length) {
     const { data, error } = await supabase
       .from('vehicle_pm_log')
       .select('*')
-      .in('vehicle_id', vIds)
+      .in('vehicle_id', allIds)
       .order('date_performed', { ascending: false })
     if (!error) pmRecords.value = data
   }
   loading.value = false
 }
 
-watch(selectedYear, fetchAll)
+// WHY: Removed watch(selectedYear, fetchAll) — year filtering is done
+//      in the matrixGroups computed, no need to re-fetch from Supabase
 onMounted(fetchAll)
+
+// ── Snackbar ──
+const snackbar = ref({ show: false, message: '', color: 'success' })
+function showSnackbar(message, color = 'success') {
+  snackbar.value = { show: true, message, color }
+}
 </script>
 
 <style scoped>
@@ -685,9 +736,10 @@ thead .ml-sticky-l2 {
 .ml-row:hover td {
   background: #f8f8f6;
 }
-.ml-row--overdue td {
+/* WHY: Overdue row color removed per requirements */
+/* .ml-row--overdue td {
   background: #fff8f8;
-}
+} */
 .ml-row--soon td {
   background: #fffef5;
 }
@@ -700,10 +752,10 @@ thead .ml-sticky-l2 {
 }
 
 /* Vehicle cell */
+/* WHY: Background color removed — table should be clean and consistent */
 .ml-td-vehicle {
   vertical-align: top !important;
   padding-top: 12px !important;
-  background: #fafaf8;
   border-right: 1.5px solid var(--c-border);
 }
 .ml-vehicle-badge {
@@ -729,9 +781,8 @@ thead .ml-sticky-l2 {
 }
 
 /* Task cell */
-.ml-td-task {
-  background: #fafaf8;
-}
+/* WHY: Background color removed per requirements */
+
 .ml-task-name {
   display: block;
   font-weight: 600;
@@ -752,37 +803,36 @@ thead .ml-sticky-l2 {
   background: #eff6ff22;
 }
 
+/* WHY: Removed green background and transform hover —
+   replaced with clean neutral style consistent with other modules */
 .ml-cell-done {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  background: #dcfce7;
-  border: 1.5px solid #86efac;
-  border-radius: 6px;
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
   padding: 3px 7px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s;
   text-decoration: none;
   font-family: inherit;
 }
 .ml-cell-done:hover {
-  background: #bbf7d0;
-  border-color: #4ade80;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.15);
+  background: #e0e7ff;
 }
 .ml-cell-done__date {
   font-size: 10.5px;
-  font-weight: 700;
-  color: #15803d;
+  font-weight: 600;
+  color: #3730a3;
   line-height: 1;
 }
 .ml-cell-done__dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #6366f1;
 }
 
 .ml-cell-empty {
@@ -978,4 +1028,131 @@ thead .ml-sticky-l2 {
   opacity: 0;
   transform: scale(0.97);
 }
+
+/* ── Print ── */
+/* WHAT: When printing, hide everything except the matrix table */
+/* WHY: Print layout must be clean — only the data table is needed */
+/* WHY: Print CSS removed — printing is now handled by PMCReportView */
+  /* Hide everything on screen */
+  body > * {
+    display: none !important;
+  }
+
+  /* Show only the print area */
+  .print-area {
+    display: block !important;
+  }
+
+  /* Page setup */
+  .print-page {
+    padding: 12mm 15mm 10mm 15mm;
+    background: white;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
+  }
+
+  /* Title block */
+  .print-title-block {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .print-title {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .print-subtitle {
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+
+  /* Matrix table */
+  .print-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+    margin-bottom: 16px;
+  }
+  .print-matrix-table th {
+    background: #f5f5f5;
+    color: #333;
+    padding: 4px 5px;
+    border: 1px solid #333;
+    text-align: left;
+    font-size: 8px;
+  }
+  .print-matrix-table td {
+    border: 1px solid #999;
+    padding: 3px 4px;
+    vertical-align: top;
+    font-size: 8px;
+  }
+  .print-col-asset {
+    width: 120px;
+  }
+  .print-col-task {
+    width: 140px;
+  }
+  .print-col-month {
+    width: 32px;
+    text-align: center;
+  }
+  .print-td-month {
+    text-align: center;
+  }
+  .print-td-asset {
+    vertical-align: top;
+  }
+  .print-plate {
+    font-size: 7px;
+    color: #666;
+  }
+  .print-row-sep td {
+    height: 4px;
+    background: #f0f0f0;
+    border: none;
+  }
+  .print-empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+  }
+
+  /* Signatory */
+  .print-signatory-block {
+    display: flex;
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  .print-signatory-item {
+    min-width: 280px;
+  }
+  .print-signatory-label {
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .print-signatory-name {
+    margin-top: 24px;
+    border-top: 1px solid #333;
+    font-weight: bold;
+    font-size: 10px;
+    padding-top: 2px;
+    min-width: 240px;
+  }
+  .print-signatory-title {
+    font-size: 9.5px;
+    color: #333;
+    margin-top: 2px;
+  }
+
+  /* Form code */
+  .print-form-code {
+    display: flex;
+    flex-direction: column;
+    font-size: 8px;
+    color: #666;
+    margin-top: 8px;
+  }
+
 </style>

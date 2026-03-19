@@ -7,7 +7,7 @@
           <div>
             <h2 class="text-h5 font-weight-bold">Fuel Allocation Monitoring</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
-              Manage annual fuel contracts per cost center
+              Monitor annual fuel allocation and remaining balance per cost center
             </p>
           </div>
           <div class="d-flex ga-2 flex-wrap align-center">
@@ -38,75 +38,111 @@
       </v-col>
     </v-row>
 
-    <!-- Summary Cards — FEATURE 4 & 5 -->
+    <!-- ── SUMMARY CARDS ──────────────────────────────────────────────────────
+         Three cards showing the fuel allocation health for the selected year.
+         Card 1: Budget overview (contract total, consumed, remaining balance)
+         Card 2: Diesel        (allocated L, consumed L, remaining L)
+         Card 3: Gasoline      (allocated L, consumed L, remaining L)
+         All values come from computed properties defined in <script setup>.
+         Remaining values turn red when negative (over-budget/over-allocated).
+    ─────────────────────────────────────────────────────────────────────────-->
     <v-row class="mb-4">
-      <!-- Total Contract Amount + Remaining Balance -->
+      <!-- ── CARD 1: Contract Budget Overview ── -->
       <v-col cols="12" sm="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="ga-2">
-            <div class="d-flex align-center ga-3 mb-2">
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text>
+            <!-- Header: icon + label -->
+            <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="orange-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-cash-multiple</v-icon>
               </v-avatar>
-              <p class="text-body-2 font-weight-bold">Contract Amount</p>
+              <p class="text-body-2 font-weight-bold">Total Contract Amount</p>
             </div>
-            <v-row>
-              <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">TOTAL CONTRACT AMOUNT</p>
-                <p class="text-h6 font-weight-bold">{{ formatCurrency(totalContractAmount) }}</p>
-              </v-col>
-              <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">REMAINING BALANCE</p>
-                <p
-                  class="text-h6 font-weight-bold"
-                  :class="totalRemainingAmount >= 0 ? 'text-success' : 'text-error'"
-                >
-                  {{ formatCurrency(Math.abs(totalRemainingAmount)) }}
-                  <span v-if="totalRemainingAmount < 0" class="text-caption">(over)</span>
-                </p>
-              </v-col>
-            </v-row>
+
+            <!-- Main figure: the full approved budget for this year -->
+            <p class="text-h5 font-weight-bold mb-3">
+              {{ formatCurrency(totalContractAmount) }}
+            </p>
+
+            <v-divider class="mb-3" />
+
+            <!-- Row: total peso amount consumed so far this year -->
+            <div class="d-flex justify-space-between align-center mb-2">
+              <p class="text-caption text-medium-emphasis">Total consumed</p>
+              <p class="text-body-2 font-weight-medium">
+                {{ formatCurrency(totalConsumedAmount) }}
+              </p>
+            </div>
+
+            <!-- Row: remaining balance = contract total minus consumed.
+                 Turns red with a "−" prefix when the balance is negative.
+                 A negative balance is VALID — it means the office spent
+                 slightly more than the contract allows (see Image 5). -->
+            <div class="d-flex justify-space-between align-center">
+              <p class="text-caption text-medium-emphasis">Remaining balance</p>
+              <p
+                class="text-body-2 font-weight-bold"
+                :class="totalRemainingBalance < 0 ? 'text-error' : 'text-success'"
+              >
+                {{ totalRemainingBalance < 0 ? '−' : ''
+                }}{{ formatCurrency(Math.abs(totalRemainingBalance)) }}
+              </p>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <!-- Diesel -->
+      <!-- ── CARD 2: Diesel ── -->
       <v-col cols="12" sm="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="ga-2">
-            <div class="d-flex align-center ga-3 mb-2">
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text>
+            <!-- Header: icon + label -->
+            <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="blue-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-fuel</v-icon>
               </v-avatar>
               <p class="text-body-2 font-weight-bold">Diesel</p>
             </div>
-            <v-row>
+
+            <!-- Top section: what was ALLOCATED (the plan from contracts) -->
+            <v-row class="mb-1">
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total Liters Used</p>
+                <p class="text-caption text-medium-emphasis">Total No. (L)</p>
+                <!-- totalDiesel = sum of allocated_diesel from all contracts -->
                 <p class="text-h6 font-weight-bold text-blue-darken-2">
-                  {{ formatNumber(usedDieselLiters) }} L
+                  {{ formatNumber(totalDiesel) }}
                 </p>
-                <p class="text-caption text-medium-emphasis mt-1">Total Amount Used</p>
-                <p class="font-weight-medium">{{ formatCurrency(totalDieselAmount) }}</p>
               </v-col>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Remaining Liters</p>
-                <p
-                  class="text-h6 font-weight-bold"
-                  :class="remainingDieselLiters >= 0 ? 'text-blue-darken-2' : 'text-error'"
-                >
-                  {{ formatNumber(remainingDieselLiters) }} L
+                <p class="text-caption text-medium-emphasis">Total Amount</p>
+                <!-- totalDieselAmount = sum of actual transaction amounts for diesel -->
+                <p class="text-h6 font-weight-bold">
+                  {{ formatCurrency(totalDieselAmount) }}
                 </p>
-                <p class="text-caption text-medium-emphasis mt-1">Remaining Amount</p>
+              </v-col>
+            </v-row>
+
+            <v-divider class="mb-2" />
+
+            <!-- Bottom section: REMAINING BALANCE (what the end user requested) -->
+            <p class="text-caption text-medium-emphasis mb-1">Remaining balance</p>
+            <v-row>
+              <v-col cols="6">
+                <!-- Remaining liters = allocated minus consumed.
+                     Red + "−" prefix when over-allocated. -->
                 <p
-                  class="font-weight-medium"
-                  :class="totalRemainingAmount >= 0 ? '' : 'text-error'"
+                  class="text-body-2 font-weight-bold"
+                  :class="totalRemainingDiesel < 0 ? 'text-error' : ''"
                 >
-                  {{
-                    formatCurrency(
-                      Math.max(totalContractAmount - totalDieselAmount - totalGasolineAmount, 0),
-                    )
-                  }}
+                  {{ totalRemainingDiesel < 0 ? '−' : ''
+                  }}{{ formatNumber(Math.abs(totalRemainingDiesel)) }} L
+                </p>
+              </v-col>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Consumed</p>
+                <!-- totalConsumedDiesel = actual liters withdrawn from transactions -->
+                <p class="text-body-2 font-weight-medium">
+                  {{ formatNumber(totalConsumedDiesel) }} L
                 </p>
               </v-col>
             </v-row>
@@ -114,40 +150,57 @@
         </v-card>
       </v-col>
 
-      <!-- Gasoline -->
+      <!-- ── CARD 3: Gasoline (same structure as Card 2) ── -->
       <v-col cols="12" sm="4">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="ga-2">
-            <div class="d-flex align-center ga-3 mb-2">
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text>
+            <!-- Header: icon + label -->
+            <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="green-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-gas-station</v-icon>
               </v-avatar>
               <p class="text-body-2 font-weight-bold">Gasoline</p>
             </div>
-            <v-row>
+
+            <!-- Top section: what was ALLOCATED -->
+            <v-row class="mb-1">
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Total Liters Used</p>
+                <p class="text-caption text-medium-emphasis">Total No. (L)</p>
+                <!-- totalGasoline = sum of allocated_gasoline from all contracts -->
                 <p class="text-h6 font-weight-bold text-green-darken-2">
-                  {{ formatNumber(usedGasolineLiters) }} L
+                  {{ formatNumber(totalGasoline) }}
                 </p>
-                <p class="text-caption text-medium-emphasis mt-1">Total Amount Used</p>
-                <p class="font-weight-medium">{{ formatCurrency(totalGasolineAmount) }}</p>
               </v-col>
               <v-col cols="6">
-                <p class="text-caption text-medium-emphasis">Remaining Liters</p>
-                <p
-                  class="text-h6 font-weight-bold"
-                  :class="remainingGasolineLiters >= 0 ? 'text-green-darken-2' : 'text-error'"
-                >
-                  {{ formatNumber(remainingGasolineLiters) }} L
+                <p class="text-caption text-medium-emphasis">Total Amount</p>
+                <!-- totalGasolineAmount = sum of actual transaction amounts for gasoline -->
+                <p class="text-h6 font-weight-bold">
+                  {{ formatCurrency(totalGasolineAmount) }}
                 </p>
-                <p class="text-caption text-medium-emphasis mt-1">Remaining Amount</p>
-                <p class="font-weight-medium">
-                  {{
-                    formatCurrency(
-                      Math.max(totalContractAmount - totalDieselAmount - totalGasolineAmount, 0),
-                    )
-                  }}
+              </v-col>
+            </v-row>
+
+            <v-divider class="mb-2" />
+
+            <!-- Bottom section: REMAINING BALANCE -->
+            <p class="text-caption text-medium-emphasis mb-1">Remaining balance</p>
+            <v-row>
+              <v-col cols="6">
+                <!-- Remaining liters = allocated minus consumed.
+                     Red + "−" prefix when over-allocated. -->
+                <p
+                  class="text-body-2 font-weight-bold"
+                  :class="totalRemainingGasoline < 0 ? 'text-error' : ''"
+                >
+                  {{ totalRemainingGasoline < 0 ? '−' : ''
+                  }}{{ formatNumber(Math.abs(totalRemainingGasoline)) }} L
+                </p>
+              </v-col>
+              <v-col cols="6">
+                <p class="text-caption text-medium-emphasis">Consumed</p>
+                <!-- totalConsumedGasoline = actual liters withdrawn from transactions -->
+                <p class="text-body-2 font-weight-medium">
+                  {{ formatNumber(totalConsumedGasoline) }} L
                 </p>
               </v-col>
             </v-row>
@@ -879,11 +932,42 @@ const totalDieselAmount = computed(() =>
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 const totalGasolineAmount = computed(() =>
-  summaryTransactions.value
+  allTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
+// totalConsumedAmount: total peso amount spent across ALL cost centers this year.
+// This is calculated from actual transactions, not from contract amounts.
+const totalConsumedAmount = computed(() =>
+  allTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
+)
+
+// totalRemainingBalance: total contract budget minus total amount actually spent.
+// This can be negative if any cost centers went over budget.
+const totalRemainingBalance = computed(() => totalContractAmount.value - totalConsumedAmount.value)
+
+// totalConsumedDiesel: total liters of diesel actually withdrawn this year.
+// Sourced from transactions, not from the allocated amount in contracts.
+const totalConsumedDiesel = computed(() =>
+  allTransactions.value
+    .filter((t) => t.fuel_type === 'Diesel')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
+
+// totalConsumedGasoline: total liters of gasoline actually withdrawn this year.
+const totalConsumedGasoline = computed(() =>
+  allTransactions.value
+    .filter((t) => t.fuel_type === 'Gasoline')
+    .reduce((s, t) => s + (t.quantity || 0), 0),
+)
+
+// totalRemainingDiesel: allocated diesel liters minus consumed diesel liters.
+// Negative means the office used more diesel than was allocated.
+const totalRemainingDiesel = computed(() => totalDiesel.value - totalConsumedDiesel.value)
+
+// totalRemainingGasoline: allocated gasoline liters minus consumed gasoline liters.
+const totalRemainingGasoline = computed(() => totalGasoline.value - totalConsumedGasoline.value)
 // FEATURE 4: used liters per fuel type (from transactions)
 const usedDieselLiters = computed(() =>
   summaryTransactions.value
@@ -1152,11 +1236,26 @@ function formatNumber(val) {
   if (val === null || val === undefined || val === '') return '0'
   return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
 }
+// formatCurrency: always shows the full exact peso amount with 2 decimal places.
+// Why: This is a government accounting system — abbreviating ₱385,785 as "₱385.8K"
+// hides the real number and can cause confusion during audits.
+// How it works: it reuses formatNumber (which adds commas) then adds the ₱ sign.
+
+// formatCurrency: always shows the exact peso amount with 2 decimal places.
+// WHY this exists: government accounting requires exact amounts — never abbreviations.
+// PROBLEM it solves: the old version showed ₱385,785.00 as "₱385.8K" which is
+//   misleading and wrong for official financial records.
+// HOW it works: it uses the same number formatter as formatNumber, but forces
+//   exactly 2 decimal places so ₱200,450.00 never shows as ₱200,450.
 function formatCurrency(val) {
-  if (!val) return '₱0'
-  if (val >= 1000000) return '₱' + (val / 1000000).toFixed(2) + 'M'
-  if (val >= 1000) return '₱' + (val / 1000).toFixed(1) + 'K'
-  return '₱' + formatNumber(val)
+  if (val === null || val === undefined || val === '') return '₱0.00'
+  return (
+    '₱' +
+    Number(val).toLocaleString('en-PH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  )
 }
 function formatDate(dateStr) {
   if (!dateStr) return ''

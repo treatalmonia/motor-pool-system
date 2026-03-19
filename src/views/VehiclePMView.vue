@@ -36,7 +36,7 @@
       </v-col>
     </v-row>
 
-<!-- Summary Cards — date-based status for Scheduled records only -->
+    <!-- Summary Cards — date-based status for Scheduled records only -->
     <!-- WHY: Shows actionable maintenance urgency, not just database status counts -->
     <v-row class="mb-4">
       <!-- Overdue Maintenance — past the due date -->
@@ -153,7 +153,9 @@
           rounded="lg"
         >
           <template v-slot:item="{ item, props }">
-            <tr v-bind="props" :class="{ 'bg-red-lighten-5': isOverdue(item) }">
+            <!-- WHY: Row background color shows urgency at a glance -->
+            <!-- Red = Overdue, Blue = Due Today, Yellow = Due Soon, none = OK -->
+            <tr v-bind="props" :style="getRowStyle(item)">
               <td>{{ item.asset_name }}</td>
               <td>
                 <v-chip
@@ -200,9 +202,13 @@
                     variant="tonal"
                     class="ml-1"
                   >
-                    {{ getDateStatus(item) === 'overdue' ? 'Overdue'
-                       : getDateStatus(item) === 'due-today' ? 'Due Today'
-                       : 'Due Soon' }}
+                    {{
+                      getDateStatus(item) === 'overdue'
+                        ? 'Overdue'
+                        : getDateStatus(item) === 'due-today'
+                          ? 'Due Today'
+                          : 'Due Soon'
+                    }}
                   </v-chip>
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
@@ -704,7 +710,6 @@
 
         <v-card-text class="pa-4">
           <v-row>
-
             <!-- Last Date Performed — pre-filled from date_accomplished of completed record -->
             <v-col cols="12" sm="6">
               <v-text-field
@@ -851,19 +856,13 @@
                 placeholder="Additional notes"
               />
             </v-col>
-
           </v-row>
         </v-card-text>
 
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <!-- Skip — keeps the Completed status, just doesn't create next record -->
-          <v-btn
-            variant="text"
-            @click="scheduleNextDialog = false"
-          >
-            Skip for now
-          </v-btn>
+          <v-btn variant="text" @click="scheduleNextDialog = false"> Skip for now </v-btn>
           <!-- Schedule Next — saves the new Scheduled record -->
           <v-btn
             color="primary"
@@ -881,7 +880,6 @@
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
-
       :color="snackbar.color"
       location="bottom right"
       :timeout="3000"
@@ -985,9 +983,9 @@ const scheduleNextForm = ref({
   vehicle_id: null,
   service_type: '',
   service_type_id: null,
-  date_performed: '',          // Last Date Performed = date_accomplished of completed record
+  date_performed: '', // Last Date Performed = date_accomplished of completed record
   date_performed_display: '',
-  odometer: null,              // Previous Odometer
+  odometer: null, // Previous Odometer
   odometer_display: '',
   hours_of_operation: null,
   km_between_service: null,
@@ -1153,6 +1151,7 @@ async function onConductedByUpdate(value) {
 // WHY: completedCount removed — replaced by date-based status summary cards
 // WHY: overdueCount removed — replaced by overdueMaintenanceCount (date-based)
 
+
 // ── New date-based status logic ──
 // WHAT: Computes a visual status for each Scheduled record based on next_due_date.
 // WHY: The database status (Scheduled/Completed/Cancelled) is different from
@@ -1164,7 +1163,7 @@ async function onConductedByUpdate(value) {
 //   Anything else              → 'ok'
 
 function getDateStatus(record) {
-  // Only Scheduled records have a meaningful due status 
+  // Only Scheduled records have a meaningful due status
   if (record.status !== 'Scheduled') return 'ok'
   if (!record.next_due_date) return 'ok'
 
@@ -1174,22 +1173,22 @@ function getDateStatus(record) {
   // Difference in whole days (positive = future, negative = past)
   const diffDays = Math.round((due - now) / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return 'overdue'    // Past due date
+  if (diffDays < 0) return 'overdue' // Past due date
   if (diffDays === 0) return 'due-today' // Exactly today
-  if (diffDays <= 2) return 'due-soon'   // Within 2 days
+  if (diffDays <= 2) return 'due-soon' // Within 2 days
   return 'ok'
 }
 
 // WHAT: Summary card counts — only for Scheduled records
 // WHY: Completed and Cancelled records are not actionable
-const overdueMaintenanceCount = computed(() =>
-  pmRecords.value.filter((r) => getDateStatus(r) === 'overdue').length
+const overdueMaintenanceCount = computed(
+  () => pmRecords.value.filter((r) => getDateStatus(r) === 'overdue').length,
 )
-const dueTodayCount = computed(() =>
-  pmRecords.value.filter((r) => getDateStatus(r) === 'due-today').length
+const dueTodayCount = computed(
+  () => pmRecords.value.filter((r) => getDateStatus(r) === 'due-today').length,
 )
-const dueSoonCount = computed(() =>
-  pmRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length
+const dueSoonCount = computed(
+  () => pmRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length,
 )
 const serviceTypeNames = computed(() => pmServiceTypes.value.map((s) => s.service_type))
 const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
@@ -1391,6 +1390,18 @@ function dateStatusColor(record) {
   return ''
 }
 
+// WHAT: Returns an inline style object for the entire table row.
+// WHY: Coloring the full row makes the urgency immediately visible
+//      without needing to read the date column.
+// Colors are intentionally light so text remains readable.
+function getRowStyle(record) {
+  const s = getDateStatus(record)
+  if (s === 'overdue') return { backgroundColor: '#fff1f1' }   // light red
+  if (s === 'due-today') return { backgroundColor: '#e3f2fd' } // light blue
+  if (s === 'due-soon') return { backgroundColor: '#fffde7' }  // light yellow
+  return {}
+}
+
 function getAssetName(assetId) {
   const asset = assetList.value.find((a) => a.id === assetId)
   return asset ? asset.asset_name : '—'
@@ -1495,11 +1506,11 @@ async function fetchRecords() {
 }
 
 async function fetchAssets() {
- const { data, error } = await supabase
-  .from('vehicles')
-  .select('id, asset_name, asset_type')
-  .ilike('status', 'active')   // WHY: ilike = case-insensitive match, catches 'active', 'Active', 'ACTIVE'
-  .order('asset_type')
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('id, asset_name, asset_type')
+    .ilike('status', 'active') // WHY: ilike = case-insensitive match, catches 'active', 'Active', 'ACTIVE'
+    .order('asset_type')
   if (!error) assetList.value = data
 }
 
@@ -1665,14 +1676,14 @@ async function openScheduleNextDialog(completedRecord) {
   if (existing && existing.length > 0) {
     showSnackbar(
       '⚠️ A scheduled record already exists for this service. Add manually if needed.',
-      'warning'
+      'warning',
     )
     return
   }
 
   // Step 2: Get the service type intervals from the PM program
   const serviceTypeRecord = pmServiceTypes.value.find(
-    (s) => s.service_type === completedRecord.service_type
+    (s) => s.service_type === completedRecord.service_type,
   )
 
   // Step 3: Determine asset type for this record
@@ -1695,7 +1706,7 @@ async function openScheduleNextDialog(completedRecord) {
   // Step 6: Calculate Next Due Date
   const nextDueDate = computeNextDueDate(lastDatePerformed, monthsInterval)
 
-    // Step 7: Previous Odometer for the NEXT record =
+  // Step 7: Previous Odometer for the NEXT record =
   //         next_due_odometer of the record just completed.
   // WHY: This keeps the maintenance chain continuous and logical.
   //      The completed record's next_due_odometer is where the
@@ -1817,7 +1828,7 @@ function onSNOdometerInput(e) {
       scheduleNextForm.value.next_due_odometer =
         Number(raw) + Number(scheduleNextForm.value.km_between_service)
       scheduleNextForm.value.next_due_odometer_display = formatNumber(
-        scheduleNextForm.value.next_due_odometer
+        scheduleNextForm.value.next_due_odometer,
       )
     }
   }
@@ -1880,7 +1891,10 @@ async function quickUpdateStatus(item, newStatus) {
   //      Other status changes (Scheduled, Cancelled) don't need it.
   if (newStatus === 'Completed') {
     // Pass the updated item (with date_accomplished set) to the modal
-    await openScheduleNextDialog({ ...item, date_accomplished: payload.date_accomplished || item.date_accomplished })
+    await openScheduleNextDialog({
+      ...item,
+      date_accomplished: payload.date_accomplished || item.date_accomplished,
+    })
   }
 }
 

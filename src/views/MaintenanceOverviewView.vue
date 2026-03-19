@@ -24,6 +24,11 @@
               style="min-width: 130px"
             />
             <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
+            <!-- WHAT: Print button — triggers window.print() -->
+            <!-- WHY: Only the print-area div shows during print -->
+            <v-btn variant="outlined" prepend-icon="mdi-printer" @click="printOverview">
+              Print
+            </v-btn>
           </div>
         </div>
       </v-col>
@@ -100,11 +105,7 @@
               <tbody>
                 <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
                   <!-- WHY: rowStatusClass removed — no more overdue row color highlighting -->
-                  <tr
-                    v-for="(row, ri) in group.rows"
-                    :key="row.service_type"
-                    class="ml-row"
-                  >
+                  <tr v-for="(row, ri) in group.rows" :key="row.service_type" class="ml-row">
                     <!-- Vehicle cell — only on first row of group -->
                     <td
                       v-if="ri === 0"
@@ -248,6 +249,76 @@
       </div>
     </transition>
 
+    <!-- ── PRINT AREA ── -->
+    <!-- WHAT: This entire block is hidden on screen but visible only when printing -->
+    <!-- WHY: Reuses the same ReportHeader and signatory layout from PMCReportView -->
+    <div class="print-area" id="maintenance-print">
+      <div class="print-page">
+        <!-- Same header as PMCReportView -->
+        <ReportHeader variant="standard" />
+
+        <!-- Title -->
+        <div class="print-title-block">
+          <div class="print-title">PREVENTIVE MAINTENANCE CHECKLIST</div>
+          <div class="print-subtitle">Maintenance Overview — {{ selectedYear ?? 'All Years' }}</div>
+        </div>
+
+        <!-- Matrix table — print version (simplified, no sticky, no buttons) -->
+        <table class="print-matrix-table">
+          <thead>
+            <tr>
+              <th class="print-col-asset">Asset</th>
+              <th class="print-col-task">Performance Task</th>
+              <th v-for="m in months" :key="m.value" class="print-col-month">
+                {{ m.label }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
+              <tr v-for="(row, ri) in group.rows" :key="row.service_type">
+                <!-- Asset name — only on first row of group -->
+                <td v-if="ri === 0" :rowspan="group.rows.length" class="print-td-asset">
+                  <strong>{{ group.vehicleName }}</strong>
+                  <div v-if="group.plate" class="print-plate">{{ group.plate }}</div>
+                </td>
+                <!-- Task name -->
+                <td class="print-td-task">{{ row.service_type }}</td>
+                <!-- Month cells — show date if done that month -->
+                <td v-for="m in months" :key="m.value" class="print-td-month">
+                  <span v-if="row.monthCells[m.value]">
+                    {{ formatShortDate(row.monthCells[m.value].date_performed) }}
+                  </span>
+                  <span v-else>—</span>
+                </td>
+              </tr>
+              <!-- Separator between asset groups -->
+              <tr v-if="gi < matrixGroups.length - 1" class="print-row-sep">
+                <td :colspan="months.length + 2"></td>
+              </tr>
+            </template>
+            <tr v-if="matrixGroups.length === 0">
+              <td :colspan="months.length + 2" class="print-empty-row">No records found.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Signatory block — same as PMCReportView -->
+        <div class="print-signatory-block">
+          <div class="print-signatory-item">
+            <span class="print-signatory-label">Reviewed by:</span>
+            <div class="print-signatory-name">ENGR. ENA TIU-IBARRA</div>
+            <div class="print-signatory-title">AO III, General Services</div>
+          </div>
+        </div>
+
+        <div class="print-form-code">
+          <span>F-GEN-PMC-003a</span>
+          <span>Rev. 3 10/19/2023</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
@@ -263,6 +334,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
+import ReportHeader from '../components/ReportHeader.vue'
 
 const today = new Date().toISOString().split('T')[0]
 const currentYear = new Date().getFullYear()
@@ -304,6 +376,12 @@ const yearOptions = computed(() => {
 // WHAT: Stub for Add Year button
 function addYear() {
   showSnackbar('Add Year feature coming soon', 'info')
+}
+
+// WHAT: Triggers the browser print dialog.
+// WHY: The @media print CSS hides everything except .print-area
+function printOverview() {
+  window.print()
 }
 
 const months = [
@@ -761,7 +839,7 @@ thead .ml-sticky-l2 {
 /* WHY: Background color removed per requirements */
 
 .ml-task-name {
-  display: block;  
+  display: block;
   font-weight: 600;
   color: var(--c-text);
 }
@@ -772,7 +850,6 @@ thead .ml-sticky-l2 {
   margin-top: 1px;
 }
 
-
 /* Month cells */
 .ml-td-month {
   text-align: center;
@@ -781,37 +858,36 @@ thead .ml-sticky-l2 {
   background: #eff6ff22;
 }
 
+/* WHY: Removed green background and transform hover —
+   replaced with clean neutral style consistent with other modules */
 .ml-cell-done {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  background: #dcfce7;
-  border: 1.5px solid #86efac;
-  border-radius: 6px;
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
   padding: 3px 7px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s;
   text-decoration: none;
   font-family: inherit;
 }
 .ml-cell-done:hover {
-  background: #bbf7d0;
-  border-color: #4ade80;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.15);
+  background: #e0e7ff;
 }
 .ml-cell-done__date {
   font-size: 10.5px;
-  font-weight: 700;
-  color: #15803d;
+  font-weight: 600;
+  color: #3730a3;
   line-height: 1;
 }
 .ml-cell-done__dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #6366f1;
 }
 
 .ml-cell-empty {
@@ -1011,59 +1087,134 @@ thead .ml-sticky-l2 {
 /* ── Print ── */
 /* WHAT: When printing, hide everything except the matrix table */
 /* WHY: Print layout must be clean — only the data table is needed */
+/* ── Screen: hide print area ── */
+/* WHY: Print area is invisible on screen — only shows when printing */
+.print-area {
+  display: none;
+}
+
+/* ── Print styles ── */
 @media print {
-  /* Hide all Vuetify chrome and page controls */
-  .v-navigation-drawer,
-  .v-app-bar,
-  .v-btn,
-  .v-select,
-  .v-card:not(.print-target),
-  .v-row:first-child,
-  .ml-overlay,
-  .v-snackbar {
+  /* Hide everything on screen */
+  body > * {
     display: none !important;
   }
 
-  /* Show only the matrix scroll area */
-  .ml-matrix-wrap {
+  /* Show only the print area */
+  .print-area {
     display: block !important;
-    overflow: visible !important;
   }
 
-  /* Make the matrix table fill the full print width */
-  .ml-matrix {
-    width: 100% !important;
-    font-size: 8px !important;
-    border-collapse: collapse !important;
+  /* Page setup */
+  .print-page {
+    padding: 12mm 15mm 10mm 15mm;
+    background: white;
+    font-family: Arial, sans-serif;
+    font-size: 10px;
   }
 
-  /* Clean border styling for print */
-  .ml-matrix th,
-  .ml-matrix td {
-    border: 1px solid #333 !important;
-    padding: 3px 4px !important;
+  /* Title block */
+  .print-title-block {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .print-title {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .print-subtitle {
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 2px;
   }
 
-  /* Remove sticky positioning — it doesn't work in print */
-  .ml-sticky-l,
-  .ml-sticky-l2 {
-    position: static !important;
+  /* Matrix table */
+  .print-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+    margin-bottom: 16px;
+  }
+  .print-matrix-table th {
+    background: #f5f5f5;
+    color: #333;
+    padding: 4px 5px;
+    border: 1px solid #333;
+    text-align: left;
+    font-size: 8px;
+  }
+  .print-matrix-table td {
+    border: 1px solid #999;
+    padding: 3px 4px;
+    vertical-align: top;
+    font-size: 8px;
+  }
+  .print-col-asset {
+    width: 120px;
+  }
+  .print-col-task {
+    width: 140px;
+  }
+  .print-col-month {
+    width: 32px;
+    text-align: center;
+  }
+  .print-td-month {
+    text-align: center;
+  }
+  .print-td-asset {
+    vertical-align: top;
+  }
+  .print-plate {
+    font-size: 7px;
+    color: #666;
+  }
+  .print-row-sep td {
+    height: 4px;
+    background: #f0f0f0;
+    border: none;
+  }
+  .print-empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #999;
   }
 
-  /* Remove scroll container constraints */
-  .ml-matrix-scroll {
-    overflow: visible !important;
-    max-height: none !important;
+  /* Signatory */
+  .print-signatory-block {
+    display: flex;
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  .print-signatory-item {
+    min-width: 280px;
+  }
+  .print-signatory-label {
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .print-signatory-name {
+    margin-top: 24px;
+    border-top: 1px solid #333;
+    font-weight: bold;
+    font-size: 10px;
+    padding-top: 2px;
+    min-width: 240px;
+  }
+  .print-signatory-title {
+    font-size: 9.5px;
+    color: #333;
+    margin-top: 2px;
   }
 
-  /* Remove row hover/highlight effects */
-  .ml-row:hover {
-    background: transparent !important;
-  }
-
-  /* Hide the detail popup overlay */
-  .ml-overlay {
-    display: none !important;
+  /* Form code */
+  .print-form-code {
+    display: flex;
+    flex-direction: column;
+    font-size: 8px;
+    color: #666;
+    margin-top: 8px;
   }
 }
 </style>

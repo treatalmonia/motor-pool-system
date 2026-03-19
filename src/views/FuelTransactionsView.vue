@@ -249,7 +249,6 @@
 
         <v-card-text class="pa-4">
           <v-row>
-
             <!-- ── SECTION 1: Receipt Details ── -->
             <v-col cols="12">
               <p class="text-body-2 font-weight-medium text-medium-emphasis mb-1">
@@ -365,9 +364,7 @@
               <v-card rounded="lg" variant="tonal" color="grey" class="pa-3">
                 <div class="d-flex align-center justify-space-between">
                   <p class="text-body-2 text-medium-emphasis">Total amount due</p>
-                  <p class="text-h5 font-weight-bold">
-                    ₱{{ form.total_amount_display || '0.00' }}
-                  </p>
+                  <p class="text-h5 font-weight-bold">₱{{ form.total_amount_display || '0.00' }}</p>
                 </div>
               </v-card>
             </v-col>
@@ -394,9 +391,7 @@
                 density="compact"
                 color="primary"
               >
-                <v-btn value="Vehicular" prepend-icon="mdi-car">
-                  Vehicular
-                </v-btn>
+                <v-btn value="Vehicular" prepend-icon="mdi-car"> Vehicular </v-btn>
                 <v-btn value="Non-Vehicular" prepend-icon="mdi-tractor">
                   Non-vehicular equipment
                 </v-btn>
@@ -412,9 +407,11 @@
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle"
-                :placeholder="form.utilization_type === 'Non-Vehicular'
-                  ? 'e.g. FARMALL, BRUSHCUTTER, GENERATOR'
-                  : 'e.g. COASTER, FORTUNER, VAN'"
+                :placeholder="
+                  form.utilization_type === 'Non-Vehicular'
+                    ? 'e.g. FARMALL, BRUSHCUTTER, GENERATOR'
+                    : 'e.g. COASTER, FORTUNER, VAN'
+                "
               />
             </v-col>
 
@@ -459,7 +456,7 @@
               </p>
             </v-col>
 
-   <!-- Charge To: searchable autocomplete showing fund chip + name + PO + balance.
+            <!-- Charge To: searchable autocomplete showing fund chip + name + PO + balance.
                  WHY: replaces the old Fund Cluster filter + plain dropdown combo.
                  Staff can type any part of the cost center name, PO number, or
                  account code to find it instantly — no scrolling through 30+ items.
@@ -467,8 +464,8 @@
                  can never be accidentally charged to a 2024 contract. -->
             <v-col cols="12">
               <p class="text-caption text-medium-emphasis mb-1">
-                Search by cost center name, PO number, or account code.
-                Only showing FY {{ filterYear }} contracts.
+                Search by cost center name, PO number, or account code. Only showing FY
+                {{ filterYear }} contracts.
               </p>
               <v-autocomplete
                 v-model="form.contract_id"
@@ -486,9 +483,10 @@
                 no-data-text="No contracts found for this year"
                 @update:modelValue="onContractSelected"
               >
-                <!-- Each item shows: fund chip | cost center name | PO | balance -->
                 <template #item="{ props, item }">
-                  <v-list-item v-bind="props" :title="undefined">
+                  <!-- Guard: item.raw can be undefined in Vuetify 4 when the
+                       autocomplete is filtering. Skip rendering if raw is missing. -->
+                  <v-list-item v-if="item.raw" v-bind="props" :title="undefined">
                     <template #prepend>
                       <v-chip
                         :color="fundColor(item.raw.fund_cluster)"
@@ -506,7 +504,6 @@
                       {{ item.raw.po_number }}
                     </v-list-item-subtitle>
                     <template #append>
-                      <!-- Green = remaining budget available, red = over budget -->
                       <span
                         class="text-caption font-weight-medium"
                         :class="item.raw.balance < 0 ? 'text-error' : 'text-success'"
@@ -515,21 +512,30 @@
                       </span>
                     </template>
                   </v-list-item>
+                  <!-- Fallback for when item.raw is not yet available -->
+                  <v-list-item v-else v-bind="props" />
                 </template>
+
               </v-autocomplete>
 
               <!-- Shows selected contract summary below the field -->
               <p v-if="form.contract_id && selectedContractSummary" class="text-caption mt-1">
-                Selected: <strong>{{ selectedContractSummary.account_code }}</strong>
-                ({{ selectedContractSummary.fund_cluster }} · {{ selectedContractSummary.po_number }})
-                · Balance:
-                <span :class="selectedContractSummary.balance < 0 ? 'text-error' : 'text-success'" class="font-weight-medium">
-                  {{ selectedContractSummary.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(selectedContractSummary.balance)) }}
+                Selected: <strong>{{ selectedContractSummary.account_code }}</strong> ({{
+                  selectedContractSummary.fund_cluster
+                }}
+                · {{ selectedContractSummary.po_number }}) · Balance:
+                <span
+                  :class="selectedContractSummary.balance < 0 ? 'text-error' : 'text-success'"
+                  class="font-weight-medium"
+                >
+                  {{ selectedContractSummary.balance < 0 ? '−' : '' }}₱{{
+                    formatNumber(Math.abs(selectedContractSummary.balance))
+                  }}
                 </span>
               </p>
             </v-col>
 
-<!-- PO Number and Account Code are no longer shown as separate fields.
+            <!-- PO Number and Account Code are no longer shown as separate fields.
                  They are auto-filled silently when a contract is selected and
                  displayed in the summary line below the autocomplete instead.
                  The values are still saved to the database via the payload. -->
@@ -542,7 +548,6 @@
                 density="comfortable"
               />
             </v-col>
-
           </v-row>
         </v-card-text>
 
@@ -661,7 +666,12 @@
           <v-btn
             color="primary"
             variant="flat"
-            @click="() => { viewDialog = false; openEditDialog(selectedTx) }"
+            @click="
+              () => {
+                viewDialog = false
+                openEditDialog(selectedTx)
+              }
+            "
           >
             Edit
           </v-btn>
@@ -676,7 +686,8 @@
           <v-icon color="error" size="56" class="mb-3">mdi-alert-circle</v-icon>
           <h3 class="text-h6 mb-2">Delete Transaction?</h3>
           <p class="text-medium-emphasis">
-            Delete OR# <strong>{{ selectedTx?.or_number }}</strong>? This cannot be undone.
+            Delete OR# <strong>{{ selectedTx?.or_number }}</strong
+            >? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
@@ -810,8 +821,18 @@ const headers = [
 
 // ── BILLING PERIODS (24 per year) ──
 const MONTH_NAMES = [
-  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+  'JANUARY',
+  'FEBRUARY',
+  'MARCH',
+  'APRIL',
+  'MAY',
+  'JUNE',
+  'JULY',
+  'AUGUST',
+  'SEPTEMBER',
+  'OCTOBER',
+  'NOVEMBER',
+  'DECEMBER',
 ]
 
 // getBillingPeriod: converts a date string into the billing period label.
@@ -1066,8 +1087,6 @@ function onDateBlur() {
     form.value.billing_period = getBillingPeriod(form.value.date)
   }
 }
-
-
 
 // onContractSelected: auto-fills PO number and account code when a contract is chosen.
 // WHY: staff should not type these manually. They come from the contract record.

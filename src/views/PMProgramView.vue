@@ -354,6 +354,8 @@ function openEditDialog(serviceType) {
     ...serviceType,
     km_between_service: serviceType.km_between_service ?? null,
     months_between_service: serviceType.months_between_service ?? null,
+    // WHY: Explicitly set nv field — if undefined from spread it causes 400 error
+    months_between_service_nv: serviceType.months_between_service_nv ?? null,
   }
   errors.value = {}
   formDialog.value = true
@@ -405,7 +407,9 @@ async function saveServiceType() {
       .eq('id', form.value.id)
 
     if (error) {
-      showSnackbar('Failed to update service type', 'error')
+      // WHY: Log the full error so we can see exactly which column Supabase rejects
+      console.error('Supabase update error:', error)
+      showSnackbar(`Failed to update: ${error.message}`, 'error')
     } else {
       showSnackbar('Service type updated successfully', 'success')
       closeFormDialog()

@@ -611,9 +611,12 @@ import { supabase } from '../supabase'
 
 async function quickUpdateStatus(item, newStatus) {
   const payload = { status: newStatus }
+  const completedDate = new Date().toISOString().split('T')[0]
+
   if (newStatus === 'Completed' && !item.date_completed) {
-    payload.date_completed = new Date().toISOString().split('T')[0]
+    payload.date_completed = completedDate
   }
+
   const { error } = await supabase
     .from('vehicle_service_requests')
     .update(payload)
@@ -621,10 +624,48 @@ async function quickUpdateStatus(item, newStatus) {
 
   if (error) {
     showSnackbar('Failed to update status', 'error')
-  } else {
-    item.status = newStatus
-    if (payload.date_completed) item.date_completed = payload.date_completed
-    showSnackbar('Status updated', 'success')
+    return
+  }
+
+  item.status = newStatus
+  if (payload.date_completed) item.date_completed = payload.date_completed
+  showSnackbar('Status updated', 'success')
+
+  // WHAT: Auto-log completed service requests into vehicle_pm_log.
+  // WHY: The Maintenance Log reads from vehicle_pm_log. Service requests
+  //      are in a separate table. Without this, completed corrective
+  //      maintenance would never appear in the Maintenance Log.
+  // HOW: We insert a minimal record — service_type uses work_details
+  //      since service requests don't have a formal service type field.
+  if (newStatus === 'Completed') {
+    const logPayload = {
+      vehicle_id: item.vehicle_id,
+      asset_type: item.asset_type || 'Vehicle',
+      // WHY: Use work_details as service type — it describes what was done.
+      //      Falls back to problem_details if work_details is empty.
+      service_type: item.work_details || item.problem_details || 'Corrective Maintenance',
+      date_performed: item.date_of_request || completedDate,
+      date_accomplished: payload.date_completed || item.date_completed,
+      status: 'Completed',
+      conducted_by: item.conducted_by || null,
+      cost: item.cost || null,
+      remarks: item.remarks || null,
+      // WHY: Mileage maps to odometer for vehicles
+      odometer: item.asset_type === 'Vehicle' ? item.mileage || null : null,
+      hours_of_operation: item.asset_type === 'Non-Vehicular'
+        ? item.hours_of_operation || null
+        : null,
+    }
+
+    const { error: logError } = await supabase
+      .from('vehicle_pm_log')
+      .insert(logPayload)
+
+    if (logError) {
+      // WHY: Don't block the user — the SR update succeeded.
+      //      Log the error silently so it doesn't confuse the user.
+      console.error('Auto-log to maintenance log failed:', logError)
+    }
   }
 }
 
@@ -1251,23 +1292,31 @@ async function saveRequest() {
   if (!validateForm()) return
   saving.value = true
 
+  // WHAT: Helper to extract string value from combobox field.
+  // WHY: v-combobox can return either a plain string (typed) or an object
+  //      { id, value, isDefault } (picked from list). We always want the string.
+  const extractComboValue = (val) => {
+    if (!val) return null
+    if (typeof val === 'object') return val.value ?? null
+    return String(val).trim() || null
+  }
+
   const payload = {
     request_no: form.value.request_no,
     date_of_request: form.value.date_of_request,
     date_completed: form.value.date_completed || null,
     vehicle_id: form.value.vehicle_id,
     asset_type: form.value.asset_type,
-    requisitioner: form.value.requisitioner,
+    // WHY: extractComboValue ensures we save a string, not an object
+    requisitioner: extractComboValue(form.value.requisitioner),
     problem_details: form.value.problem_details,
-    work_details: form.value.work_details,
-    conducted_by: form.value.conducted_by,
+    work_details: extractComboValue(form.value.work_details),
+    conducted_by: extractComboValue(form.value.conducted_by),
     mileage: selectedAssetType.value === 'Vehicle' ? form.value.mileage || null : null,
     hours_of_operation:
       selectedAssetType.value === 'Non-Vehicular' ? form.value.hours_of_operation || null : null,
     cost: form.value.cost || null,
     status: form.value.status,
-    // WHY: remarks was missing from the payload — it was saved in the form
-    //      but never sent to Supabase, so it always disappeared after saving.
     remarks: form.value.remarks || null,
   }
 

@@ -26,8 +26,13 @@
             <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
             <!-- WHAT: Print button — triggers window.print() -->
             <!-- WHY: Only the print-area div shows during print -->
-            <v-btn variant="outlined" prepend-icon="mdi-printer" @click="printOverview">
-              Print
+          <!-- WHY: Print moved to PMCReportView — navigate there instead -->
+            <v-btn
+              variant="outlined"
+              prepend-icon="mdi-clipboard-check"
+              @click="goToPMCReport"
+            >
+              PMC Report
             </v-btn>
           </div>
         </div>
@@ -151,12 +156,11 @@
                       <button
                         v-if="row.monthCells[m.value]"
                         class="ml-cell-done"
-                        @click="
+                          @click="
                           openDetail(
                             row.monthCells[m.value],
                             group.vehicleName,
                             row.service_type,
-                            group.currentOdometer,
                           )
                         "
                         :title="
@@ -249,75 +253,7 @@
       </div>
     </transition>
 
-    <!-- ── PRINT AREA ── -->
-    <!-- WHAT: This entire block is hidden on screen but visible only when printing -->
-    <!-- WHY: Reuses the same ReportHeader and signatory layout from PMCReportView -->
-    <div class="print-area" id="maintenance-print">
-      <div class="print-page">
-        <!-- Same header as PMCReportView -->
-        <ReportHeader variant="standard" />
-
-        <!-- Title -->
-        <div class="print-title-block">
-          <div class="print-title">PREVENTIVE MAINTENANCE CHECKLIST</div>
-          <div class="print-subtitle">Maintenance Overview — {{ selectedYear ?? 'All Years' }}</div>
-        </div>
-
-        <!-- Matrix table — print version (simplified, no sticky, no buttons) -->
-        <table class="print-matrix-table">
-          <thead>
-            <tr>
-              <th class="print-col-asset">Asset</th>
-              <th class="print-col-task">Performance Task</th>
-              <th v-for="m in months" :key="m.value" class="print-col-month">
-                {{ m.label }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="(group, gi) in matrixGroups" :key="group.vehicleId">
-              <tr v-for="(row, ri) in group.rows" :key="row.service_type">
-                <!-- Asset name — only on first row of group -->
-                <td v-if="ri === 0" :rowspan="group.rows.length" class="print-td-asset">
-                  <strong>{{ group.vehicleName }}</strong>
-                  <div v-if="group.plate" class="print-plate">{{ group.plate }}</div>
-                </td>
-                <!-- Task name -->
-                <td class="print-td-task">{{ row.service_type }}</td>
-                <!-- Month cells — show date if done that month -->
-                <td v-for="m in months" :key="m.value" class="print-td-month">
-                  <span v-if="row.monthCells[m.value]">
-                    {{ formatShortDate(row.monthCells[m.value].date_performed) }}
-                  </span>
-                  <span v-else>—</span>
-                </td>
-              </tr>
-              <!-- Separator between asset groups -->
-              <tr v-if="gi < matrixGroups.length - 1" class="print-row-sep">
-                <td :colspan="months.length + 2"></td>
-              </tr>
-            </template>
-            <tr v-if="matrixGroups.length === 0">
-              <td :colspan="months.length + 2" class="print-empty-row">No records found.</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Signatory block — same as PMCReportView -->
-        <div class="print-signatory-block">
-          <div class="print-signatory-item">
-            <span class="print-signatory-label">Reviewed by:</span>
-            <div class="print-signatory-name">ENGR. ENA TIU-IBARRA</div>
-            <div class="print-signatory-title">AO III, General Services</div>
-          </div>
-        </div>
-
-        <div class="print-form-code">
-          <span>F-GEN-PMC-003a</span>
-          <span>Rev. 3 10/19/2023</span>
-        </div>
-      </div>
-    </div>
+<!-- WHY: Print area removed — printing is now handled by PMCReportView -->
 
     <!-- Snackbar -->
     <v-snackbar
@@ -334,7 +270,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
-import ReportHeader from '../components/ReportHeader.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const today = new Date().toISOString().split('T')[0]
 const currentYear = new Date().getFullYear()
@@ -356,8 +294,10 @@ const detailRecord = ref(null)
 const detailVehicle = ref('')
 const detailTask = ref('')
 
-function openDetail(record, vehicleName, taskName, vehicleOdometer) {
-  detailRecord.value = { ...record, current_odometer: vehicleOdometer }
+// WHY: vehicleOdometer param removed — current_odometer was deleted from the system.
+//      The detail popup now shows only what's in the record itself.
+function openDetail(record, vehicleName, taskName) {
+  detailRecord.value = { ...record }
   detailVehicle.value = vehicleName
   detailTask.value = taskName
   detailOpen.value = true
@@ -378,10 +318,15 @@ function addYear() {
   showSnackbar('Add Year feature coming soon', 'info')
 }
 
-// WHAT: Triggers the browser print dialog.
-// WHY: The @media print CSS hides everything except .print-area
-function printOverview() {
-  window.print()
+// WHAT: Navigates to PMCReportView with the selected vehicle pre-filled.
+// WHY: Print is now handled by PMCReportView which has the full layout.
+//      If an asset is selected, pass it as a query param so PMCReport
+//      opens with that vehicle already loaded.
+function goToPMCReport() {
+  const query = {}
+  if (selectedVehicleId.value) query.vehicleId = selectedVehicleId.value
+  if (selectedYear.value) query.year = selectedYear.value
+  router.push({ path: '/pmc-report', query })
 }
 
 const months = [
@@ -1087,14 +1032,7 @@ thead .ml-sticky-l2 {
 /* ── Print ── */
 /* WHAT: When printing, hide everything except the matrix table */
 /* WHY: Print layout must be clean — only the data table is needed */
-/* ── Screen: hide print area ── */
-/* WHY: Print area is invisible on screen — only shows when printing */
-.print-area {
-  display: none;
-}
-
-/* ── Print styles ── */
-@media print {
+/* WHY: Print CSS removed — printing is now handled by PMCReportView */
   /* Hide everything on screen */
   body > * {
     display: none !important;
@@ -1216,5 +1154,5 @@ thead .ml-sticky-l2 {
     color: #666;
     margin-top: 8px;
   }
-}
+
 </style>

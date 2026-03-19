@@ -182,8 +182,9 @@
               <!-- Date Completed -->
               <td>{{ formatDate(item.date_accomplished) || '—' }}</td>
 
-              <!-- Next Due Date — colored by date-based status -->
-              <!-- WHY: Red = Overdue, Blue = Due Today, Yellow = Due Soon -->
+<!-- Next Due Date — row color already shows urgency -->
+              <!-- WHY: Chip labels removed — row background color (red/blue/yellow)
+                   communicates the status. Chips were redundant and cluttered. -->
               <td>
                 <span
                   v-if="item.next_due_date"
@@ -194,22 +195,6 @@
                   }"
                 >
                   {{ formatDate(item.next_due_date) }}
-                  <!-- Small badge label next to the date -->
-                  <v-chip
-                    v-if="getDateStatus(item) !== 'ok'"
-                    :color="dateStatusColor(item)"
-                    size="x-small"
-                    variant="tonal"
-                    class="ml-1"
-                  >
-                    {{
-                      getDateStatus(item) === 'overdue'
-                        ? 'Overdue'
-                        : getDateStatus(item) === 'due-today'
-                          ? 'Due Today'
-                          : 'Due Soon'
-                    }}
-                  </v-chip>
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
               </td>
@@ -1364,10 +1349,11 @@ function onStatusChange(newStatus) {
 //   }
 // }
 
+// WHY: isOverdue removed — replaced by getDateStatus which handles all
+//      three states (overdue, due-today, due-soon) consistently.
+//      Having two separate functions for the same concept caused conflicts.
 function isOverdue(record) {
-  if (record.status === 'Completed' || record.status === 'Cancelled') return false
-  if (!record.next_due_date) return false
-  return record.next_due_date < today
+  return getDateStatus(record) === 'overdue'
 }
 
 function statusColor(status) {
@@ -1380,15 +1366,15 @@ function statusColor(status) {
   return colors[status] || 'grey'
 }
 
-// WHAT: Returns a Vuetify color name for the date-based status.
-// CONNECTS TO: Used by the row highlight in the table.
-function dateStatusColor(record) {
-  const s = getDateStatus(record)
-  if (s === 'overdue') return 'error'
-  if (s === 'due-today') return 'primary'
-  if (s === 'due-soon') return 'warning'
-  return ''
-}
+// // WHAT: Returns a Vuetify color name for the date-based status.
+// // CONNECTS TO: Used by the row highlight in the table.
+// function dateStatusColor(record) {
+//   const s = getDateStatus(record)
+//   if (s === 'overdue') return 'error'
+//   if (s === 'due-today') return 'primary'
+//   if (s === 'due-soon') return 'warning'
+//   return ''
+// }
 
 // WHAT: Returns an inline style object for the entire table row.
 // WHY: Coloring the full row makes the urgency immediately visible
@@ -1823,12 +1809,14 @@ function onSNOdometerInput(e) {
   const raw = e.target.value.replace(/,/g, '')
   if (!isNaN(raw) && raw !== '') {
     scheduleNextForm.value.odometer = Number(raw)
+    // WHY: Update display immediately as user types so it doesn't look stale
+    scheduleNextForm.value.odometer_display = Number(raw).toLocaleString()
     // Recalculate next due odometer
     if (scheduleNextForm.value.km_between_service) {
       scheduleNextForm.value.next_due_odometer =
         Number(raw) + Number(scheduleNextForm.value.km_between_service)
       scheduleNextForm.value.next_due_odometer_display = formatNumber(
-        scheduleNextForm.value.next_due_odometer,
+        scheduleNextForm.value.next_due_odometer
       )
     }
   }

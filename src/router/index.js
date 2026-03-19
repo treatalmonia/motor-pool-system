@@ -8,6 +8,7 @@ const router = createRouter({
       path: '/',
       component: MainLayout,
       children: [
+        // ── FLEET MANAGEMENT ──────────────────────────────────────────────
         {
           path: '',
           name: 'dashboard',
@@ -43,6 +44,8 @@ const router = createRouter({
           name: 'MaintenanceLog',
           component: () => import('../views/MaintenanceOverviewView.vue'),
         },
+
+        // ── AC MANAGEMENT ─────────────────────────────────────────────────
         {
           path: 'ac-units',
           name: 'ac-units',
@@ -58,16 +61,53 @@ const router = createRouter({
           name: 'ac-cleaning',
           component: () => import('../views/ACCleaningView.vue'),
         },
+
+        // ── FUEL MONITORING ───────────────────────────────────────────────
+
+        // Fuel dashboard — overview with charts, alerts, recent transactions.
+        // Uses a separate route so it does not conflict with the fleet dashboard.
+        {
+          path: 'fuel-dashboard',
+          name: 'FuelDashboard',
+          component: () => import('../views/FuelDashboardView.vue'),
+        },
+
+        // Fuel Allocation Monitoring (renamed from Fuel Contracts & Cost Centers)
         {
           path: 'fuel-contracts',
           name: 'FuelContracts',
           component: () => import('../views/FuelContractsView.vue'),
         },
+
+        // Fuel Transactions — daily OR encoding
         {
           path: 'fuel-transactions',
           name: 'FuelTransactions',
           component: () => import('../views/FuelTransactionsView.vue'),
         },
+
+        // Fuel Reports — 4 tabs:
+        //   1. Billing Summary   (replaces FuelSummaryReportView)
+        //   2. Vehicle Consumption Report
+        //   3. Balance by Cost Center
+        //   4. Payment Tracker (DV)
+        {
+          path: 'fuel-reports',
+          name: 'FuelReports',
+          component: () => import('../views/FuelReportsView.vue'),
+        },
+
+        // Keep the old fuel-summary-report route alive so any existing
+        // bookmarks or nav links do not break. It still loads the original
+        // FuelSummaryReportView. You can remove this later once you have
+        // updated all nav links to point to fuel-reports instead.
+        {
+          path: 'fuel-summary-report',
+          name: 'FuelSummaryReport',
+          component: () => import('../views/FuelSummaryReportView.vue'),
+        },
+
+        // ── OTHER REPORTS ─────────────────────────────────────────────────
         {
           path: 'pmc-report',
           name: 'PMCReport',
@@ -77,12 +117,6 @@ const router = createRouter({
           path: 'efhr-report',
           name: 'EFHRReport',
           component: () => import('../views/EFHRReportView.vue'),
-        },
-        // ✅ FIX 1: was missing entirely — caused blank screen for Fuel Summary
-        {
-          path: 'fuel-summary-report',
-          name: 'FuelSummaryReport',
-          component: () => import('../views/FuelSummaryReportView.vue'),
         },
       ],
     },

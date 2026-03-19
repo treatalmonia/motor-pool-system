@@ -11,13 +11,26 @@
       <v-divider />
 
       <v-list density="compact" nav>
+
+        <!-- ── MAIN ── -->
         <v-list-subheader>MAIN</v-list-subheader>
 
-        <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" rounded="lg" />
+        <v-list-item
+          prepend-icon="mdi-view-dashboard"
+          title="Dashboard"
+          to="/"
+          rounded="lg"
+        />
 
+        <!-- ── MOTOR POOL ── -->
         <v-list-subheader>MOTOR POOL</v-list-subheader>
 
-        <v-list-item prepend-icon="mdi-car" title="Asset Registry" to="/vehicles" rounded="lg" />
+        <v-list-item
+          prepend-icon="mdi-car"
+          title="Asset Registry"
+          to="/vehicles"
+          rounded="lg"
+        />
         <v-list-item
           prepend-icon="mdi-wrench"
           title="Service Requests"
@@ -56,8 +69,6 @@
               <v-icon size="18" class="mr-2">mdi-table-eye</v-icon>
             </template>
           </v-list-item>
-
-
         </v-list-group>
 
         <v-list-item
@@ -67,7 +78,7 @@
           rounded="lg"
         />
 
-
+        <!-- ── AIR CONDITIONER ── -->
         <v-list-subheader>AIR CONDITIONER</v-list-subheader>
 
         <v-list-item
@@ -82,7 +93,6 @@
           to="/ac-requests"
           rounded="lg"
         />
-
         <v-list-item
           prepend-icon="mdi-snowflake"
           title="AC Cleaning Log"
@@ -90,13 +100,26 @@
           rounded="lg"
         />
 
-        <v-list-subheader>FUEL MANAGEMENT</v-list-subheader>
+        <!-- ── FUEL MONITORING ── -->
+        <!-- Renamed from "FUEL MANAGEMENT" to match the new module naming -->
+        <v-list-subheader>FUEL MONITORING</v-list-subheader>
+
+        <!-- Fuel Dashboard: overview with charts, alerts, recent transactions -->
+        <v-list-item
+          prepend-icon="mdi-view-dashboard-outline"
+          title="Fuel Dashboard"
+          to="/fuel-dashboard"
+          rounded="lg"
+        />
+
+        <!-- Fuel Allocation Monitoring: renamed from "Fuel Contracts" -->
         <v-list-item
           prepend-icon="mdi-file-document-multiple"
-          title="Fuel Contracts"
+          title="Fuel Allocation Monitoring"
           to="/fuel-contracts"
           rounded="lg"
         />
+
         <v-list-item
           prepend-icon="mdi-receipt-text"
           title="Fuel Transactions"
@@ -104,6 +127,15 @@
           rounded="lg"
         />
 
+        <!-- Fuel Reports: replaces old "Fuel Summary Report" with 4 tabs -->
+        <v-list-item
+          prepend-icon="mdi-chart-box"
+          title="Fuel Reports"
+          to="/fuel-reports"
+          rounded="lg"
+        />
+
+        <!-- ── PRINTABLE REPORTS ── -->
         <v-list-subheader>PRINTABLE REPORTS</v-list-subheader>
 
         <v-list-item
@@ -119,20 +151,16 @@
           rounded="lg"
         />
 
-        <v-list-item
-          prepend-icon="mdi-gas-station"
-          title="Fuel Summary Report"
-          to="/fuel-summary-report"
-          rounded="lg"
-        />
       </v-list>
 
-          <v-list-item
-          prepend-icon="mdi-file-document-edit"
-          title="Annual PM Program"
-          to="/annual-pm"
-          rounded="lg"
-        />
+      <!-- Annual PM — kept outside the list to match original placement -->
+      <v-list-item
+        prepend-icon="mdi-file-document-edit"
+        title="Annual PM Program"
+        to="/annual-pm"
+        rounded="lg"
+      />
+
     </v-navigation-drawer>
 
     <!-- Top Bar -->
@@ -174,7 +202,11 @@ function toggleTheme() {
   theme.global.name.value = isDark.value ? 'light' : 'dark'
 }
 
+// pageTitles: maps each route path to a human-readable title shown in the top bar.
+// WHY: the top bar reads from this map using the current route path.
+// Always add a new entry here whenever you add a new route in index.js.
 const pageTitles = {
+  // Fleet Management
   '/': 'Dashboard',
   '/vehicles': 'Asset Registry',
   '/vehicle-requests': 'Service Requests',
@@ -182,15 +214,23 @@ const pageTitles = {
   '/maintenance-log': 'Maintenance Log',
   '/schedule-of-maintenance': 'Preventive Maintenance Program',
   '/annual-pm': 'Annual PM Program',
-  '/pmc-report': 'PMC Report',
-  '/efhr-report': 'EFHR Report',
-  '/fuel-summary-report': 'Fuel Summary Report',
+
+  // AC Management
   '/ac-units': 'AC Unit Registry',
   '/ac-requests': 'AC Service Requests',
-
   '/ac-cleaning': 'AC Cleaning Log',
-  '/fuel-contracts': 'Fuel Contracts',
+
+  // Fuel Monitoring — new entries added here
+  '/fuel-dashboard': 'Fuel Dashboard',
+  '/fuel-contracts': 'Fuel Allocation Monitoring',
   '/fuel-transactions': 'Fuel Transactions',
+  '/fuel-reports': 'Fuel Reports',
+  '/fuel-summary-report': 'Fuel Summary Report', // kept for backward compatibility
+
+  // Printable Reports
+  '/pmc-report': 'PMC Report',
+  '/efhr-report': 'EFHR Report',
 }
+
 const currentPageTitle = computed(() => pageTitles[route.path] || 'Motor Pool System')
 </script>

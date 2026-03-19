@@ -357,46 +357,85 @@
                 @blur="onUnitPriceBlur"
               />
             </v-col>
-            <!-- Total Amount (auto-computed) -->
-            <!-- WHY read-only: total = quantity × unit price.
-                 Letting staff type this manually risks wrong amounts being saved. -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.total_amount_display"
-                label="Total Amount"
-                variant="outlined"
-                density="comfortable"
-                prefix="₱"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-computed (Qty × Unit Price)"
-                persistent-hint
-              />
+            <!-- Total Amount — displayed as a prominent summary row, not a text field.
+                 WHY: a styled box makes the total stand out visually so staff can
+                 confirm the amount before saving. It is always auto-computed from
+                 Quantity × Unit Price and is never editable. -->
+            <v-col cols="12">
+              <v-card rounded="lg" variant="tonal" color="grey" class="pa-3">
+                <div class="d-flex align-center justify-space-between">
+                  <p class="text-body-2 text-medium-emphasis">Total amount due</p>
+                  <p class="text-h5 font-weight-bold">
+                    ₱{{ form.total_amount_display || '0.00' }}
+                  </p>
+                </div>
+              </v-card>
             </v-col>
 
-            <!-- ── SECTION 3: Usage Details ── -->
+            <!-- ── SECTION 3: Vehicle / Equipment ── -->
             <v-col cols="12">
               <v-divider class="mb-1" />
               <p class="text-body-2 font-weight-medium text-medium-emphasis my-2">
                 <v-icon size="16" class="mr-1">mdi-car</v-icon>
-                Usage Details
+                Vehicle / Equipment
               </p>
             </v-col>
 
-            <!-- Vehicle / Equipment -->
-            <v-col cols="12" sm="6">
+            <!-- Vehicular / Non-vehicular toggle.
+                 WHY: separating these two types allows the dashboard and vehicle
+                 consumption report to correctly group cars/vans separately from
+                 farm equipment, generators, and other non-vehicular assets.
+                 This sets the utilization_type column in fuel_transactions. -->
+            <v-col cols="12">
+              <v-btn-toggle
+                v-model="form.utilization_type"
+                mandatory
+                rounded="lg"
+                density="compact"
+                color="primary"
+              >
+                <v-btn value="Vehicular" prepend-icon="mdi-car">
+                  Vehicular
+                </v-btn>
+                <v-btn value="Non-Vehicular" prepend-icon="mdi-tractor">
+                  Non-vehicular equipment
+                </v-btn>
+              </v-btn-toggle>
+            </v-col>
+
+            <!-- Vehicle / Equipment — label changes based on the toggle above -->
+            <v-col cols="12" sm="4">
               <v-combobox
                 v-model="form.vehicle"
                 :items="vehicleOptions"
-                label="Vehicle / Equipment *"
+                :label="form.utilization_type === 'Non-Vehicular' ? 'Equipment *' : 'Vehicle *'"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.vehicle"
-                placeholder="e.g. COASTER, FORTUNER, FARMALL"
+                :placeholder="form.utilization_type === 'Non-Vehicular'
+                  ? 'e.g. FARMALL, BRUSHCUTTER, GENERATOR'
+                  : 'e.g. COASTER, FORTUNER, VAN'"
               />
             </v-col>
+
+            <!-- Plate Number — shown for Vehicular only, hidden for Non-Vehicular.
+                 Read-only because it is auto-filled from the fleet system.
+                 For non-vehicular equipment there is no plate number. -->
+            <v-col v-if="form.utilization_type !== 'Non-Vehicular'" cols="12" sm="4">
+              <v-text-field
+                v-model="form.plate_number"
+                label="Plate Number"
+                variant="outlined"
+                density="comfortable"
+                readonly
+                bg-color="grey-lighten-4"
+                hint="Auto-filled from fleet data"
+                persistent-hint
+              />
+            </v-col>
+
             <!-- Utilized By (office name) -->
-            <v-col cols="12" sm="6">
+            <v-col cols="12" :sm="form.utilization_type !== 'Non-Vehicular' ? 4 : 8">
               <v-combobox
                 v-model="form.utilized_by"
                 :items="utilizedByOptions"
@@ -420,27 +459,17 @@
               </p>
             </v-col>
 
-            <!-- Fund Cluster filter — narrows down the contract list -->
-            <v-col cols="12" sm="3">
-              <v-select
-                v-model="form.fund_cluster"
-                :items="['', ...availableFunds]"
-                label="Fund Cluster"
-                variant="outlined"
-                density="comfortable"
-                clearable
-                @update:modelValue="onFundChange"
-              />
-            </v-col>
-
-            <!-- PHASE 3: Replaced plain v-select with v-autocomplete.
-                 WHY: With 30+ cost centers, a plain dropdown is slow to use.
-                 v-autocomplete lets staff type part of the cost center name,
-                 PO number, or account code to find it instantly.
-                 YEAR-LOCKED: Only shows contracts from filterYear (the selected
-                 year in the header). This prevents accidentally charging a 2025
-                 transaction to a 2024 contract — a bug in the original code. -->
-            <v-col cols="12" sm="9">
+   <!-- Charge To: searchable autocomplete showing fund chip + name + PO + balance.
+                 WHY: replaces the old Fund Cluster filter + plain dropdown combo.
+                 Staff can type any part of the cost center name, PO number, or
+                 account code to find it instantly — no scrolling through 30+ items.
+                 YEAR-LOCKED: only shows contracts from filterYear so a 2025 transaction
+                 can never be accidentally charged to a 2024 contract. -->
+            <v-col cols="12">
+              <p class="text-caption text-medium-emphasis mb-1">
+                Search by cost center name, PO number, or account code.
+                Only showing FY {{ filterYear }} contracts.
+              </p>
               <v-autocomplete
                 v-model="form.contract_id"
                 :items="filteredContractOptions"
@@ -454,12 +483,10 @@
                 :hint="contractBalanceHint"
                 persistent-hint
                 clearable
-                no-data-text="No contracts found for this year and fund"
+                no-data-text="No contracts found for this year"
                 @update:modelValue="onContractSelected"
               >
-                <!-- Custom item slot: shows fund chip + name + PO + remaining balance -->
-                <!-- This lets staff see the balance BEFORE selecting, preventing
-                     them from charging to a cost center that is already depleted. -->
+                <!-- Each item shows: fund chip | cost center name | PO | balance -->
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props" :title="undefined">
                     <template #prepend>
@@ -479,46 +506,33 @@
                       {{ item.raw.po_number }}
                     </v-list-item-subtitle>
                     <template #append>
-                      <!-- Balance shown in green (remaining) or red (over budget) -->
+                      <!-- Green = remaining budget available, red = over budget -->
                       <span
                         class="text-caption font-weight-medium"
                         :class="item.raw.balance < 0 ? 'text-error' : 'text-success'"
                       >
-                        {{ item.raw.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(item.raw.balance)) }}
+                        {{ item.raw.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(item.raw.balance)) }} left
                       </span>
                     </template>
                   </v-list-item>
                 </template>
               </v-autocomplete>
+
+              <!-- Shows selected contract summary below the field -->
+              <p v-if="form.contract_id && selectedContractSummary" class="text-caption mt-1">
+                Selected: <strong>{{ selectedContractSummary.account_code }}</strong>
+                ({{ selectedContractSummary.fund_cluster }} · {{ selectedContractSummary.po_number }})
+                · Balance:
+                <span :class="selectedContractSummary.balance < 0 ? 'text-error' : 'text-success'" class="font-weight-medium">
+                  {{ selectedContractSummary.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(selectedContractSummary.balance)) }}
+                </span>
+              </p>
             </v-col>
 
-            <!-- PO Number (read-only, auto-filled when contract is selected) -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.po_number"
-                label="PO Number"
-                variant="outlined"
-                density="comfortable"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-filled when cost center is selected"
-                persistent-hint
-              />
-            </v-col>
-            <!-- Account Code (read-only, auto-filled) -->
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.account_code"
-                label="Account Code"
-                variant="outlined"
-                density="comfortable"
-                readonly
-                bg-color="grey-lighten-4"
-                hint="Auto-filled when cost center is selected"
-                persistent-hint
-              />
-            </v-col>
-
+<!-- PO Number and Account Code are no longer shown as separate fields.
+                 They are auto-filled silently when a contract is selected and
+                 displayed in the summary line below the autocomplete instead.
+                 The values are still saved to the database via the payload. -->
             <!-- Remarks -->
             <v-col cols="12">
               <v-text-field
@@ -760,6 +774,12 @@ const defaultForm = {
   total_amount: 0,
   total_amount_display: '',
   vehicle: '',
+  // utilization_type: tracks whether this is a vehicle or equipment.
+  // Default is 'Vehicular' since most transactions are vehicle-based.
+  utilization_type: 'Vehicular',
+  // plate_number: auto-filled from fleet data for vehicular transactions.
+  // Stored as empty string for non-vehicular equipment.
+  plate_number: '',
   utilized_by: '',
   fund_cluster: '',
   contract_id: null,
@@ -894,19 +914,20 @@ const filteredContractOptions = computed(() => {
     }))
 })
 
-// contractBalanceHint: shows the remaining balance of the currently selected
-// contract as a hint below the "Charge To" field.
-// WHY: staff can immediately see if the cost center is over budget without
-// having to go to a different screen.
+// contractBalanceHint: hint text shown below the autocomplete field.
+// Empty string when a contract is selected because the summary line
+// below the field already shows the full detail.
 const contractBalanceHint = computed(() => {
   if (!form.value.contract_id) return 'Only showing FY ' + filterYear.value + ' contracts'
-  const selected = filteredContractOptions.value.find((c) => c.id === form.value.contract_id)
-  if (!selected) return ''
-  const balance = selected.balance
-  if (balance < 0) {
-    return `⚠ Over budget by ₱${formatNumber(Math.abs(balance))}`
-  }
-  return `Remaining balance: ₱${formatNumber(balance)}`
+  return ''
+})
+
+// selectedContractSummary: the full contract object for the currently selected
+// contract. Used to render the "Selected: Name (Fund · PO) · Balance: ₱X" line
+// below the autocomplete, matching the design in the mockup image.
+const selectedContractSummary = computed(() => {
+  if (!form.value.contract_id) return null
+  return filteredContractOptions.value.find((c) => c.id === form.value.contract_id) || null
 })
 
 // Vehicle / Equipment options from assets + past transactions
@@ -1046,14 +1067,7 @@ function onDateBlur() {
   }
 }
 
-// onFundChange: clears the selected contract when the fund cluster filter changes.
-// WHY: if you were looking at IGF contracts and switch to RAF, the previously
-// selected contract_id would be from IGF — wrong fund. Clear it to force re-selection.
-function onFundChange() {
-  form.value.contract_id = null
-  form.value.po_number = ''
-  form.value.account_code = ''
-}
+
 
 // onContractSelected: auto-fills PO number and account code when a contract is chosen.
 // WHY: staff should not type these manually. They come from the contract record.
@@ -1126,6 +1140,10 @@ async function saveTransaction() {
     unit_price: form.value.unit_price,
     total_amount: form.value.total_amount,
     vehicle: form.value.vehicle,
+    // Save utilization_type and plate_number — added in the Supabase migration.
+    // These columns already exist in fuel_transactions from the migration SQL.
+    utilization_type: form.value.utilization_type || 'Vehicular',
+    plate_number: form.value.plate_number || '',
     utilized_by: form.value.utilized_by,
     fund_cluster: form.value.fund_cluster,
     contract_id: form.value.contract_id,

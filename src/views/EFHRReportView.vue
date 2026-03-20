@@ -83,10 +83,6 @@
       <ReportHeader variant="standard" />
 
       <div class="efhr-title-block">
-        <div class="efhr-form-code-top">
-          <span>F-GEN-EFHR-004</span>
-          <span>Rev. 2 10/19/2023</span>
-        </div>
         <div class="efhr-title">EQUIPMENT / FACILITY HISTORY RECORD</div>
       </div>
 
@@ -254,7 +250,11 @@
             <td class="data-cell blank-row"></td>
           </tr>
         </tbody>
-        <tfoot>
+        <tfoot></tfoot>
+      </table>
+
+      <table class="efhr-table" style="margin-bottom: 4px">
+        <tbody>
           <tr>
             <td colspan="5" class="total-label">Total Expenses</td>
             <td class="total-value">
@@ -264,7 +264,7 @@
               <input v-else v-model="manualTotal" class="edit-input text-right" type="number" />
             </td>
           </tr>
-        </tfoot>
+        </tbody>
       </table>
 
       <div class="efhr-signatories">
@@ -298,6 +298,12 @@
             <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
           </div>
         </div>
+       
+      </div>
+
+      <div class="efhr-form-code">
+        <span>F-GEN-EFHR-004</span>
+        <span>Rev. 2 10/19/2023</span>
       </div>
     </div>
 
@@ -390,7 +396,6 @@ async function fetchVehicles() {
 }
 
 function fillHeaderFromVehicle(vehicleId) {
-  // ✅ FIX: both sides are strings after normalisation above
   const v = vehicles.value.find((x) => sid(x.id) === sid(vehicleId))
   if (!v) {
     console.warn(
@@ -401,10 +406,17 @@ function fillHeaderFromVehicle(vehicleId) {
     )
     return
   }
+  // Reset ALL editable fields when switching vehicles so previous
+  // vehicle's data never bleeds into the next vehicle's report
   editableInfo.value.name = v.asset_name || ''
   editableInfo.value.eqfCode = v.eqf_code || ''
   editableInfo.value.model = v.model || ''
   editableInfo.value.plateNo = v.plate_number || ''
+  editableInfo.value.datePurchased = ''
+  editableInfo.value.supplier = ''
+  editableInfo.value.custodian = ''
+  editableInfo.value.contactNo = ''
+  editableInfo.value.otherInfo = ''
 }
 
 function onVehicleChange(vehicleId) {
@@ -518,17 +530,13 @@ onMounted(async () => {
   text-align: center;
   margin-bottom: 10px;
 }
-.efhr-form-code-top {
+.efhr-form-code {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   font-size: 8px;
   color: #666;
-  margin-bottom: 4px;
-}
-@media print {
-  .efhr-form-code-top {
-    display: none !important;
-  }
+  margin-top: 8px;
+  text-align: left;
 }
 .efhr-title {
   font-size: 14px;

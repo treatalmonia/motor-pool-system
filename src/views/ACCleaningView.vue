@@ -1,4 +1,3 @@
-
 <!-- TODO: implement next schedule  functionality -->
 <template>
   <v-container fluid>
@@ -401,6 +400,7 @@
             >? This cannot be undone.
           </p>
         </v-card-text>
+
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
@@ -410,6 +410,93 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Schedule Next Cleaning Dialog -->
+    <v-dialog v-model="scheduleNextDialog" max-width="560" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <span class="text-h6">Schedule Next Cleaning</span>
+        </v-card-title>
+
+        <v-card-subtitle class="px-4 pb-2">
+          <div class="d-flex ga-2 flex-wrap mt-1">
+            <v-chip color="primary" size="small" variant="tonal">
+              <v-icon start size="12">mdi-air-conditioner</v-icon>
+              {{ scheduleNextForm.area_room }}
+            </v-chip>
+            <v-chip color="info" size="small" variant="tonal">
+              <v-icon start size="12">mdi-office-building</v-icon>
+              {{ scheduleNextForm.building }}
+            </v-chip>
+          </div>
+        </v-card-subtitle>
+
+        <v-card-text class="pa-4">
+          <v-row>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.last_cleaning_date"
+                label="Last Cleaning Date"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-filled from completed record. You can change it."
+                persistent-hint
+                @update:modelValue="onScheduleNextDateChange"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.next_cleaning_date"
+                label="Next Cleaning Date"
+                variant="outlined"
+                density="comfortable"
+                type="date"
+                hint="Auto-calculated (3 months). You can change it."
+                persistent-hint
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.conducted_by"
+                label="Conducted By"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Technician name"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="scheduleNextForm.remarks"
+                label="Remarks"
+                variant="outlined"
+                density="comfortable"
+                placeholder="Additional notes"
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="scheduleNextDialog = false">Skip for now</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="savingNext"
+            prepend-icon="mdi-calendar-plus"
+            @click="saveScheduleNext"
+          >
+            Schedule Next
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar -->
 
     <!-- Snackbar -->
     <v-snackbar
@@ -732,7 +819,78 @@ async function quickUpdateStatus(item, newStatus) {
     item.status = newStatus
     if (payload.date_accomplished) item.date_accomplished = payload.date_accomplished
     showSnackbar('Status updated', 'success')
+
+    if (newStatus === 'Completed') {
+      openScheduleNextDialog({
+        ...item,
+        date_accomplished: payload.date_accomplished || item.date_accomplished,
+      })
+    }
   }
+}
+
+// ---- SCHEDULE NEXT ----
+const scheduleNextDialog = ref(false)
+const savingNext = ref(false)
+const scheduleNextForm = ref({
+  building: '',
+  area_room: '',
+  ac_unit_id: null,
+  last_cleaning_date: '',
+  next_cleaning_date: '',
+  conducted_by: '',
+  remarks: '',
+})
+
+function onScheduleNextDateChange(dateValue) {
+  if (!dateValue) return
+  const date = new Date(dateValue)
+  date.setMonth(date.getMonth() + 3)
+  scheduleNextForm.value.next_cleaning_date = date.toISOString().split('T')[0]
+}
+
+function openScheduleNextDialog(completedRecord) {
+  const lastDate = completedRecord.date_accomplished || today
+  const nextDate = new Date(lastDate)
+  nextDate.setMonth(nextDate.getMonth() + 3)
+
+  scheduleNextForm.value = {
+    building: completedRecord.building || '',
+    area_room: completedRecord.area_room || '',
+    ac_unit_id: completedRecord.ac_unit_id || null,
+    last_cleaning_date: lastDate,
+    next_cleaning_date: nextDate.toISOString().split('T')[0],
+    conducted_by: '',
+    remarks: '',
+  }
+
+  scheduleNextDialog.value = true
+}
+
+async function saveScheduleNext() {
+  savingNext.value = true
+
+  const { error } = await supabase.from('ac_cleaning_log').insert({
+    building: scheduleNextForm.value.building,
+    area_room: scheduleNextForm.value.area_room,
+    ac_unit_id: scheduleNextForm.value.ac_unit_id || null,
+    last_cleaning_date: scheduleNextForm.value.last_cleaning_date,
+    next_cleaning_date: scheduleNextForm.value.next_cleaning_date,
+    conducted_by: scheduleNextForm.value.conducted_by || null,
+    remarks: scheduleNextForm.value.remarks || null,
+    status: 'Pending',
+    date_accomplished: null,
+  })
+
+  if (error) {
+    showSnackbar('Failed to schedule next cleaning', 'error')
+  } else {
+    showSnackbar('Next cleaning scheduled successfully', 'success')
+    scheduleNextDialog.value = false
+    await fetchRecords()
+  }
+
+  savingNext.value = false
 }
 
 function showSnackbar(message, color = 'success') {

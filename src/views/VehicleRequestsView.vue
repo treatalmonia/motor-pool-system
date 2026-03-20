@@ -652,14 +652,11 @@ async function quickUpdateStatus(item, newStatus) {
       remarks: item.remarks || null,
       // WHY: Mileage maps to odometer for vehicles
       odometer: item.asset_type === 'Vehicle' ? item.mileage || null : null,
-      hours_of_operation: item.asset_type === 'Non-Vehicular'
-        ? item.hours_of_operation || null
-        : null,
+      hours_of_operation:
+        item.asset_type === 'Non-Vehicular' ? item.hours_of_operation || null : null,
     }
 
-    const { error: logError } = await supabase
-      .from('vehicle_pm_log')
-      .insert(logPayload)
+    const { error: logError } = await supabase.from('vehicle_pm_log').insert(logPayload)
 
     if (logError) {
       // WHY: Don't block the user — the SR update succeeded.

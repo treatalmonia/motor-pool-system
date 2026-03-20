@@ -281,18 +281,23 @@
               />
             </v-col>
 
-            <!-- Service Type -->
-            <v-col cols="12" sm="6">
-              <v-combobox
-                v-model="form.service_type"
-                :items="serviceTypeNames"
-                label="Service Type *"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="errors.service_type"
-                @update:modelValue="onServiceTypeSelected"
-              />
-            </v-col>
+            <v-combobox
+              v-model="form.service_type"
+              :items="serviceTypeNames"
+              label="Service Type *"
+              variant="outlined"
+              density="comfortable"
+              :error-messages="errors.service_type"
+              @update:modelValue="onServiceTypeSelected"
+            />
+            <p
+              v-if="form.service_type && !serviceTypeNames.includes(form.service_type)"
+              class="text-caption text-warning mt-1"
+            >
+              ⚠ This service type is not in the PM Program. Intervals will not auto-calculate and
+              this record will not appear in the Maintenance Log. Go to
+              <strong>Preventive Maintenance Program</strong> to add it first.
+            </p>
 
             <!-- Row: Date Performed | Odometer or Hours -->
             <v-col cols="12" sm="6">
@@ -1181,7 +1186,14 @@ const groupedAssetItems = computed(() => {
       disabled: true,
       class: 'text-primary font-weight-bold text-caption',
     })
-    vehicles.forEach((v) => items.push({ title: v.asset_name, value: v.id }))
+    const allNames = assetList.value.map((a) => a.asset_name)
+    const isDupe = (name) => allNames.filter((n) => n === name).length > 1
+    vehicles.forEach((v) =>
+      items.push({
+        title: isDupe(v.asset_name) ? `${v.asset_name} (ID:${v.id})` : v.asset_name,
+        value: v.id,
+      }),
+    )
   }
   if (nonVehicles.length > 0) {
     items.push({
@@ -1190,7 +1202,14 @@ const groupedAssetItems = computed(() => {
       disabled: true,
       class: 'text-primary font-weight-bold text-caption',
     })
-    nonVehicles.forEach((v) => items.push({ title: v.asset_name, value: v.id }))
+    const allNames = assetList.value.map((a) => a.asset_name)
+    const isDupe = (name) => allNames.filter((n) => n === name).length > 1
+    nonVehicles.forEach((v) =>
+      items.push({
+        title: isDupe(v.asset_name) ? `${v.asset_name} (ID:${v.id})` : v.asset_name,
+        value: v.id,
+      }),
+    )
   }
   return items
 })

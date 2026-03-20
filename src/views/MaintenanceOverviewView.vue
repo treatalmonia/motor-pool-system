@@ -26,12 +26,8 @@
             <v-btn variant="outlined" prepend-icon="mdi-plus" @click="addYear"> Add Year </v-btn>
             <!-- WHAT: Print button — triggers window.print() -->
             <!-- WHY: Only the print-area div shows during print -->
-          <!-- WHY: Print moved to PMCReportView — navigate there instead -->
-            <v-btn
-              variant="outlined"
-              prepend-icon="mdi-clipboard-check"
-              @click="goToPMCReport"
-            >
+            <!-- WHY: Print moved to PMCReportView — navigate there instead -->
+            <v-btn variant="outlined" prepend-icon="mdi-clipboard-check" @click="goToPMCReport">
               PMC Report
             </v-btn>
           </div>
@@ -156,12 +152,8 @@
                       <button
                         v-if="row.monthCells[m.value]"
                         class="ml-cell-done"
-                          @click="
-                          openDetail(
-                            row.monthCells[m.value],
-                            group.vehicleName,
-                            row.service_type,
-                          )
+                        @click="
+                          openDetail(row.monthCells[m.value], group.vehicleName, row.service_type)
                         "
                         :title="
                           'View details for ' + formatDate(row.monthCells[m.value].date_performed)
@@ -253,7 +245,7 @@
       </div>
     </transition>
 
-<!-- WHY: Print area removed — printing is now handled by PMCReportView -->
+    <!-- WHY: Print area removed — printing is now handled by PMCReportView -->
 
     <!-- Snackbar -->
     <v-snackbar
@@ -367,7 +359,9 @@ const matrixGroups = computed(() => {
     const vehicleRecords = pmRecords.value.filter((r) => r.vehicle_id === vehicle.id)
 
     const rows = pmServiceTypes.value.map((st) => {
-      const records = vehicleRecords.filter((r) => r.service_type === st.service_type)
+      const records = vehicleRecords.filter(
+        (r) => r.service_type?.toLowerCase() === st.service_type?.toLowerCase(),
+      )
 
       // WHY: If selectedYear is null (All Years), show all records
       //      Otherwise filter by the selected year
@@ -378,12 +372,14 @@ const matrixGroups = computed(() => {
       })
 
       const monthCells = {}
-      yearRecords.forEach((r) => {
-        const month = new Date(r.date_performed + 'T00:00:00').getMonth() + 1
-        if (!monthCells[month] || r.date_performed > monthCells[month].date_performed) {
-          monthCells[month] = r
-        }
-      })
+      yearRecords
+        .filter((r) => r.status === 'Completed')
+        .forEach((r) => {
+          const month = new Date(r.date_performed + 'T00:00:00').getMonth() + 1
+          if (!monthCells[month] || r.date_performed > monthCells[month].date_performed) {
+            monthCells[month] = r
+          }
+        })
 
       const latestRecord = records.length
         ? records.reduce((a, b) => ((a.date_performed || '') > (b.date_performed || '') ? a : b))
@@ -1033,126 +1029,125 @@ thead .ml-sticky-l2 {
 /* WHAT: When printing, hide everything except the matrix table */
 /* WHY: Print layout must be clean — only the data table is needed */
 /* WHY: Print CSS removed — printing is now handled by PMCReportView */
-  /* Hide everything on screen */
-  body > * {
-    display: none !important;
-  }
+/* Hide everything on screen */
+body > * {
+  display: none !important;
+}
 
-  /* Show only the print area */
-  .print-area {
-    display: block !important;
-  }
+/* Show only the print area */
+.print-area {
+  display: block !important;
+}
 
-  /* Page setup */
-  .print-page {
-    padding: 12mm 15mm 10mm 15mm;
-    background: white;
-    font-family: Arial, sans-serif;
-    font-size: 10px;
-  }
+/* Page setup */
+.print-page {
+  padding: 12mm 15mm 10mm 15mm;
+  background: white;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+}
 
-  /* Title block */
-  .print-title-block {
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  .print-title {
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 1px;
-  }
-  .print-subtitle {
-    font-size: 11px;
-    font-weight: bold;
-    margin-top: 2px;
-  }
+/* Title block */
+.print-title-block {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.print-title {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.print-subtitle {
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 2px;
+}
 
-  /* Matrix table */
-  .print-matrix-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 8px;
-    margin-bottom: 16px;
-  }
-  .print-matrix-table th {
-    background: #f5f5f5;
-    color: #333;
-    padding: 4px 5px;
-    border: 1px solid #333;
-    text-align: left;
-    font-size: 8px;
-  }
-  .print-matrix-table td {
-    border: 1px solid #999;
-    padding: 3px 4px;
-    vertical-align: top;
-    font-size: 8px;
-  }
-  .print-col-asset {
-    width: 120px;
-  }
-  .print-col-task {
-    width: 140px;
-  }
-  .print-col-month {
-    width: 32px;
-    text-align: center;
-  }
-  .print-td-month {
-    text-align: center;
-  }
-  .print-td-asset {
-    vertical-align: top;
-  }
-  .print-plate {
-    font-size: 7px;
-    color: #666;
-  }
-  .print-row-sep td {
-    height: 4px;
-    background: #f0f0f0;
-    border: none;
-  }
-  .print-empty-row {
-    text-align: center;
-    padding: 20px;
-    color: #999;
-  }
+/* Matrix table */
+.print-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8px;
+  margin-bottom: 16px;
+}
+.print-matrix-table th {
+  background: #f5f5f5;
+  color: #333;
+  padding: 4px 5px;
+  border: 1px solid #333;
+  text-align: left;
+  font-size: 8px;
+}
+.print-matrix-table td {
+  border: 1px solid #999;
+  padding: 3px 4px;
+  vertical-align: top;
+  font-size: 8px;
+}
+.print-col-asset {
+  width: 120px;
+}
+.print-col-task {
+  width: 140px;
+}
+.print-col-month {
+  width: 32px;
+  text-align: center;
+}
+.print-td-month {
+  text-align: center;
+}
+.print-td-asset {
+  vertical-align: top;
+}
+.print-plate {
+  font-size: 7px;
+  color: #666;
+}
+.print-row-sep td {
+  height: 4px;
+  background: #f0f0f0;
+  border: none;
+}
+.print-empty-row {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+}
 
-  /* Signatory */
-  .print-signatory-block {
-    display: flex;
-    margin-top: 24px;
-    margin-bottom: 8px;
-  }
-  .print-signatory-item {
-    min-width: 280px;
-  }
-  .print-signatory-label {
-    font-size: 10px;
-    font-weight: bold;
-  }
-  .print-signatory-name {
-    margin-top: 24px;
-    border-top: 1px solid #333;
-    font-weight: bold;
-    font-size: 10px;
-    padding-top: 2px;
-    min-width: 240px;
-  }
-  .print-signatory-title {
-    font-size: 9.5px;
-    color: #333;
-    margin-top: 2px;
-  }
+/* Signatory */
+.print-signatory-block {
+  display: flex;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+.print-signatory-item {
+  min-width: 280px;
+}
+.print-signatory-label {
+  font-size: 10px;
+  font-weight: bold;
+}
+.print-signatory-name {
+  margin-top: 24px;
+  border-top: 1px solid #333;
+  font-weight: bold;
+  font-size: 10px;
+  padding-top: 2px;
+  min-width: 240px;
+}
+.print-signatory-title {
+  font-size: 9.5px;
+  color: #333;
+  margin-top: 2px;
+}
 
-  /* Form code */
-  .print-form-code {
-    display: flex;
-    flex-direction: column;
-    font-size: 8px;
-    color: #666;
-    margin-top: 8px;
-  }
-
+/* Form code */
+.print-form-code {
+  display: flex;
+  flex-direction: column;
+  font-size: 8px;
+  color: #666;
+  margin-top: 8px;
+}
 </style>

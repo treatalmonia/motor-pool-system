@@ -270,7 +270,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { supabase } from '../supabase'
 import {
   Chart,
@@ -744,7 +744,8 @@ function utilizationColor(pct) {
 }
 
 // Watch year changes to reload everything
-watch(selectedYear, loadAll)
+// AFTER — delete this line entirely
+// The @update:modelValue on the <v-select> already calls loadAll
 
 onMounted(async () => {
   await loadAvailableYears()

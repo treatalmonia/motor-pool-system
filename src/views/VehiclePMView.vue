@@ -121,16 +121,6 @@
             />
           </v-col>
 
-          <v-col cols="12" sm="2">
-            <v-select
-              v-model="yearFilter"
-              :items="yearOptions"
-              label="Year"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
           <v-col cols="12" sm="3">
             <v-select
               v-model="vehicleFilter"
@@ -182,7 +172,7 @@
               <!-- Date Completed -->
               <td>{{ formatDate(item.date_accomplished) || '—' }}</td>
 
-<!-- Next Due Date — row color already shows urgency -->
+              <!-- Next Due Date — row color already shows urgency -->
               <!-- WHY: Chip labels removed — row background color (red/blue/yellow)
                    communicates the status. Chips were redundant and cluttered. -->
               <td>
@@ -1136,7 +1126,6 @@ async function onConductedByUpdate(value) {
 // WHY: completedCount removed — replaced by date-based status summary cards
 // WHY: overdueCount removed — replaced by overdueMaintenanceCount (date-based)
 
-
 // ── New date-based status logic ──
 // WHAT: Computes a visual status for each Scheduled record based on next_due_date.
 // WHY: The database status (Scheduled/Completed/Cancelled) is different from
@@ -1382,9 +1371,9 @@ function statusColor(status) {
 // Colors are intentionally light so text remains readable.
 function getRowStyle(record) {
   const s = getDateStatus(record)
-  if (s === 'overdue') return { backgroundColor: '#fff1f1' }   // light red
+  if (s === 'overdue') return { backgroundColor: '#fff1f1' } // light red
   if (s === 'due-today') return { backgroundColor: '#e3f2fd' } // light blue
-  if (s === 'due-soon') return { backgroundColor: '#fffde7' }  // light yellow
+  if (s === 'due-soon') return { backgroundColor: '#fffde7' } // light yellow
   return {}
 }
 
@@ -1605,6 +1594,14 @@ async function saveRecord() {
       showSnackbar('Record updated successfully', 'success')
       closeFormDialog()
       await fetchRecords()
+      if (payload.status === 'Completed') {
+        const updatedRecord = {
+          ...form.value,
+          ...payload,
+          asset_name: getAssetName(form.value.vehicle_id),
+        }
+        await openScheduleNextDialog(updatedRecord)
+      }
     }
   } else {
     const { error } = await supabase.from('vehicle_pm_log').insert(payload)
@@ -1816,7 +1813,7 @@ function onSNOdometerInput(e) {
       scheduleNextForm.value.next_due_odometer =
         Number(raw) + Number(scheduleNextForm.value.km_between_service)
       scheduleNextForm.value.next_due_odometer_display = formatNumber(
-        scheduleNextForm.value.next_due_odometer
+        scheduleNextForm.value.next_due_odometer,
       )
     }
   }

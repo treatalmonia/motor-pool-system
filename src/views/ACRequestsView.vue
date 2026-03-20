@@ -222,30 +222,35 @@
               />
             </v-col>
 
-            <v-combobox
-              v-model="selectedBuilding"
-              :items="buildings"
-              label="Building *"
-              variant="outlined"
-              density="comfortable"
-              :error-messages="errors.building"
-              hint="Select or type a new building"
-              persistent-hint
-              @update:modelValue="onBuildingChange"
-            />
+            <!-- AFTER (fixed) -->
+            <v-col cols="12" sm="6">
+              <v-combobox
+                v-model="selectedBuilding"
+                :items="buildings"
+                label="Building *"
+                variant="outlined"
+                density="comfortable"
+                :error-messages="errors.building"
+                hint="Select or type a new building"
+                persistent-hint
+                @update:modelValue="onBuildingChange"
+              />
+            </v-col>
 
             <!-- AC Unit (filtered by building) -->
-            <v-combobox
-              v-model="form.area_room"
-              :items="filteredAcUnits.map((u) => u.display_name)"
-              label="AC Unit / Room *"
-              variant="outlined"
-              density="comfortable"
-              :error-messages="errors.ac_unit_id"
-              :disabled="!selectedBuilding"
-              hint="Select or type a room name"
-              persistent-hint
-            />
+            <v-col cols="12" sm="6">
+              <v-combobox
+                v-model="form.area_room"
+                :items="filteredAcUnits.map((u) => u.display_name)"
+                label="AC Unit / Room *"
+                variant="outlined"
+                density="comfortable"
+                :error-messages="errors.ac_unit_id"
+                :disabled="!selectedBuilding"
+                hint="Select or type a room name"
+                persistent-hint
+              />
+            </v-col>
 
             <!-- Details of Request -->
             <v-col cols="12">
@@ -304,7 +309,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
+<!-- TODO: I want to delete the delete functionality to each dropdown-->
     <!-- View Details Dialog -->
     <v-dialog v-model="viewDialog" max-width="500">
       <v-card rounded="lg">
@@ -328,10 +333,7 @@
           <v-list lines="two" density="compact">
             <v-list-item subtitle="Date Received" :title="selectedRequest.date_received || '—'" />
             <v-list-item subtitle="Building" :title="selectedRequest.building || '—'" />
-            <v-list-item
-              subtitle="Area / Room"
-              :title="getAcUnitRoom(selectedRequest.ac_unit_id)"
-            />
+            <v-list-item subtitle="Area / Room" :title="selectedRequest.area_room || '—'" />
             <v-list-item
               subtitle="Details of Request"
               :title="selectedRequest.details_of_request || '—'"
@@ -407,6 +409,7 @@ const deleteDialog = ref(false)
 const isEditing = ref(false)
 const selectedRequest = ref(null)
 
+// TODO: always shows "—" for Area/Room
 // ---- FORM ----
 const defaultForm = {
   request_no: '',
@@ -502,10 +505,7 @@ function onStatusChange(newStatus) {
   }
 }
 
-function getAcUnitRoom(acUnitId) {
-  const unit = acUnitList.value.find((u) => u.id === acUnitId)
-  return unit ? `${unit.floor} — ${unit.area_room}` : '—'
-}
+
 
 function onBuildingChange() {
   form.value.ac_unit_id = null
@@ -550,10 +550,7 @@ async function fetchRequests() {
   if (error) {
     showSnackbar('Failed to load AC requests', 'error')
   } else {
-    requests.value = data.map((r) => ({
-      ...r,
-      area_room: getAcUnitRoom(r.ac_unit_id),
-    }))
+    requests.value = data
   }
 
   loading.value = false

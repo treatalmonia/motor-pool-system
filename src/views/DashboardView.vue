@@ -27,7 +27,7 @@
     </div>
 
     <!-- ── KPI Summary Cards ── -->
-    <v-row  density="comfortable" class="mb-4">
+    <v-row density="comfortable" class="mb-4">
       <v-col cols="6" sm="3" v-for="kpi in kpiCards" :key="kpi.label">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="pa-4">
@@ -45,7 +45,7 @@
     </v-row>
 
     <!-- ── Row 2: Fuel Consumption Bar Chart + PM Status ── -->
-    <v-row  density="comfortable" class="mb-4">
+    <v-row density="comfortable" class="mb-4">
       <!-- Fuel Consumption Per Year -->
       <v-col cols="12" md="8">
         <v-card rounded="lg" elevation="0" border height="340">
@@ -106,7 +106,7 @@
     </v-row>
 
     <!-- ── Row 3: Vehicular Consumption Bar + Non-Vehicular Bar ── -->
-    <v-row  density="comfortable" class="mb-4">
+    <v-row density="comfortable" class="mb-4">
       <!-- Vehicular Fuel Consumption -->
       <v-col cols="12" md="6">
         <v-card rounded="lg" elevation="0" border height="320">
@@ -173,7 +173,7 @@
     </v-row>
 
     <!-- ── Row 4: Asset Fuel Summary Table ── -->
-    <v-row  density="comfortable" class="mb-4">
+    <v-row density="comfortable" class="mb-4">
       <v-col cols="12">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="pa-4">
@@ -239,7 +239,7 @@
     </v-row>
 
     <!-- ── Row 5: Recent Service Requests ── -->
-    <v-row  density="comfortable">
+    <v-row density="comfortable">
       <v-col cols="12" md="6">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="pa-4">
@@ -926,4 +926,3 @@ onMounted(() => loadAll())
   font-size: 12px !important;
 }
 </style>
-

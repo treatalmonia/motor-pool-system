@@ -1002,10 +1002,11 @@ async function fetchContracts() {
   if (data) contracts.value = data
 }
 
+// AFTER — add plate_number to the select
 async function fetchAssets() {
   const { data } = await supabase
     .from('vehicles')
-    .select('asset_name, asset_type')
+    .select('asset_name, asset_type, plate_number')
     .eq('status', 'Active')
     .order('asset_name')
   if (data) assets.value = data
@@ -1193,6 +1194,18 @@ async function saveTransaction() {
   saving.value = false
 }
 
+// ADD this watch after the other watchers (near the bottom of <script setup>)
+watch(() => form.value.vehicle, (vehicleName) => {
+  if (!vehicleName || form.value.utilization_type === 'Non-Vehicular') {
+    form.value.plate_number = ''
+    return
+  }
+  const match = assets.value.find(
+    (a) => a.asset_name === vehicleName
+  )
+  form.value.plate_number = match?.plate_number || ''
+})
+
 // ── DELETE ──
 async function deleteTx() {
   deleting.value = true
@@ -1233,7 +1246,8 @@ function showSnackbar(message, color = 'success') {
 
 // Watch filterYear: if the year selector changes from outside (e.g. browser back),
 // re-fetch everything. The actual handler is onYearChange() called by the select.
-watch(filterYear, onYearChange)
+// AFTER — delete this line entirely
+// The @update:modelValue on the <v-select> already calls loadAll
 
 onMounted(async () => {
   await fetchAssets()

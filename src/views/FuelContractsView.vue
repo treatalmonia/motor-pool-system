@@ -20,6 +20,7 @@
               density="compact"
               hide-details
               style="min-width: 110px"
+              :disabled="formDialog || viewDialog || deleteDialog"
               @update:modelValue="refreshData"
             />
             <v-btn
@@ -59,7 +60,17 @@
               <v-avatar color="orange-darken-2" variant="tonal" size="44">
                 <v-icon>mdi-cash-multiple</v-icon>
               </v-avatar>
-              <p class="text-body-2 font-weight-bold">Total Contract Amount</p>
+              <div class="d-flex align-center ga-2">
+                <p class="text-body-2 font-weight-bold">Total Contract Amount</p>
+                <v-chip
+                  v-if="overBudgetCount > 0"
+                  color="error"
+                  size="x-small"
+                  variant="flat"
+                >
+                  {{ overBudgetCount }} over budget
+                </v-chip>
+              </div>
             </div>
 
             <!-- Main figure: the full approved budget for this year -->
@@ -252,6 +263,10 @@
         :loading="loading"
         items-per-page="15"
         class="fuel-table"
+        :sort-by="[{ key: 'pct_used', order: 'desc' }]"
+        :row-props="({ item }) => item.consumed_amount > item.contract_amount
+          ? { style: 'background:#fff1f1' }
+          : {}"
       >
         <!-- Fund Cluster chip -->
         <template #item.fund_cluster="{ item }">
@@ -299,6 +314,41 @@
           <span>{{ formatNumber(item.allocated_gasoline) }} L</span>
         </template>
 
+        <!-- % Used -->
+        <template #item.pct_used="{ item }">
+          <div style="min-width:90px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+              <span
+                style="font-size:11px;font-weight:600"
+                :style="item.consumed_amount > item.contract_amount
+                  ? 'color:#dc2626'
+                  : item.consumed_amount / (item.contract_amount || 1) >= 0.85
+                    ? 'color:#d97706'
+                    : 'color:#16a34a'"
+              >
+                {{ item.contract_amount > 0
+                  ? Math.min(Math.round((item.consumed_amount / item.contract_amount) * 100), 999) + '%'
+                  : '—' }}
+              </span>
+            </div>
+            <div style="height:5px;border-radius:3px;background:#e5e7eb;overflow:hidden">
+              <div
+                style="height:100%;border-radius:3px;transition:width 0.3s"
+                :style="{
+                  width: item.contract_amount > 0
+                    ? Math.min((item.consumed_amount / item.contract_amount) * 100, 100) + '%'
+                    : '0%',
+                  background: item.consumed_amount > item.contract_amount
+                    ? '#dc2626'
+                    : item.consumed_amount / (item.contract_amount || 1) >= 0.85
+                      ? '#d97706'
+                      : '#16a34a'
+                }"
+              />
+            </div>
+          </div>
+        </template>
+
         <!-- Balance -->
         <template #item.balance="{ item }">
           <v-chip :color="item.balance >= 0 ? 'success' : 'error'" variant="tonal" size="small">
@@ -322,6 +372,14 @@
             variant="text"
             color="primary"
             @click="openEditDialog(item)"
+          />
+          <v-btn
+            icon="mdi-receipt-text"
+            size="x-small"
+            variant="text"
+            color="teal"
+            title="View transactions for this cost center"
+            @click="router.push({ path: '/fuel-transactions', query: { fund: item.fund_cluster, po: item.po_number } })"
           />
           <v-btn
             icon="mdi-delete"
@@ -544,35 +602,41 @@
 
           <!-- Fuel Allocation -->
           <v-card rounded="lg" variant="tonal" color="green" class="pa-3">
-            <p class="text-caption font-weight-bold text-medium-emphasis mb-2">FUEL ALLOCATION</p>
-            <v-row density="comfortable">
-              <v-col cols="3">
-                <p class="text-caption text-medium-emphasis">Diesel (L)</p>
-                <p class="font-weight-medium">{{ formatNumber(selectedContract.allocated_diesel) }}</p>
-              </v-col>
-              <v-col cols="3">
-                <p class="text-caption text-medium-emphasis">Rem. Diesel</p>
-                <p
-                  class="font-weight-bold"
-                  :class="selectedContract.remaining_diesel < 0 ? 'text-error' : ''"
-                >
-                  {{ formatNumber(selectedContract.remaining_diesel) }} L
-                </p>
-              </v-col>
-              <v-col cols="3">
-                <p class="text-caption text-medium-emphasis">Gasoline (L)</p>
-                <p class="font-weight-medium">{{ formatNumber(selectedContract.allocated_gasoline) }}</p>
-              </v-col>
-              <v-col cols="3">
-                <p class="text-caption text-medium-emphasis">Rem. Gasoline</p>
-                <p
-                  class="font-weight-bold"
-                  :class="selectedContract.remaining_gasoline < 0 ? 'text-error' : ''"
-                >
-                  {{ formatNumber(selectedContract.remaining_gasoline) }} L
-                </p>
-              </v-col>
-            </v-row>
+            <p class="text-caption font-weight-bold text-medium-emphasis mb-3">FUEL ALLOCATION</p>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px"></th>
+                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Allocated</th>
+                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Consumed</th>
+                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Remaining (L)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px 8px;font-weight:600">Diesel</td>
+                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.allocated_diesel) }} L</td>
+                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.consumed_diesel) }} L</td>
+                  <td
+                    style="text-align:right;padding:6px 8px;font-weight:700"
+                    :style="selectedContract.remaining_diesel < 0 ? 'color:#dc2626' : 'color:#16a34a'"
+                  >
+                    {{ formatNumber(selectedContract.remaining_diesel) }} L
+                  </td>
+                </tr>
+                <tr style="border-top:1px solid rgba(0,0,0,0.06)">
+                  <td style="padding:6px 8px;font-weight:600">Gasoline</td>
+                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.allocated_gasoline) }} L</td>
+                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.consumed_gasoline) }} L</td>
+                  <td
+                    style="text-align:right;padding:6px 8px;font-weight:700"
+                    :style="selectedContract.remaining_gasoline < 0 ? 'color:#dc2626' : 'color:#16a34a'"
+                  >
+                    {{ formatNumber(selectedContract.remaining_gasoline) }} L
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </v-card>
 
         </v-card-text>
@@ -646,7 +710,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
+
+const router = useRouter()
 
 // ── STATE ──
 const contracts = ref([])
@@ -700,9 +767,8 @@ const headers = [
   { title: 'Cost Center Head', key: 'cost_center_head' },
   { title: 'Contract Amt.', key: 'contract_amount', align: 'end' },
   { title: 'Consumed', key: 'consumed_amount', align: 'end' },
+  { title: '% Used', key: 'pct_used', align: 'center', sortable: false },
   { title: 'Balance', key: 'balance', align: 'center' },
-  { title: 'Diesel Rem.', key: 'remaining_diesel', align: 'end' },
-  { title: 'Gas. Rem.', key: 'remaining_gasoline', align: 'end' },
   { title: 'Actions', key: 'actions', sortable: false, align: 'center', width: '100px' },
 ]
 
@@ -720,74 +786,68 @@ const filteredContracts = computed(() => {
 })
 
 // totalContractAmount: sum of all contract amounts for the selected year.
+// All totals below use filteredContracts so summary cards react to search and fund filter.
+
+const overBudgetCount = computed(() =>
+  filteredContracts.value.filter((c) => c.balance < 0).length
+)
+
+const filteredContractIds = computed(() =>
+  new Set(filteredContracts.value.map((c) => c.id))
+)
+
+const filteredTransactions = computed(() =>
+  allTransactions.value.filter((t) => filteredContractIds.value.has(t.contract_id))
+)
+
 const totalContractAmount = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
+  filteredContracts.value.reduce((s, c) => s + (c.contract_amount || 0), 0),
 )
 
-// totalDiesel: sum of allocated diesel liters from all contracts this year.
 const totalDiesel = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
+  filteredContracts.value.reduce((s, c) => s + (c.allocated_diesel || 0), 0),
 )
 
-// totalGasoline: sum of allocated gasoline liters from all contracts this year.
 const totalGasoline = computed(() =>
-  contracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
+  filteredContracts.value.reduce((s, c) => s + (c.allocated_gasoline || 0), 0),
 )
 
-// totalDieselAmount: sum of actual transaction amounts for diesel this year.
 const totalDieselAmount = computed(() =>
-  allTransactions.value
+  filteredTransactions.value
     .filter((t) => t.fuel_type === 'Diesel')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-// totalGasolineAmount: sum of actual transaction amounts for gasoline this year.
 const totalGasolineAmount = computed(() =>
-  allTransactions.value
+  filteredTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-// totalConsumedAmount: the total peso amount actually spent this year across
-// ALL cost centers. Calculated from real transaction records, not from the
-// contract amounts. Think of it as "how much of the budget is already used".
 const totalConsumedAmount = computed(() =>
-  allTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
+  filteredTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-// totalRemainingBalance: total contract budget minus total amount spent.
-// WHY: this is the single most important number — it answers "do we still
-// have money left in the fuel budget?"
-// NOTE: this CAN be negative. A negative number means the office has spent
-// more than the total contract allows. This is valid in real operations.
 const totalRemainingBalance = computed(
   () => totalContractAmount.value - totalConsumedAmount.value,
 )
 
-// totalConsumedDiesel: total liters of diesel actually withdrawn this year.
-// Sourced from fuel_transactions, NOT from the allocated_diesel column
-// in fuel_contracts. The contract column is the plan — transactions are reality.
 const totalConsumedDiesel = computed(() =>
-  allTransactions.value
+  filteredTransactions.value
     .filter((t) => t.fuel_type === 'Diesel')
     .reduce((s, t) => s + (t.quantity || 0), 0),
 )
 
-// totalConsumedGasoline: same as totalConsumedDiesel but for gasoline.
 const totalConsumedGasoline = computed(() =>
-  allTransactions.value
+  filteredTransactions.value
     .filter((t) => t.fuel_type === 'Gasoline')
     .reduce((s, t) => s + (t.quantity || 0), 0),
 )
 
-// totalRemainingDiesel: how many diesel liters are still available.
-// Formula: allocated liters (from contracts) minus consumed liters (from transactions).
-// Can be negative if more was consumed than allocated.
 const totalRemainingDiesel = computed(
   () => totalDiesel.value - totalConsumedDiesel.value,
 )
 
-// totalRemainingGasoline: same logic as totalRemainingDiesel but for gasoline.
 const totalRemainingGasoline = computed(
   () => totalGasoline.value - totalConsumedGasoline.value,
 )
@@ -825,15 +885,18 @@ const enrichedContracts = computed(() =>
       consumed_gasoline: 0,
       transactions: [],
     }
+    const contractAmt = c.contract_amount || 0
+    const consumed = stats.consumed_amount
     return {
       ...c,
-      consumed_amount: stats.consumed_amount,
-      balance: (c.contract_amount || 0) - stats.consumed_amount,
+      consumed_amount: consumed,
+      balance: contractAmt - consumed,
       remaining_diesel: (c.allocated_diesel || 0) - stats.consumed_diesel,
       remaining_gasoline: (c.allocated_gasoline || 0) - stats.consumed_gasoline,
       consumed_diesel: stats.consumed_diesel,
       consumed_gasoline: stats.consumed_gasoline,
       transactions: stats.transactions,
+      pct_used: contractAmt > 0 ? Math.round((consumed / contractAmt) * 100) : 0,
     }
   }),
 )

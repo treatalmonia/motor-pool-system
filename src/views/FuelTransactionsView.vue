@@ -99,12 +99,21 @@
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
-          label="Search OR#, vehicle, utilized by..."
+          label="Search OR#, PO#, vehicle, account code, utilized by..."
           variant="outlined"
           density="compact"
           hide-details
           clearable
           style="min-width: 260px"
+        />
+        <v-select
+          v-model="filterAssetType"
+          :items="['All Types', 'Vehicular', 'Non-Vehicular']"
+          label="Asset Type"
+          variant="outlined"
+          density="compact"
+          hide-details
+          style="min-width: 140px"
         />
         <v-select
           v-model="filterPeriod"
@@ -228,6 +237,22 @@
               Add First Transaction
             </v-btn>
           </div>
+        </template>
+
+        <template #body.append>
+          <tr v-if="filteredTransactions.length > 0" style="background:var(--v-theme-surface);border-top:2px solid rgba(0,0,0,0.12)">
+            <td colspan="4" style="padding:10px 14px;font-size:12px;font-weight:600">
+              Totals ({{ filteredTransactions.length }} records)
+            </td>
+            <td style="padding:10px 14px;text-align:right;font-size:12px;font-weight:700">
+              {{ formatNumber(filteredTransactions.reduce((s,t) => s + (t.quantity||0), 0)) }} L
+            </td>
+            <td style="padding:10px 14px"></td>
+            <td style="padding:10px 14px;text-align:right;font-size:12px;font-weight:700;color:#e65100">
+              ₱{{ formatNumber(filteredTransactions.reduce((s,t) => s + (t.total_amount||0), 0)) }}
+            </td>
+            <td colspan="4" style="padding:10px 14px"></td>
+          </tr>
         </template>
       </v-data-table>
     </v-card>
@@ -739,7 +764,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { supabase } from '../supabase'
+
+const route = useRoute()
 
 // ── STATE ──
 const transactions = ref([])
@@ -762,6 +790,7 @@ const search = ref('')
 const filterPeriod = ref('All Periods')
 const filterFuel = ref('All Types')
 const filterFund = ref('All Funds')
+const filterAssetType = ref('All Types')
 
 // ── DIALOGS ──
 const formDialog = ref(false)
@@ -851,7 +880,17 @@ function getBillingPeriod(dateStr) {
 
 const billingPeriods = computed(() => {
   const set = new Set(transactions.value.map((t) => t.billing_period).filter(Boolean))
-  return [...set].sort()
+  return [...set].sort((a, b) => {
+    const rank = (p) => {
+      const parts = p.split(', ')
+      const year = parseInt(parts[1]) || 0
+      const monthPart = parts[0]?.split(' ')[0] || ''
+      const monthIdx = MONTH_NAMES.indexOf(monthPart)
+      const isSecondHalf = parts[0]?.includes('16') ? 1 : 0
+      return year * 1000 + monthIdx * 2 + isSecondHalf
+    }
+    return rank(a) - rank(b)
+  })
 })
 
 // ── COMPUTED ──
@@ -859,14 +898,15 @@ const filteredTransactions = computed(() => {
   return transactions.value.filter((t) => {
     const matchSearch =
       !search.value ||
-      [t.or_number, t.vehicle, t.utilized_by, t.account_code].some((f) =>
+      [t.or_number, t.vehicle, t.utilized_by, t.account_code, t.po_number].some((f) =>
         f?.toLowerCase().includes(search.value.toLowerCase()),
       )
     const matchPeriod =
       filterPeriod.value === 'All Periods' || t.billing_period === filterPeriod.value
     const matchFuel = filterFuel.value === 'All Types' || t.fuel_type === filterFuel.value
     const matchFund = filterFund.value === 'All Funds' || t.fund_cluster === filterFund.value
-    return matchSearch && matchPeriod && matchFuel && matchFund
+    const matchAssetType = filterAssetType.value === 'All Types' || t.utilization_type === filterAssetType.value
+    return matchSearch && matchPeriod && matchFuel && matchFund && matchAssetType
   })
 })
 
@@ -948,7 +988,19 @@ const contractBalanceHint = computed(() => {
 // below the autocomplete, matching the design in the mockup image.
 const selectedContractSummary = computed(() => {
   if (!form.value.contract_id) return null
-  return filteredContractOptions.value.find((c) => c.id === form.value.contract_id) || null
+  const contract = filteredContractOptions.value.find((c) => c.id === form.value.contract_id)
+  if (!contract) return null
+
+  // When editing, exclude the current transaction's own amount from the balance
+  // so we don't double-subtract it
+  const currentTxAmount = isEditing.value ? (selectedTx.value?.total_amount || 0) : 0
+  const pendingAmount = form.value.total_amount || 0
+  const adjustedBalance = contract.balance + currentTxAmount - pendingAmount
+
+  return {
+    ...contract,
+    balance: adjustedBalance,
+  }
 })
 
 // Vehicle / Equipment options from assets + past transactions
@@ -1252,7 +1304,10 @@ function showSnackbar(message, color = 'success') {
 onMounted(async () => {
   await fetchAssets()
   await fetchAvailableYears()
-  // Fetch transactions and contracts in parallel for faster page load
   await Promise.all([fetchTransactions(), fetchContracts()])
+
+  // Apply pre-filters from query params (e.g. coming from Fuel Allocation Monitoring)
+  if (route.query.fund) filterFund.value = route.query.fund
+  if (route.query.po) search.value = route.query.po
 })
 </script>

@@ -97,8 +97,8 @@
         :class="{ 'page-break-after': pIdx < pages.length - 1 }"
       >
 
-        <!-- Official CSU Header (full variant: CSU logo | contact info | SOCOTEC) -->
-        <ReportHeader variant="full" />
+        <!-- Official CSU Header -->
+        <ReportHeader variant="standard" />
 
         <!-- Contractor row (kept as editable field below the header) -->
         <div class="fuel-contractor-row">

@@ -113,7 +113,9 @@
           <v-col cols="12" sm="3">
             <v-select
               v-model="statusFilter"
-              :items="['All', 'Scheduled', 'Completed', 'Overdue', 'Cancelled']"
+              :items="statusOptions"
+              item-title="title"
+              item-value="value"
               label="Status"
               variant="outlined"
               density="compact"
@@ -125,6 +127,8 @@
             <v-select
               v-model="vehicleFilter"
               :items="assetOptions"
+              item-title="title"
+              item-value="value"
               label="Asset"
               variant="outlined"
               density="compact"
@@ -132,6 +136,9 @@
             />
           </v-col>
         </v-row>
+        <p class="text-caption text-medium-emphasis mb-2">
+          Click any row to view details · Double-click to edit
+        </p>
 
         <v-data-table
           :headers="headers"
@@ -141,7 +148,7 @@
           no-data-text="No PM records found"
           items-per-page="10"
           rounded="lg"
-      
+
         >
          <template v-slot:item="{ item, props }">
             <!-- WHY: Row background color shows urgency at a glance -->
@@ -209,28 +216,52 @@
               </td>
 
               <td>
-                <v-menu>
-                  <template v-slot:activator="{ props }">
+                <div class="d-flex align-center ga-1">
+                  <!-- Scheduled: show status chip + prominent Mark as Done button -->
+                  <template v-if="item.status === 'Scheduled'">
                     <v-chip
                       :color="statusColor(item.status)"
                       size="small"
                       variant="tonal"
-                      v-bind="props"
-                      style="cursor: pointer"
-                      append-icon="mdi-chevron-down"
                     >
                       {{ item.status }}
                     </v-chip>
-                  </template>
-                  <v-list density="compact" min-width="150">
-                    <v-list-item
-                      v-for="s in ['Scheduled', 'Completed', 'Cancelled']"
-                      :key="s"
-                      :title="s"
-                      @click="quickUpdateStatus(item, s)"
+                    <v-btn
+                      size="x-small"
+                      color="success"
+                      variant="tonal"
+                      icon="mdi-check"
+                      title="Mark as Completed"
+                      @click.stop="quickUpdateStatus(item, 'Completed')"
                     />
-                  </v-list>
-                </v-menu>
+                  </template>
+
+                  <!-- Completed or Cancelled: read-only chip + cancel option -->
+                  <template v-else>
+                    <v-menu>
+                      <template v-slot:activator="{ props }">
+                        <v-chip
+                          :color="statusColor(item.status)"
+                          size="small"
+                          variant="tonal"
+                          v-bind="props"
+                          style="cursor: pointer"
+                          append-icon="mdi-chevron-down"
+                        >
+                          {{ item.status }}
+                        </v-chip>
+                      </template>
+                      <v-list density="compact" min-width="150">
+                        <v-list-item
+                          v-for="s in ['Scheduled', 'Completed', 'Cancelled']"
+                          :key="s"
+                          :title="s"
+                          @click="quickUpdateStatus(item, s)"
+                        />
+                      </v-list>
+                    </v-menu>
+                  </template>
+                </div>
               </td>
               <td class="text-center">
                 <v-btn
@@ -1221,16 +1252,37 @@ function getDateStatus(record) {
 // WHAT: Summary card counts — only for Scheduled records
 // WHY: Completed and Cancelled records are not actionable
 const overdueMaintenanceCount = computed(
-  () => pmRecords.value.filter((r) => getDateStatus(r) === 'overdue').length,
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'overdue').length,
 )
 const dueTodayCount = computed(
-  () => pmRecords.value.filter((r) => getDateStatus(r) === 'due-today').length,
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'due-today').length,
 )
 const dueSoonCount = computed(
-  () => pmRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length,
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length,
 )
 const serviceTypeNames = computed(() => pmServiceTypes.value.map((s) => s.service_type))
-const assetOptions = computed(() => ['All', ...assetList.value.map((a) => a.asset_name)])
+const assetOptions = computed(() => {
+  const names = assetList.value.map((a) => a.asset_name)
+  return [
+    `All (${filteredRecords.value.length})`,
+    ...names.map((name) => {
+      const count = filteredRecords.value.filter((r) => r.asset_name === name).length
+      return { title: `${name} (${count})`, value: name }
+    }),
+  ]
+})
+
+const statusOptions = computed(() => {
+  const statuses = ['Scheduled', 'Completed', 'Cancelled']
+  const allCount = pmRecords.value.length
+  return [
+    { title: `All (${allCount})`, value: 'All' },
+    ...statuses.map((s) => {
+      const count = pmRecords.value.filter((r) => r.status === s).length
+      return { title: `${s} (${count})`, value: s }
+    }),
+  ]
+})
 
 // WHY: disabled and class are set directly on item objects instead of using
 //      :item-props function — prevents Vuetify 4 virtual scroll render crash.

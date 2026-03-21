@@ -76,16 +76,8 @@ const router = createRouter({
           component: () => import('../views/FuelTransactionsView.vue'),
         },
 
-        // Fuel Reports — 4 tabs:
-        //   1. Billing Summary   (replaces FuelSummaryReportView)
-        //   2. Vehicle Consumption Report
-        //   3. Balance by Cost Center
-        //   4. Payment Tracker (DV)
-        {
-          path: 'fuel-reports',
-          name: 'FuelReports',
-          component: () => import('../views/FuelReportsView.vue'),
-        },
+       
+
 
         // Keep the old fuel-summary-report route alive so any existing
         // bookmarks or nav links do not break. It still loads the original

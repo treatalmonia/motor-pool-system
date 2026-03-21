@@ -267,25 +267,36 @@
       <v-col cols="12">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-3">
+            <div class="d-flex align-center justify-space-between mb-3 flex-wrap ga-2">
               <div>
                 <div class="text-subtitle-2 font-weight-bold">
-                  Asset Fuel Summary — {{ selectedYear }}
+                  Vehicle Consumption — {{ selectedYear }}
                 </div>
                 <div class="text-caption text-medium-emphasis">
-                  Withdrawals, liters consumed, fuel type, and total amount per asset
+                  Withdrawals, liters consumed, and total amount per asset
                 </div>
               </div>
-              <v-text-field
-                v-model="assetSearch"
-                placeholder="Search asset..."
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                density="compact"
-                hide-details
-                clearable
-                style="max-width: 220px"
-              />
+              <div class="d-flex ga-2 align-center flex-wrap">
+                <v-select
+                  v-model="assetTypeFilterDash"
+                  :items="['All', 'Vehicular', 'Non-Vehicular']"
+                  label="Type"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  style="min-width: 140px"
+                />
+                <v-text-field
+                  v-model="assetSearch"
+                  placeholder="Search asset..."
+                  prepend-inner-icon="mdi-magnify"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  clearable
+                  style="max-width: 200px"
+                />
+              </div>
             </div>
             <v-data-table
               :headers="assetTableHeaders"
@@ -464,6 +475,8 @@ const pmStatusData = ref([])
 // ── Asset table ──
 const assetSearch = ref('')
 const assetRows = ref([])
+const assetTypeFilterDash = ref('All')
+
 const assetTableHeaders = [
   { title: 'Asset', key: 'asset_name', sortable: true },
   { title: 'Type', key: 'asset_type', sortable: true },
@@ -471,18 +484,29 @@ const assetTableHeaders = [
   { title: 'Diesel (L)', key: 'diesel_liters', sortable: true, align: 'end' },
   { title: 'Gasoline (L)', key: 'gasoline_liters', sortable: true, align: 'end' },
   { title: 'Total (L)', key: 'total_liters', sortable: true, align: 'end' },
-  { title: 'Fuel Type', key: 'fuel_type', sortable: false },
   { title: 'Total Amount', key: 'total_amount', sortable: true, align: 'end' },
 ]
 const filteredAssetRows = computed(() => {
-  if (!assetSearch.value) return assetRows.value
-  const s = assetSearch.value.toLowerCase()
-  return assetRows.value.filter(
-    (r) =>
-      (r.asset_name || '').toLowerCase().includes(s) ||
-      (r.asset_type || '').toLowerCase().includes(s) ||
-      (r.fuel_type || '').toLowerCase().includes(s),
-  )
+  let result = assetRows.value
+
+  if (assetTypeFilterDash.value !== 'All') {
+    result = result.filter((r) =>
+      assetTypeFilterDash.value === 'Non-Vehicular'
+        ? r.asset_type === 'Non-Vehicular'
+        : r.asset_type === 'Vehicle',
+    )
+  }
+
+  if (assetSearch.value) {
+    const s = assetSearch.value.toLowerCase()
+    result = result.filter(
+      (r) =>
+        (r.asset_name || '').toLowerCase().includes(s) ||
+        (r.asset_type || '').toLowerCase().includes(s),
+    )
+  }
+
+  return result
 })
 
 // ── Recent service requests ──

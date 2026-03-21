@@ -108,14 +108,6 @@
           rounded="lg"
         />
 
-        <!-- Fuel Reports: replaces old "Fuel Summary Report" with 4 tabs -->
-        <v-list-item
-          prepend-icon="mdi-chart-box"
-          title="Fuel Reports"
-          to="/fuel-reports"
-          rounded="lg"
-        />
-
         <!-- ── PRINTABLE REPORTS ── -->
         <v-list-subheader>PRINTABLE REPORTS</v-list-subheader>
 
@@ -213,7 +205,7 @@ const pageTitles = {
 
   '/fuel-contracts': 'Fuel Allocation Monitoring',
   '/fuel-transactions': 'Fuel Transactions',
-  '/fuel-reports': 'Fuel Reports',
+
   '/fuel-summary-report': 'Fuel Summary Report', // kept for backward compatibility
 
   // Printable Reports

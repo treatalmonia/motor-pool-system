@@ -44,6 +44,96 @@
       </v-col>
     </v-row>
 
+    <!-- ── Fuel Budget Overview ── -->
+    <p class="text-caption font-weight-bold text-medium-emphasis text-uppercase mb-3" style="letter-spacing:0.8px">
+      Fuel Budget — FY {{ selectedYear }}
+    </p>
+    <v-row density="comfortable" class="mb-4">
+      <v-col cols="6" sm="3">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis text-uppercase font-weight-medium">Contract Budget</span>
+              <v-icon color="orange" size="18" opacity="0.7">mdi-cash-multiple</v-icon>
+            </div>
+            <div class="text-h5 font-weight-bold">{{ formatCurrency(fuelBudget.totalContractAmount) }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">{{ fuelBudget.totalContracts }} cost centers</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="6" sm="3">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis text-uppercase font-weight-medium">Consumed</span>
+              <v-icon color="blue" size="18" opacity="0.7">mdi-fuel</v-icon>
+            </div>
+            <div class="text-h5 font-weight-bold">{{ formatCurrency(fuelBudget.totalConsumed) }}</div>
+            <div class="text-caption mt-1" :class="fuelBudget.utilizationPct >= 90 ? 'text-error' : fuelBudget.utilizationPct >= 80 ? 'text-warning' : 'text-success'">
+              {{ fuelBudget.utilizationPct }}% utilized
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="6" sm="3">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis text-uppercase font-weight-medium">Remaining</span>
+              <v-icon :color="fuelBudget.totalBalance < 0 ? 'error' : 'success'" size="18" opacity="0.7">mdi-scale-balance</v-icon>
+            </div>
+            <div class="text-h5 font-weight-bold" :class="fuelBudget.totalBalance < 0 ? 'text-error' : ''">
+              {{ fuelBudget.totalBalance < 0 ? '−' : '' }}{{ formatCurrency(Math.abs(fuelBudget.totalBalance)) }}
+            </div>
+            <div v-if="fuelBudget.overBudgetCount > 0" class="text-caption text-error mt-1">
+              {{ fuelBudget.overBudgetCount }} center{{ fuelBudget.overBudgetCount > 1 ? 's' : '' }} over budget
+            </div>
+            <div v-else class="text-caption text-success mt-1">All centers within budget</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="6" sm="3">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption text-medium-emphasis text-uppercase font-weight-medium">Transactions</span>
+              <v-icon color="primary" size="18" opacity="0.7">mdi-receipt-text</v-icon>
+            </div>
+            <div class="text-h5 font-weight-bold">{{ fuelBudget.totalTransactions }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">This period: {{ fuelBudget.currentPeriodTransactions }}</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- ── Budget Alerts ── -->
+    <v-row v-if="budgetAlerts.length > 0" density="comfortable" class="mb-4">
+      <v-col cols="12">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="pa-4">
+            <div class="text-subtitle-2 font-weight-bold mb-3">
+              <v-icon start color="warning" size="18">mdi-alert-circle</v-icon>
+              Budget Alerts
+            </div>
+            <div class="d-flex flex-column ga-2">
+              <v-alert
+                v-for="alert in budgetAlerts"
+                :key="alert.id"
+                :type="alert.type"
+                variant="tonal"
+                density="compact"
+                rounded="lg"
+              >
+                <span class="text-body-2">
+                  <strong>{{ alert.name }}</strong> {{ alert.message }}
+                </span>
+              </v-alert>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- ── Row 2: Fuel Consumption Bar Chart + PM Status ── -->
     <v-row density="comfortable" class="mb-4">
       <!-- Fuel Consumption Per Year -->
@@ -399,6 +489,19 @@ const filteredAssetRows = computed(() => {
 const recentSR = ref([])
 const upcomingPM = ref([])
 
+// ── Fuel budget summary ──
+const fuelBudget = ref({
+  totalContractAmount: 0,
+  totalConsumed: 0,
+  totalBalance: 0,
+  totalContracts: 0,
+  overBudgetCount: 0,
+  utilizationPct: 0,
+  totalTransactions: 0,
+  currentPeriodTransactions: 0,
+})
+const budgetAlerts = ref([])
+
 // ── Helpers ──
 function formatNum(n) {
   return Number(n || 0).toLocaleString('en-PH', {
@@ -454,6 +557,7 @@ async function loadAll() {
     loadAssetTable(),
     loadRecentSR(),
     loadUpcomingPM(),
+    loadFuelBudget(),
   ])
 }
 
@@ -894,6 +998,82 @@ async function loadUpcomingPM() {
     asset_name: vMap[String(r.vehicle_id)] || `Asset #${r.vehicle_id}`,
   }))
   loadingPMDue.value = false
+}
+
+// ── Fuel Budget ──
+async function loadFuelBudget() {
+  const yr = selectedYear.value
+  const startDate = `${yr}-01-01`
+  const endDate = `${yr}-12-31`
+
+  const { data: contracts } = await supabase
+    .from('fuel_contracts')
+    .select('id, contract_amount, account_code, fund_cluster')
+    .eq('year', yr)
+
+  const { data: transactions } = await supabase
+    .from('fuel_transactions')
+    .select('contract_id, total_amount, billing_period')
+    .gte('date', startDate)
+    .lte('date', endDate)
+
+  if (!contracts || !transactions) return
+
+  const totalContractAmount = contracts.reduce((s, c) => s + (c.contract_amount || 0), 0)
+  const totalConsumed = transactions.reduce((s, t) => s + (t.total_amount || 0), 0)
+
+  const consumedMap = new Map()
+  transactions.forEach((t) => {
+    if (!t.contract_id) return
+    consumedMap.set(t.contract_id, (consumedMap.get(t.contract_id) || 0) + (t.total_amount || 0))
+  })
+
+  const alerts = []
+  contracts.forEach((c) => {
+    const consumed = consumedMap.get(c.id) || 0
+    const balance = (c.contract_amount || 0) - consumed
+    const pct = c.contract_amount > 0 ? (consumed / c.contract_amount) * 100 : 0
+    if (balance < 0) {
+      alerts.push({
+        id: c.id,
+        type: 'error',
+        name: c.account_code,
+        message: `is ₱${formatNum(Math.abs(balance))} over budget`,
+      })
+    } else if (pct >= 90) {
+      alerts.push({
+        id: c.id,
+        type: 'warning',
+        name: c.account_code,
+        message: `at ${pct.toFixed(1)}% utilized. ₱${formatNum(balance)} remaining`,
+      })
+    }
+  })
+
+  const periodCounts = {}
+  transactions.forEach((t) => {
+    if (t.billing_period) periodCounts[t.billing_period] = (periodCounts[t.billing_period] || 0) + 1
+  })
+  const currentPeriod = Object.keys(periodCounts).sort().pop() || ''
+  const currentPeriodTransactions = periodCounts[currentPeriod] || 0
+  const utilizationPct = totalContractAmount > 0
+    ? Math.round((totalConsumed / totalContractAmount) * 1000) / 10
+    : 0
+
+  fuelBudget.value = {
+    totalContractAmount,
+    totalConsumed,
+    totalBalance: totalContractAmount - totalConsumed,
+    totalContracts: contracts.length,
+    overBudgetCount: alerts.filter((a) => a.type === 'error').length,
+    utilizationPct,
+    totalTransactions: transactions.length,
+    currentPeriodTransactions,
+  }
+
+  budgetAlerts.value = alerts.sort((a, b) =>
+    a.type === 'error' && b.type !== 'error' ? -1 : b.type === 'error' ? 1 : 0
+  )
 }
 
 // ── Lifecycle ──

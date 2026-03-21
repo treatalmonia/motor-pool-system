@@ -62,16 +62,6 @@ const router = createRouter({
           component: () => import('../views/ACCleaningView.vue'),
         },
 
-        // ── FUEL MONITORING ───────────────────────────────────────────────
-
-        // Fuel dashboard — overview with charts, alerts, recent transactions.
-        // Uses a separate route so it does not conflict with the fleet dashboard.
-        {
-          path: 'fuel-dashboard',
-          name: 'FuelDashboard',
-          component: () => import('../views/FuelDashboardView.vue'),
-        },
-
         // Fuel Allocation Monitoring (renamed from Fuel Contracts & Cost Centers)
         {
           path: 'fuel-contracts',

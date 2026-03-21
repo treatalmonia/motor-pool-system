@@ -11,26 +11,15 @@
       <v-divider />
 
       <v-list density="compact" nav>
-
         <!-- ── MAIN ── -->
         <v-list-subheader>MAIN</v-list-subheader>
 
-        <v-list-item
-          prepend-icon="mdi-view-dashboard"
-          title="Dashboard"
-          to="/"
-          rounded="lg"
-        />
+        <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" rounded="lg" />
 
         <!-- ── MOTOR POOL ── -->
         <v-list-subheader>MOTOR POOL</v-list-subheader>
 
-        <v-list-item
-          prepend-icon="mdi-car"
-          title="Asset Registry"
-          to="/vehicles"
-          rounded="lg"
-        />
+        <v-list-item prepend-icon="mdi-car" title="Asset Registry" to="/vehicles" rounded="lg" />
         <v-list-item
           prepend-icon="mdi-wrench"
           title="Service Requests"
@@ -104,14 +93,6 @@
         <!-- Renamed from "FUEL MANAGEMENT" to match the new module naming -->
         <v-list-subheader>FUEL MONITORING</v-list-subheader>
 
-        <!-- Fuel Dashboard: overview with charts, alerts, recent transactions -->
-        <v-list-item
-          prepend-icon="mdi-view-dashboard-outline"
-          title="Fuel Dashboard"
-          to="/fuel-dashboard"
-          rounded="lg"
-        />
-
         <!-- Fuel Allocation Monitoring: renamed from "Fuel Contracts" -->
         <v-list-item
           prepend-icon="mdi-file-document-multiple"
@@ -150,7 +131,12 @@
           to="/efhr-report"
           rounded="lg"
         />
-
+        <v-list-item
+          prepend-icon="mdi-file-chart"
+          title="Fuel Summary Report"
+          to="/fuel-summary-report"
+          rounded="lg"
+        />
       </v-list>
 
       <!-- Annual PM — kept outside the list to match original placement -->
@@ -160,7 +146,6 @@
         to="/annual-pm"
         rounded="lg"
       />
-
     </v-navigation-drawer>
 
     <!-- Top Bar -->
@@ -226,8 +211,6 @@ const pageTitles = {
   '/ac-requests': 'AC Service Requests',
   '/ac-cleaning': 'AC Cleaning Log',
 
-  // Fuel Monitoring — new entries added here
-  '/fuel-dashboard': 'Fuel Dashboard',
   '/fuel-contracts': 'Fuel Allocation Monitoring',
   '/fuel-transactions': 'Fuel Transactions',
   '/fuel-reports': 'Fuel Reports',

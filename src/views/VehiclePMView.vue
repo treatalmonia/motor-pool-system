@@ -141,11 +141,18 @@
           no-data-text="No PM records found"
           items-per-page="10"
           rounded="lg"
+      
         >
-          <template v-slot:item="{ item, props }">
+         <template v-slot:item="{ item, props }">
             <!-- WHY: Row background color shows urgency at a glance -->
             <!-- Red = Overdue, Blue = Due Today, Yellow = Due Soon, none = OK -->
-            <tr v-bind="props" :style="getRowStyle(item)">
+           <tr
+              v-bind="props"
+              :style="getRowStyle(item)"
+              style="cursor:pointer"
+              @click="viewRecord(item)"
+              @dblclick="openEditDialog(item)"
+            >
               <td>{{ item.asset_name }}</td>
               <td>
                 <v-chip
@@ -227,25 +234,18 @@
               </td>
               <td class="text-center">
                 <v-btn
-                  icon="mdi-eye"
-                  size="small"
-                  variant="text"
-                  color="info"
-                  @click="viewRecord(item)"
-                />
-                <v-btn
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
                   color="primary"
-                  @click="openEditDialog(item)"
+                  @click.stop="openEditDialog(item)"
                 />
                 <v-btn
                   icon="mdi-delete"
                   size="small"
                   variant="text"
                   color="error"
-                  @click="openDeleteDialog(item)"
+                  @click.stop="openDeleteDialog(item)"
                 />
               </td>
             </tr>
@@ -253,6 +253,11 @@
         </v-data-table>
       </v-card-text>
     </v-card>
+
+
+
+
+
 
     <!-- Add / Edit Dialog -->
     <v-dialog v-model="formDialog" max-width="700" persistent>
@@ -479,7 +484,7 @@
     </v-dialog>
 
     <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="560">
+    <v-dialog v-model="viewDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
           <span class="text-h6">PM Record Details</span>
@@ -503,6 +508,22 @@
             </v-chip>
             <v-chip v-if="isOverdue(selectedRecord)" color="error" variant="tonal">
               <v-icon start>mdi-alert</v-icon>OVERDUE
+            </v-chip>
+          </div>
+
+          <!-- Quick Status Update -->
+          <div class="d-flex ga-2 flex-wrap mb-4 align-center">
+            <span class="text-caption text-medium-emphasis">Quick update:</span>
+            <v-chip
+              v-for="s in ['Scheduled', 'Completed', 'Cancelled']"
+              :key="s"
+              :color="statusColor(s)"
+              :variant="selectedRecord.status === s ? 'flat' : 'outlined'"
+              size="small"
+              style="cursor:pointer"
+              @click="quickUpdateStatus(selectedRecord, s); viewDialog = false"
+            >
+              {{ s }}
             </v-chip>
           </div>
 
@@ -537,6 +558,12 @@
                     }}
                   </p>
                 </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Reference No.</p>
+                  <p class="text-body-2 font-weight-medium">
+                    {{ selectedRecord.reference_no || '—' }}
+                  </p>
+                </v-col>
               </v-row>
             </v-card-text>
           </v-card>
@@ -551,6 +578,12 @@
                   <p class="text-caption text-medium-emphasis">Last Date Performed</p>
                   <p class="text-body-2 font-weight-medium">
                     {{ formatDate(selectedRecord.date_performed) || '—' }}
+                  </p>
+                </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Date Completed</p>
+                  <p class="text-body-2 font-weight-medium">
+                    {{ formatDate(selectedRecord.date_accomplished) || '—' }}
                   </p>
                 </v-col>
                 <v-col cols="6" v-if="selectedRecord.asset_type === 'Vehicle'">
@@ -606,8 +639,8 @@
                 <v-col cols="6">
                   <p class="text-caption text-medium-emphasis">Next Due Date</p>
                   <p
-                    class="text-body-2 font-weight-medium"
-                    :class="isOverdue(selectedRecord) ? 'text-error' : ''"
+                    class="text-body-2 font-weight-bold"
+                    :class="isOverdue(selectedRecord) ? 'text-error' : 'text-success'"
                   >
                     {{ formatDate(selectedRecord.next_due_date) || '—' }}
                   </p>
@@ -634,6 +667,32 @@
             </v-card-text>
           </v-card>
         </v-card-text>
+
+        <v-divider />
+
+        <v-card-actions class="pa-4">
+          <v-btn
+            color="primary"
+            variant="flat"
+            size="large"
+            prepend-icon="mdi-pencil"
+            class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedRecord)"
+          >
+            Edit Record
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="outlined"
+            size="large"
+            prepend-icon="mdi-delete"
+            class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedRecord)"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+
       </v-card>
     </v-dialog>
 

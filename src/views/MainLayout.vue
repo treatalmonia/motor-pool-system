@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <!-- Sidebar Navigation -->
-    <v-navigation-drawer v-model="drawer" permanent width="300">
+    <v-navigation-drawer v-model="drawer" permanent width="300" color="#003300">
       <v-list-item title="Fleet Manager System" subtitle="CSU General Services" nav class="py-4">
         <template v-slot:prepend>
           <v-icon color="primary" size="32">mdi-car-wrench</v-icon>
@@ -198,8 +198,14 @@ const route = useRoute()
 const theme = useTheme()
 const isDark = computed(() => theme.global.name.value === 'dark')
 
+// Load saved theme preference on startup
+const savedTheme = localStorage.getItem('csu-theme')
+if (savedTheme) theme.change(savedTheme)
+
 function toggleTheme() {
-  theme.global.name.value = isDark.value ? 'light' : 'dark'
+  const next = isDark.value ? 'light' : 'dark'
+  theme.change(next)
+  localStorage.setItem('csu-theme', next)
 }
 
 // pageTitles: maps each route path to a human-readable title shown in the top bar.

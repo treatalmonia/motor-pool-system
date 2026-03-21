@@ -49,12 +49,10 @@
          Remaining values turn red when negative (over-budget / over-allocated).
     ─────────────────────────────────────────────────────────────────────────-->
     <v-row class="mb-4">
-
       <!-- ── CARD 1: Contract Budget Overview ── -->
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
-
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="orange-darken-2" variant="tonal" size="44">
@@ -62,12 +60,7 @@
               </v-avatar>
               <div class="d-flex align-center ga-2">
                 <p class="text-body-2 font-weight-bold">Total Contract Amount</p>
-                <v-chip
-                  v-if="overBudgetCount > 0"
-                  color="error"
-                  size="x-small"
-                  variant="flat"
-                >
+                <v-chip v-if="overBudgetCount > 0" color="error" size="x-small" variant="flat">
                   {{ overBudgetCount }} over budget
                 </v-chip>
               </div>
@@ -98,10 +91,10 @@
                 class="text-body-2 font-weight-bold"
                 :class="totalRemainingBalance < 0 ? 'text-error' : 'text-success'"
               >
-                {{ totalRemainingBalance < 0 ? '−' : '' }}{{ formatCurrency(Math.abs(totalRemainingBalance)) }}
+                {{ totalRemainingBalance < 0 ? '−' : ''
+                }}{{ formatCurrency(Math.abs(totalRemainingBalance)) }}
               </p>
             </div>
-
           </v-card-text>
         </v-card>
       </v-col>
@@ -110,7 +103,6 @@
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
-
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="blue-darken-2" variant="tonal" size="44">
@@ -149,7 +141,8 @@
                   class="text-body-2 font-weight-bold"
                   :class="totalRemainingDiesel < 0 ? 'text-error' : ''"
                 >
-                  {{ totalRemainingDiesel < 0 ? '−' : '' }}{{ formatNumber(Math.abs(totalRemainingDiesel)) }} L
+                  {{ totalRemainingDiesel < 0 ? '−' : ''
+                  }}{{ formatNumber(Math.abs(totalRemainingDiesel)) }} L
                 </p>
               </v-col>
               <v-col cols="6">
@@ -160,7 +153,6 @@
                 </p>
               </v-col>
             </v-row>
-
           </v-card-text>
         </v-card>
       </v-col>
@@ -169,7 +161,6 @@
       <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text>
-
             <!-- Header: icon + label -->
             <div class="d-flex align-center ga-3 mb-3">
               <v-avatar color="green-darken-2" variant="tonal" size="44">
@@ -208,7 +199,8 @@
                   class="text-body-2 font-weight-bold"
                   :class="totalRemainingGasoline < 0 ? 'text-error' : ''"
                 >
-                  {{ totalRemainingGasoline < 0 ? '−' : '' }}{{ formatNumber(Math.abs(totalRemainingGasoline)) }} L
+                  {{ totalRemainingGasoline < 0 ? '−' : ''
+                  }}{{ formatNumber(Math.abs(totalRemainingGasoline)) }} L
                 </p>
               </v-col>
               <v-col cols="6">
@@ -219,11 +211,9 @@
                 </p>
               </v-col>
             </v-row>
-
           </v-card-text>
         </v-card>
       </v-col>
-
     </v-row>
 
     <!-- Filters -->
@@ -264,9 +254,12 @@
         items-per-page="15"
         class="fuel-table"
         :sort-by="[{ key: 'pct_used', order: 'desc' }]"
-        :row-props="({ item }) => item.consumed_amount > item.contract_amount
-          ? { style: 'background:#fff1f1' }
-          : {}"
+        :row-props="
+          ({ item }) =>
+            item.consumed_amount > item.contract_amount
+              ? { style: isDark ? 'background:#3b1212' : 'background:#fff1f1' }
+              : {}
+        "
       >
         <!-- Fund Cluster chip -->
         <template #item.fund_cluster="{ item }">
@@ -316,33 +309,49 @@
 
         <!-- % Used -->
         <template #item.pct_used="{ item }">
-          <div style="min-width:90px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <div style="min-width: 90px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 2px;
+              "
+            >
               <span
-                style="font-size:11px;font-weight:600"
-                :style="item.consumed_amount > item.contract_amount
-                  ? 'color:#dc2626'
-                  : item.consumed_amount / (item.contract_amount || 1) >= 0.85
-                    ? 'color:#d97706'
-                    : 'color:#16a34a'"
+                style="font-size: 11px; font-weight: 600"
+                :style="
+                  item.consumed_amount > item.contract_amount
+                    ? 'color:#dc2626'
+                    : item.consumed_amount / (item.contract_amount || 1) >= 0.85
+                      ? 'color:#d97706'
+                      : 'color:#16a34a'
+                "
               >
-                {{ item.contract_amount > 0
-                  ? Math.min(Math.round((item.consumed_amount / item.contract_amount) * 100), 999) + '%'
-                  : '—' }}
+                {{
+                  item.contract_amount > 0
+                    ? Math.min(
+                        Math.round((item.consumed_amount / item.contract_amount) * 100),
+                        999,
+                      ) + '%'
+                    : '—'
+                }}
               </span>
             </div>
-            <div style="height:5px;border-radius:3px;background:#e5e7eb;overflow:hidden">
+            <div style="height: 5px; border-radius: 3px; background: #e5e7eb; overflow: hidden">
               <div
-                style="height:100%;border-radius:3px;transition:width 0.3s"
+                style="height: 100%; border-radius: 3px; transition: width 0.3s"
                 :style="{
-                  width: item.contract_amount > 0
-                    ? Math.min((item.consumed_amount / item.contract_amount) * 100, 100) + '%'
-                    : '0%',
-                  background: item.consumed_amount > item.contract_amount
-                    ? '#dc2626'
-                    : item.consumed_amount / (item.contract_amount || 1) >= 0.85
-                      ? '#d97706'
-                      : '#16a34a'
+                  width:
+                    item.contract_amount > 0
+                      ? Math.min((item.consumed_amount / item.contract_amount) * 100, 100) + '%'
+                      : '0%',
+                  background:
+                    item.consumed_amount > item.contract_amount
+                      ? '#dc2626'
+                      : item.consumed_amount / (item.contract_amount || 1) >= 0.85
+                        ? '#d97706'
+                        : '#16a34a',
                 }"
               />
             </div>
@@ -379,7 +388,12 @@
             variant="text"
             color="teal"
             title="View transactions for this cost center"
-            @click="router.push({ path: '/fuel-transactions', query: { fund: item.fund_cluster, po: item.po_number } })"
+            @click="
+              router.push({
+                path: '/fuel-transactions',
+                query: { fund: item.fund_cluster, po: item.po_number },
+              })
+            "
           />
           <v-btn
             icon="mdi-delete"
@@ -546,13 +560,17 @@
       <v-card rounded="lg" v-if="selectedContract">
         <v-card-title class="pa-4 pb-2 d-flex align-center justify-space-between">
           <span>Contract Details</span>
-          <v-chip :color="fundColor(selectedContract.fund_cluster)" variant="tonal" size="small" class="font-weight-bold">
+          <v-chip
+            :color="fundColor(selectedContract.fund_cluster)"
+            variant="tonal"
+            size="small"
+            class="font-weight-bold"
+          >
             {{ selectedContract.fund_cluster }}
           </v-chip>
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
-
           <!-- Contract Info -->
           <v-card rounded="lg" variant="tonal" color="orange" class="pa-3 mb-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-2">CONTRACT</p>
@@ -582,11 +600,15 @@
             <v-row density="comfortable">
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Contract Amount</p>
-                <p class="font-weight-bold">₱{{ formatNumber(selectedContract.contract_amount) }}</p>
+                <p class="font-weight-bold">
+                  ₱{{ formatNumber(selectedContract.contract_amount) }}
+                </p>
               </v-col>
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Consumed</p>
-                <p class="font-weight-medium">₱{{ formatNumber(selectedContract.consumed_amount) }}</p>
+                <p class="font-weight-medium">
+                  ₱{{ formatNumber(selectedContract.consumed_amount) }}
+                </p>
               </v-col>
               <v-col cols="4">
                 <p class="text-caption text-medium-emphasis">Balance</p>
@@ -594,7 +616,9 @@
                   class="font-weight-bold"
                   :class="selectedContract.balance < 0 ? 'text-error' : 'text-success'"
                 >
-                  {{ selectedContract.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(selectedContract.balance)) }}
+                  {{ selectedContract.balance < 0 ? '−' : '' }}₱{{
+                    formatNumber(Math.abs(selectedContract.balance))
+                  }}
                 </p>
               </v-col>
             </v-row>
@@ -603,34 +627,84 @@
           <!-- Fuel Allocation -->
           <v-card rounded="lg" variant="tonal" color="green" class="pa-3">
             <p class="text-caption font-weight-bold text-medium-emphasis mb-3">FUEL ALLOCATION</p>
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px">
               <thead>
                 <tr>
-                  <th style="text-align:left;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px"></th>
-                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Allocated</th>
-                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Consumed</th>
-                  <th style="text-align:right;padding:4px 8px;color:#6b7280;font-weight:500;font-size:11px">Remaining (L)</th>
+                  <th
+                    style="
+                      text-align: left;
+                      padding: 4px 8px;
+                      color: #6b7280;
+                      font-weight: 500;
+                      font-size: 11px;
+                    "
+                  ></th>
+                  <th
+                    style="
+                      text-align: right;
+                      padding: 4px 8px;
+                      color: #6b7280;
+                      font-weight: 500;
+                      font-size: 11px;
+                    "
+                  >
+                    Allocated
+                  </th>
+                  <th
+                    style="
+                      text-align: right;
+                      padding: 4px 8px;
+                      color: #6b7280;
+                      font-weight: 500;
+                      font-size: 11px;
+                    "
+                  >
+                    Consumed
+                  </th>
+                  <th
+                    style="
+                      text-align: right;
+                      padding: 4px 8px;
+                      color: #6b7280;
+                      font-weight: 500;
+                      font-size: 11px;
+                    "
+                  >
+                    Remaining (L)
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style="padding:6px 8px;font-weight:600">Diesel</td>
-                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.allocated_diesel) }} L</td>
-                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.consumed_diesel) }} L</td>
+                  <td style="padding: 6px 8px; font-weight: 600">Diesel</td>
+                  <td style="text-align: right; padding: 6px 8px">
+                    {{ formatNumber(selectedContract.allocated_diesel) }} L
+                  </td>
+                  <td style="text-align: right; padding: 6px 8px">
+                    {{ formatNumber(selectedContract.consumed_diesel) }} L
+                  </td>
                   <td
-                    style="text-align:right;padding:6px 8px;font-weight:700"
-                    :style="selectedContract.remaining_diesel < 0 ? 'color:#dc2626' : 'color:#16a34a'"
+                    style="text-align: right; padding: 6px 8px; font-weight: 700"
+                    :style="
+                      selectedContract.remaining_diesel < 0 ? 'color:#dc2626' : 'color:#16a34a'
+                    "
                   >
                     {{ formatNumber(selectedContract.remaining_diesel) }} L
                   </td>
                 </tr>
-                <tr style="border-top:1px solid rgba(0,0,0,0.06)">
-                  <td style="padding:6px 8px;font-weight:600">Gasoline</td>
-                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.allocated_gasoline) }} L</td>
-                  <td style="text-align:right;padding:6px 8px">{{ formatNumber(selectedContract.consumed_gasoline) }} L</td>
+                <tr style="border-top: 1px solid rgba(0, 0, 0, 0.06)">
+                  <td style="padding: 6px 8px; font-weight: 600">Gasoline</td>
+                  <td style="text-align: right; padding: 6px 8px">
+                    {{ formatNumber(selectedContract.allocated_gasoline) }} L
+                  </td>
+                  <td style="text-align: right; padding: 6px 8px">
+                    {{ formatNumber(selectedContract.consumed_gasoline) }} L
+                  </td>
                   <td
-                    style="text-align:right;padding:6px 8px;font-weight:700"
-                    :style="selectedContract.remaining_gasoline < 0 ? 'color:#dc2626' : 'color:#16a34a'"
+                    style="text-align: right; padding: 6px 8px; font-weight: 700"
+                    :style="
+                      selectedContract.remaining_gasoline < 0 ? 'color:#dc2626' : 'color:#16a34a'
+                    "
                   >
                     {{ formatNumber(selectedContract.remaining_gasoline) }} L
                   </td>
@@ -638,12 +712,20 @@
               </tbody>
             </table>
           </v-card>
-
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="viewDialog = false">Close</v-btn>
-          <v-btn color="primary" variant="flat" @click="() => { viewDialog = false; openEditDialog(selectedContract) }">
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="
+              () => {
+                viewDialog = false
+                openEditDialog(selectedContract)
+              }
+            "
+          >
             Edit
           </v-btn>
         </v-card-actions>
@@ -657,13 +739,16 @@
           <v-icon color="error" size="56" class="mb-3">mdi-alert-circle</v-icon>
           <h3 class="text-h6 mb-2">Delete Contract?</h3>
           <p class="text-medium-emphasis">
-            Delete <strong>{{ selectedContract?.account_code }}</strong>? This cannot be undone.
+            Delete <strong>{{ selectedContract?.account_code }}</strong
+            >? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteContract">Delete</v-btn>
+          <v-btn color="error" variant="flat" :loading="deleting" @click="deleteContract"
+            >Delete</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -704,16 +789,18 @@
     >
       {{ snackbar.message }}
     </v-snackbar>
-
   </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import { supabase } from '../supabase'
 
 const router = useRouter()
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
 
 // ── STATE ──
 const contracts = ref([])
@@ -788,16 +875,12 @@ const filteredContracts = computed(() => {
 // totalContractAmount: sum of all contract amounts for the selected year.
 // All totals below use filteredContracts so summary cards react to search and fund filter.
 
-const overBudgetCount = computed(() =>
-  filteredContracts.value.filter((c) => c.balance < 0).length
-)
+const overBudgetCount = computed(() => filteredContracts.value.filter((c) => c.balance < 0).length)
 
-const filteredContractIds = computed(() =>
-  new Set(filteredContracts.value.map((c) => c.id))
-)
+const filteredContractIds = computed(() => new Set(filteredContracts.value.map((c) => c.id)))
 
 const filteredTransactions = computed(() =>
-  allTransactions.value.filter((t) => filteredContractIds.value.has(t.contract_id))
+  allTransactions.value.filter((t) => filteredContractIds.value.has(t.contract_id)),
 )
 
 const totalContractAmount = computed(() =>
@@ -828,9 +911,7 @@ const totalConsumedAmount = computed(() =>
   filteredTransactions.value.reduce((s, t) => s + (t.total_amount || 0), 0),
 )
 
-const totalRemainingBalance = computed(
-  () => totalContractAmount.value - totalConsumedAmount.value,
-)
+const totalRemainingBalance = computed(() => totalContractAmount.value - totalConsumedAmount.value)
 
 const totalConsumedDiesel = computed(() =>
   filteredTransactions.value
@@ -844,13 +925,9 @@ const totalConsumedGasoline = computed(() =>
     .reduce((s, t) => s + (t.quantity || 0), 0),
 )
 
-const totalRemainingDiesel = computed(
-  () => totalDiesel.value - totalConsumedDiesel.value,
-)
+const totalRemainingDiesel = computed(() => totalDiesel.value - totalConsumedDiesel.value)
 
-const totalRemainingGasoline = computed(
-  () => totalGasoline.value - totalConsumedGasoline.value,
-)
+const totalRemainingGasoline = computed(() => totalGasoline.value - totalConsumedGasoline.value)
 
 // Per-contract consumption stats keyed by contract_id
 const contractStats = computed(() => {
@@ -1114,12 +1191,14 @@ function formatNumber(val) {
 //   misleading and wrong for official financial records.
 function formatCurrency(val) {
   if (val === null || val === undefined || val === '') return '₱0.00'
-  return '₱' + Number(val).toLocaleString('en-PH', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
+  return (
+    '₱' +
+    Number(val).toLocaleString('en-PH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  )
 }
-
 
 function fundColor(fund) {
   const map = { RAF: 'blue', IGF: 'green', BRF: 'orange', TRF: 'purple' }

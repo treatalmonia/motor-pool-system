@@ -183,14 +183,14 @@
                 <td class="act-cell">
                   <v-btn
                     icon="mdi-pencil"
-                    size="x-small"
+                    size="small"
                     variant="text"
                     color="primary"
                     @click="openEditDialog(row)"
                   />
                   <v-btn
                     icon="mdi-delete"
-                    size="x-small"
+                    size="small"
                     variant="text"
                     color="error"
                     @click="openDeleteDialog(row)"

@@ -871,10 +871,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-// import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import { supabase } from '../supabase'
 
-// const router = useRouter()
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
 
 // ---- DATA ----
 const pmRecords = ref([])
@@ -1390,9 +1391,10 @@ function statusColor(status) {
 // Colors are intentionally light so text remains readable.
 function getRowStyle(record) {
   const s = getDateStatus(record)
-  if (s === 'overdue') return { backgroundColor: '#fff1f1' } // light red
-  if (s === 'due-today') return { backgroundColor: '#e3f2fd' } // light blue
-  if (s === 'due-soon') return { backgroundColor: '#fffde7' } // light yellow
+  const dark = isDark.value
+  if (s === 'overdue')   return { backgroundColor: dark ? '#3b1212' : '#fff1f1' }
+  if (s === 'due-today') return { backgroundColor: dark ? '#0d2137' : '#e3f2fd' }
+  if (s === 'due-soon')  return { backgroundColor: dark ? '#2d2a0a' : '#fffde7' }
   return {}
 }
 

@@ -143,7 +143,8 @@
         >
           <!-- Custom row for overdue highlighting -->
           <template v-slot:item="{ item, props }">
-            <tr v-bind="props" :class="{ 'bg-red-lighten-5': isOverdue(item) }">
+            <tr v-bind="props"
+              :class="isOverdue(item) ? (isDark ? 'bg-red-darken-4' : 'bg-red-lighten-5') : ''">
               <!-- Building -->
               <td>{{ item.building }}</td>
 
@@ -512,7 +513,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useTheme } from 'vuetify'
 import { supabase } from '../supabase'
+
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
 
 // ---- DATA ----
 const cleaningRecords = ref([])

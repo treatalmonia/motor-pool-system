@@ -12,17 +12,22 @@
               }}
             </p>
           </div>
-          <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            Add AC Unit
-          </v-btn>
+          <div class="d-flex ga-2 flex-wrap">
+            <v-btn color="secondary" variant="outlined" prepend-icon="mdi-table-plus" @click="openBulkDialog">
+              Bulk Add Rooms
+            </v-btn>
+            <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
+              Add AC Unit
+            </v-btn>
+          </div>
         </div>
       </v-col>
     </v-row>
 
-    <!-- Total Summary Row -->
+    <!-- Summary Cards — react to all filters -->
     <v-row class="mb-4">
-      <!-- Total AC Units — with per-type breakdown -->
-      <v-col cols="12" sm="3">
+      <!-- Card 1: Total with type breakdown -->
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border height="100%">
           <v-card-text class="pa-4">
             <div class="d-flex align-center ga-3 mb-3">
@@ -30,89 +35,82 @@
                 <v-icon size="20">mdi-air-conditioner</v-icon>
               </v-avatar>
               <div>
-                <p class="text-medium-emphasis text-body-2" style="line-height: 1.2">
-                  Total AC Units
-                </p>
-                <p class="text-h5 font-weight-bold" style="line-height: 1.2">
-                  {{ buildingFilteredUnits.length }}
-                </p>
+                <p class="text-medium-emphasis text-body-2" style="line-height:1.2">Total AC Units</p>
+                <p class="text-h5 font-weight-bold" style="line-height:1.2">{{ filteredUnits.length }}</p>
               </div>
             </div>
-            <!-- 2×2 breakdown grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px">
-              <div class="d-flex align-center justify-space-between" style="gap: 4px">
-                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
-                  >Floor-Mntd</span
-                >
-                <span class="text-caption font-weight-bold text-primary">{{
-                  typeCount('Floor-Mounted')
-                }}</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Floor-Mntd</span>
+                <span class="text-caption font-weight-bold text-primary">{{ filteredTypeCount('Floor-Mounted') }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap: 4px">
-                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
-                  >Wall-Mntd</span
-                >
-                <span class="text-caption font-weight-bold text-info">{{
-                  typeCount('Wall-Mounted')
-                }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Wall-Mntd</span>
+                <span class="text-caption font-weight-bold text-info">{{ filteredTypeCount('Wall-Mounted') }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap: 4px">
-                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
-                  >Window</span
-                >
-                <span class="text-caption font-weight-bold text-warning">{{
-                  typeCount('Window Type')
-                }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Window</span>
+                <span class="text-caption font-weight-bold text-warning">{{ filteredTypeCount('Window Type') }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap: 4px">
-                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
-                  >Ceiling</span
-                >
-                <span class="text-caption font-weight-bold" style="color: #7c3aed">{{
-                  typeCount('Ceiling Type')
-                }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Ceiling</span>
+                <span class="text-caption font-weight-bold" style="color:#7c3aed">{{ filteredTypeCount('Ceiling Type') }}</span>
               </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="success" variant="tonal" size="48">
-              <v-icon>mdi-check-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Active</p>
-              <p class="text-h5 font-weight-bold">{{ activeCount }}</p>
+      <!-- Card 2: Active / Inactive breakdown -->
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center ga-3 mb-3">
+              <v-avatar color="success" variant="tonal" size="40">
+                <v-icon size="20">mdi-check-circle</v-icon>
+              </v-avatar>
+              <div>
+                <p class="text-medium-emphasis text-body-2" style="line-height:1.2">Status</p>
+                <p class="text-h5 font-weight-bold" style="line-height:1.2">{{ filteredActiveCount }} active</p>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis">Inactive</span>
+                <span class="text-caption font-weight-bold text-grey">{{ filteredStatusCount('Inactive') }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis">Transferred</span>
+                <span class="text-caption font-weight-bold text-warning">{{ filteredStatusCount('Transferred') }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between" style="gap:4px">
+                <span class="text-caption text-medium-emphasis">Decommissioned</span>
+                <span class="text-caption font-weight-bold text-error">{{ filteredStatusCount('Decommissioned') }}</span>
+              </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="info" variant="tonal" size="48">
-              <v-icon>mdi-window-maximize</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Window Type</p>
-              <p class="text-h5 font-weight-bold">{{ windowCount }}</p>
+
+      <!-- Card 3: Buildings count -->
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border height="100%">
+          <v-card-text class="pa-4">
+            <div class="d-flex align-center ga-3 mb-3">
+              <v-avatar color="info" variant="tonal" size="40">
+                <v-icon size="20">mdi-office-building</v-icon>
+              </v-avatar>
+              <div>
+                <p class="text-medium-emphasis text-body-2" style="line-height:1.2">Buildings</p>
+                <p class="text-h5 font-weight-bold" style="line-height:1.2">{{ filteredBuildingCount }}</p>
+              </div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="purple" variant="tonal" size="48">
-              <v-icon>mdi-ceiling-light</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Ceiling Type</p>
-              <p class="text-h5 font-weight-bold">{{ ceilingCount }}</p>
-            </div>
+            <p class="text-caption text-medium-emphasis">
+              {{ buildingFilter === 'All' ? 'All registered buildings' : 'Filtered: ' + buildingFilter }}
+            </p>
+            <p class="text-caption text-medium-emphasis mt-1">
+              {{ buildings.length }} total building{{ buildings.length !== 1 ? 's' : '' }} registered
+            </p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -478,6 +476,63 @@
       </v-card>
     </v-dialog>
 
+    <!-- Bulk Add Rooms Dialog -->
+    <v-dialog v-model="bulkDialog" max-width="650" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-2">
+          <v-icon start color="primary">mdi-table-plus</v-icon>
+          Bulk Add Rooms
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            Select a building and floor, then type one room name per line. All rooms will share the same unit type, brand, capacity, and technology.
+          </p>
+          <v-row>
+            <v-col cols="12" sm="6">
+              <v-combobox v-model="bulk.building" :items="buildings" label="Building *"
+                variant="outlined" density="comfortable" :error-messages="bulkErrors.building"
+                hint="Select or type a new building" persistent-hint />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-combobox v-model="bulk.floor" :items="floors" label="Floor *"
+                variant="outlined" density="comfortable" :error-messages="bulkErrors.floor"
+                hint="Select or type your own" persistent-hint />
+            </v-col>
+            <v-col cols="12">
+              <v-textarea v-model="bulk.rooms" label="Room Names * (one per line)"
+                variant="outlined" density="comfortable" rows="5" :error-messages="bulkErrors.rooms"
+                placeholder="e.g.&#10;Server Room&#10;Conference Room A&#10;Lobby&#10;Faculty Office"
+                hint="Each line becomes one AC unit entry" persistent-hint />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-select v-model="bulk.unit_type" :items="unitTypes" label="Unit Type *"
+                variant="outlined" density="comfortable" :error-messages="bulkErrors.unit_type" />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-select v-model="bulk.technology" :items="['Inverter', 'Non-Inverter']"
+                label="Technology" variant="outlined" density="comfortable" />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-combobox v-model="bulk.brand" :items="brandOptions" label="Brand / Make"
+                variant="outlined" density="comfortable" hint="Optional — applies to all rooms" persistent-hint />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-combobox v-model="bulk.capacity" :items="capacityOptions" label="Capacity"
+                variant="outlined" density="comfortable" hint="Optional — applies to all rooms" persistent-hint />
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" @click="bulkDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" :loading="bulkSaving" prepend-icon="mdi-check" @click="saveBulk">
+            Add {{ bulk.rooms ? bulk.rooms.split('\n').filter(r => r.trim()).length : 0 }} Rooms
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
@@ -626,26 +681,76 @@ const headers = [
 
 // ---- COMPUTED ----
 
-// Filtered only by building — used for summary card counts
-const buildingFilteredUnits = computed(() => {
-  if (buildingFilter.value === 'All') return acUnits.value
-  return acUnits.value.filter((u) => u.building === buildingFilter.value)
+// Summary card helpers — all react to filteredUnits so they match the table exactly
+function filteredTypeCount(type) {
+  return filteredUnits.value.filter((u) => u.unit_type === type).length
+}
+const filteredActiveCount = computed(
+  () => filteredUnits.value.filter((u) => u.status === 'Active').length,
+)
+function filteredStatusCount(status) {
+  return filteredUnits.value.filter((u) => u.status === status).length
+}
+const filteredBuildingCount = computed(
+  () => new Set(filteredUnits.value.map((u) => u.building).filter(Boolean)).size,
+)
+
+// ---- BULK ADD ----
+const bulkDialog = ref(false)
+const bulkSaving = ref(false)
+const bulkErrors = ref({})
+const bulk = ref({
+  building: '', floor: '', rooms: '', unit_type: '',
+  technology: 'Inverter', brand: '', capacity: '',
 })
 
-// Per-type count helper (reacts to building filter)
-function typeCount(type) {
-  return buildingFilteredUnits.value.filter((u) => u.unit_type === type).length
+function openBulkDialog() {
+  bulk.value = { building: '', floor: '', rooms: '', unit_type: '', technology: 'Inverter', brand: '', capacity: '' }
+  bulkErrors.value = {}
+  bulkDialog.value = true
 }
 
-const activeCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.status === 'Active').length,
-)
-const windowCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Window Type').length,
-)
-const ceilingCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length,
-)
+async function saveBulk() {
+  bulkErrors.value = {}
+  if (!bulk.value.building?.trim()) bulkErrors.value.building = 'Building is required'
+  if (!bulk.value.floor?.trim()) bulkErrors.value.floor = 'Floor is required'
+  if (!bulk.value.unit_type) bulkErrors.value.unit_type = 'Unit type is required'
+  const roomLines = (bulk.value.rooms || '').split('\n').map((r) => r.trim()).filter(Boolean)
+  if (!roomLines.length) bulkErrors.value.rooms = 'Enter at least one room name'
+  if (Object.keys(bulkErrors.value).length) return
+
+  bulkSaving.value = true
+
+  if (!buildings.value.includes(bulk.value.building)) {
+    await supabase.from('buildings').insert({ name: bulk.value.building })
+    await fetchBuildings()
+  }
+  if (!floors.value.includes(bulk.value.floor)) {
+    await supabase.from('floors').insert({ name: bulk.value.floor })
+    await fetchFloors()
+  }
+
+  const rows = roomLines.map((room) => ({
+    building: bulk.value.building,
+    floor: bulk.value.floor,
+    area_room: room,
+    unit_type: bulk.value.unit_type,
+    technology: bulk.value.technology,
+    brand: bulk.value.brand || null,
+    capacity: bulk.value.capacity || null,
+    status: 'Active',
+  }))
+
+  const { error } = await supabase.from('ac_units').insert(rows)
+  if (error) {
+    showSnackbar('Failed to add rooms: ' + error.message, 'error')
+  } else {
+    showSnackbar(`${rows.length} room${rows.length !== 1 ? 's' : ''} added successfully`, 'success')
+    bulkDialog.value = false
+    await fetchUnits()
+  }
+  bulkSaving.value = false
+}
 
 // Full filter (table)
 const filteredUnits = computed(() => {

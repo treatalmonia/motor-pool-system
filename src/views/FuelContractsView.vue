@@ -258,6 +258,9 @@
 
     <!-- Contracts Table -->
     <v-card rounded="lg" elevation="0" border>
+      <p class="text-caption text-medium-emphasis px-4 pt-3 pb-1">
+        Click any row to view details · Double-click to edit
+      </p>
       <v-data-table
         :headers="headers"
         :items="filteredContracts"
@@ -266,10 +269,13 @@
         class="fuel-table"
         :sort-by="[{ key: 'pct_used', order: 'desc' }]"
         :row-props="
-          ({ item }) =>
-            item.consumed_amount > item.contract_amount
-              ? { style: isDark ? 'background:#3b1212' : 'background:#fff1f1' }
-              : {}
+          ({ item }) => ({
+            style: item.consumed_amount > item.contract_amount
+              ? (isDark ? 'background:#3b1212;cursor:pointer' : 'background:#fff1f1;cursor:pointer')
+              : 'cursor:pointer',
+            onClick: () => openViewDialog(item),
+            onDblclick: () => openEditDialog(item),
+          })
         "
       >
         <!-- Fund Cluster chip -->
@@ -380,18 +386,11 @@
         <!-- Actions -->
         <template #item.actions="{ item }">
           <v-btn
-            icon="mdi-eye"
-            size="x-small"
-            variant="text"
-            color="info"
-            @click="openViewDialog(item)"
-          />
-          <v-btn
             icon="mdi-pencil"
             size="x-small"
             variant="text"
             color="primary"
-            @click="openEditDialog(item)"
+            @click.stop="openEditDialog(item)"
           />
           <v-btn
             icon="mdi-receipt-text"
@@ -399,7 +398,7 @@
             variant="text"
             color="teal"
             title="View transactions for this cost center"
-            @click="
+            @click.stop="
               router.push({
                 path: '/fuel-transactions',
                 query: { fund: item.fund_cluster, po: item.po_number },
@@ -411,7 +410,7 @@
             size="x-small"
             variant="text"
             color="error"
-            @click="openDeleteDialog(item)"
+            @click.stop="openDeleteDialog(item)"
           />
         </template>
 
@@ -460,40 +459,71 @@
                 placeholder="e.g. RAF, IGF, BRF"
               />
             </v-col>
-            <!-- PO Number -->
+            <!-- PO Number — auto-fills from account code but stays editable -->
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.po_number"
-                :items="existingPONumbers"
+                :items="poNumberOptions"
                 label="PO Number *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.po_number"
                 placeholder="e.g. 101-25-01-002"
+                hint="Auto-fills from account code. You can change it."
+                persistent-hint
+                clearable
+                @update:modelValue="onPONumberUpdate"
               />
+              <div v-if="getSavedOptions('po_number').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip v-for="opt in getSavedOptions('po_number')" :key="opt.id" size="small" closable @click:close="deleteDropdownOption(opt.id)">
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <!-- Account Code -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.account_code"
+                :items="accountCodeOptions"
                 label="Account Code / Cost Center *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.account_code"
                 placeholder="e.g. MC - GENERAL ADMINISTRATION AND SUPPORT"
+                clearable
+                @update:modelValue="onAccountCodeUpdate"
               />
+              <div v-if="getSavedOptions('account_code').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip v-for="opt in getSavedOptions('account_code')" :key="opt.id" size="small" closable @click:close="deleteDropdownOption(opt.id)">
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
             <!-- Cost Center Head -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.cost_center_head"
+                :items="costCenterHeadOptions"
                 label="Cost Center Head *"
                 variant="outlined"
                 density="comfortable"
                 :error-messages="errors.cost_center_head"
                 placeholder="e.g. ALEXANDER T. DEMETILLO, D.Eng"
+                clearable
+                @update:modelValue="onCostCenterHeadUpdate"
               />
+              <div v-if="getSavedOptions('cost_center_head').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('cost_center_head')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <!-- Contract Amount -->
@@ -724,21 +754,12 @@
             </table>
           </v-card>
         </v-card-text>
-        <v-card-actions class="pa-4 pt-0">
-          <v-spacer />
-          <v-btn variant="text" @click="viewDialog = false">Close</v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            @click="
-              () => {
-                viewDialog = false
-                openEditDialog(selectedContract)
-              }
-            "
-          >
-            Edit
-          </v-btn>
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-btn color="primary" variant="flat" size="large" prepend-icon="mdi-pencil" class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedContract)">Edit Record</v-btn>
+          <v-btn color="error" variant="outlined" size="large" prepend-icon="mdi-delete" class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedContract)">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -919,9 +940,74 @@ const defaultForm = {
 }
 const form = ref({ ...defaultForm })
 const errors = ref({})
-
-// ── SNACKBAR ──
 const snackbar = ref({ show: false, message: '', color: 'success' })
+
+// ── DROPDOWN OPTIONS ──
+const dropdownOptions = ref([])
+
+const DEFAULT_COST_CENTER_HEADS = [
+  'ALEXANDER T. DEMETILLO, D.Eng', 'ROMELL A. SERONAY, PH.D', 'DR. JEFFREY DELLOSA',
+  'DR. MICHELLE V. JAPITANA, D.Eng', 'RISSA L. MERCADO, PH.D', 'ENGR. ERWIN ARLAN',
+  'ELIZABETH PARAC, PH.D', 'JAYMER JAYOMA, PH.D', 'PROF. ANAMARIE P. SAJONIA',
+  'ROGER T. SARMIENTO', 'PROF. RUTH E. SANCHEZ', 'HENSON M. DEJARME',
+  'ADAM ROY V. GALOLO, PH.D', 'JOANNE A. LANGRES', 'AQUESSA R. PIAMONTE',
+  'JOANNE A. SALAN', 'CLARK JUSTINE L. GONZALES', 'MARIA CORAZON L. TERCERA',
+  'DAVE ANTHONY P. ASIS', 'ROLYN C. DAGUIL, PH.D', 'EVE F. GAMALINDA',
+  'VICENTE A. PITOGO, PH. D', 'CHARITO C. RODRIGUEZ', 'MELBERT R. BONOTAN',
+  'DR. VINCENT PITOGO', 'PROF. JOEY ARLES O. VERGARA',
+]
+
+async function fetchDropdownOptions() {
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .select('*')
+    .order('value', { ascending: true })
+  if (!error) dropdownOptions.value = data || []
+}
+
+async function addDropdownOption(category, value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return
+  const exists = dropdownOptions.value.some(
+    (o) => o.category === category && o.value.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (exists) return
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .insert({ category, value: trimmed })
+    .select()
+    .single()
+  if (!error && data) dropdownOptions.value.push(data)
+}
+
+async function deleteDropdownOption(id) {
+  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
+  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
+}
+
+function getSavedOptions(category) {
+  return dropdownOptions.value.filter((o) => o.category === category)
+}
+
+const costCenterHeadOptions = computed(() => {
+  const saved = dropdownOptions.value
+    .filter((o) => o.category === 'cost_center_head')
+    .map((o) => o.value)
+  return [
+    ...saved,
+    ...DEFAULT_COST_CENTER_HEADS.filter(
+      (d) => !saved.some((s) => s.toLowerCase() === d.toLowerCase()),
+    ),
+  ]
+})
+
+async function onCostCenterHeadUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  const exists = costCenterHeadOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
+  if (!exists) await addDropdownOption('cost_center_head', text)
+}
 
 // ── TABLE HEADERS ──
 const headers = [
@@ -1062,6 +1148,86 @@ const existingPONumbers = computed(() => [
 const existingFundClusters = computed(() => [
   ...new Set(contracts.value.map((c) => c.fund_cluster).filter(Boolean)),
 ])
+
+// Account code → PO number mapping based on your data
+const ACCOUNT_PO_MAP = {
+  'MC - GENERAL ADMINISTRATION AND SUPPORT': '101-25-01-002',
+  'MC - EXTENSION PROGRAM': '101-25-01-002',
+  'MC - RESEARCH PROGRAM': '101-25-01-002',
+  'MC - SUPPORT TO OPERATIONS - OVPEO': '101-25-01-002',
+  'ADMIN. PROJECT FEE': '164-25-01-006',
+  'ADMISSION & SCHOLARSHIP FUND': '164-25-01-006',
+  'CAA LABSHARE': '164-25-01-006',
+  'CCIS LABSHARE': '164-25-01-006',
+  'CEGS LABSHARE': '164-25-01-006',
+  'CFES LABSHARE': '164-25-01-006',
+  'CHASS LABSHARE': '164-25-01-006',
+  'CMNS LABSHARE': '164-25-01-006',
+  'CULTURE AND ARTS': '164-25-01-006',
+  'EXTENSION SERVICES- OFFICE OPERATIONS': '164-25-01-006',
+  'GOLD PANICLES': '164-25-01-006',
+  'GUIDANCE AND COUNSELING': '164-25-01-006',
+  'ICT FEE': '164-25-01-006',
+  'LIBRARY': '164-25-01-006',
+  'MANAGEMENT INFORMATION SYSTEM (MIS)': '164-25-01-006',
+  'OFFICE OF THE PRESIDENT': '164-25-01-006',
+  'OJT SUPERVISION FEE': '164-25-01-006',
+  'OVPAA - HIGHER ED.': '164-25-01-006',
+  'SPORTS AND RECREATION': '164-25-01-006',
+  'STUDENT HANDBOOK': '164-25-01-006',
+  'CARABAO PRODUCTION': '161-25-01-005',
+  'COCONUT & FRUIT ORCHAD': '161-25-01-005',
+  '(FASTRAC MAPX) MANAGEMENT ASSETS AND': '161-25-01-005',
+  'RICE PRODUCTION': '161-25-01-005',
+  'OATC - ORGANIC AGRICULTURE TRAINING CENTER': '161-25-01-005',
+  'COMMONWIDE FUND': '164-25-09-351',
+  'SCHOOL OF MEDICINE - SUPPLEMENTAL': '164-25-09-351',
+}
+
+const DEFAULT_ACCOUNT_CODES = Object.keys(ACCOUNT_PO_MAP)
+
+const DEFAULT_PO_NUMBERS = [
+  '101-25-01-002',
+  '164-25-01-006',
+  '161-25-01-005',
+  '164-25-09-351',
+  '161-25-09-077',
+]
+
+const accountCodeOptions = computed(() => {
+  const saved = dropdownOptions.value.filter((o) => o.category === 'account_code').map((o) => o.value)
+  return [...saved, ...DEFAULT_ACCOUNT_CODES.filter((d) => !saved.some((s) => s.toLowerCase() === d.toLowerCase()))]
+})
+
+const poNumberOptions = computed(() => {
+  const saved = dropdownOptions.value.filter((o) => o.category === 'po_number').map((o) => o.value)
+  const all = [...new Set([...saved, ...DEFAULT_PO_NUMBERS, ...existingPONumbers.value])]
+  return all
+})
+
+async function onAccountCodeUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  // Auto-fill PO number from the mapping
+  const mapped = ACCOUNT_PO_MAP[text]
+  if (mapped && !form.value.po_number) {
+    form.value.po_number = mapped
+  }
+  // Save new account code if not in defaults
+  if (!accountCodeOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())) {
+    await addDropdownOption('account_code', text)
+  }
+}
+
+async function onPONumberUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  if (!poNumberOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())) {
+    await addDropdownOption('po_number', text)
+  }
+}
 
 // ── FETCH ──
 async function fetchAvailableYears() {
@@ -1343,6 +1509,7 @@ function showSnackbar(message, color = 'success') {
 }
 
 onMounted(async () => {
+  await fetchDropdownOptions()
   await fetchAvailableYears()
   await refreshData()
 })

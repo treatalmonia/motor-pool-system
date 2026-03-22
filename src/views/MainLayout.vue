@@ -129,15 +129,13 @@
           to="/fuel-summary-report"
           rounded="lg"
         />
-      </v-list>
-
-      <!-- Annual PM — kept outside the list to match original placement -->
       <v-list-item
-        prepend-icon="mdi-file-document-edit"
-        title="Annual PM Program"
-        to="/annual-pm"
-        rounded="lg"
-      />
+          prepend-icon="mdi-file-document-edit"
+          title="Annual PM Program"
+          to="/annual-pm"
+          rounded="lg"
+        />
+      </v-list>
     </v-navigation-drawer>
 
     <!-- Top Bar -->

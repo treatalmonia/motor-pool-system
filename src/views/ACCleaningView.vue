@@ -24,7 +24,7 @@
               style="min-width: 120px"
             />
 
-           
+
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Cleaning Record
             </v-btn>
@@ -486,13 +486,27 @@
             </v-col>
 
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="scheduleNextForm.conducted_by"
+                :items="conductedByOptions"
                 label="Conducted By"
                 variant="outlined"
                 density="comfortable"
                 placeholder="Technician name"
+                clearable
+                @update:modelValue="onConductedByUpdate"
               />
+              <div v-if="getSavedOptions('conducted_by_ac').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('conducted_by_ac')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <v-col cols="12" sm="6">
@@ -871,6 +885,9 @@ async function saveRecord() {
       showSnackbar('Cleaning record updated successfully', 'success')
       closeFormDialog()
       await fetchRecords()
+      if (payload.status === 'Completed') {
+        openScheduleNextDialog({ ...payload, id: form.value.id })
+      }
     }
   } else {
     const { error } = await supabase.from('ac_cleaning_log').insert(payload)
@@ -881,6 +898,9 @@ async function saveRecord() {
       showSnackbar('Cleaning record added successfully', 'success')
       closeFormDialog()
       await fetchRecords()
+      if (payload.status === 'Completed') {
+        openScheduleNextDialog(payload)
+      }
     }
   }
 

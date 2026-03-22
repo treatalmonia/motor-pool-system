@@ -143,6 +143,9 @@
         </div>
 
         <!-- Data Table -->
+        <p class="text-caption text-medium-emphasis mb-2">
+          Click any row to view details · Double-click to edit
+        </p>
         <v-data-table
           :headers="headers"
           :items="filteredRequests"
@@ -151,6 +154,11 @@
           no-data-text="No service requests found"
           items-per-page="10"
           rounded="lg"
+          :row-props="({ item }) => ({
+            style: { cursor: 'pointer' },
+            onClick: () => viewRequest(item),
+            onDblclick: () => openEditDialog(item)
+          })"
         >
           <!-- Request No -->
           <template v-slot:item.request_no="{ item }">
@@ -217,27 +225,8 @@
 
           <!-- Actions -->
           <template v-slot:item.actions="{ item }">
-            <v-btn
-              icon="mdi-eye"
-              size="small"
-              variant="text"
-              color="info"
-              @click="viewRequest(item)"
-            />
-            <v-btn
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              color="primary"
-              @click="openEditDialog(item)"
-            />
-            <v-btn
-              icon="mdi-delete"
-              size="small"
-              variant="text"
-              color="error"
-              @click="openDeleteDialog(item)"
-            />
+            <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -312,7 +301,7 @@
                 placeholder="Type or select name"
                 clearable
                 @update:modelValue="
-                  (val) => onComboboxUpdate('requisitioner', val, requisitionerOptions)
+                  (val) => onComboboxUpdate('requisitioner', val, requisitionerOptions.value)
                 "
               />
               <!-- Saved custom entries — shown as chips with X delete button -->
@@ -344,7 +333,7 @@
                 placeholder="Type or select name"
                 clearable
                 @update:modelValue="
-                  (val) => onComboboxUpdate('conducted_by', val, conductedByOptions)
+                  (val) => onComboboxUpdate('conducted_by', val, conductedByOptions.value)
                 "
               />
               <div v-if="getSavedOptions('conducted_by').length" class="d-flex flex-wrap ga-1 mt-1">
@@ -383,7 +372,7 @@
                 density="comfortable"
                 placeholder="Type or select diagnosis / action taken"
                 clearable
-                @update:modelValue="(val) => onComboboxUpdate('diagnosis', val, diagnosisOptions)"
+                @update:modelValue="(val) => onComboboxUpdate('diagnosis', val, diagnosisOptions.value)"
               />
               <div v-if="getSavedOptions('diagnosis').length" class="d-flex flex-wrap ga-1 mt-1">
                 <v-chip
@@ -491,7 +480,7 @@
     </v-dialog>
 
     <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="550">
+    <v-dialog v-model="viewDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
           <span class="text-h6">Request Details</span>
@@ -519,52 +508,40 @@
           <v-list lines="two" density="compact">
             <v-list-item
               subtitle="Date of Request"
-              :title="selectedRequest.date_of_request || '—'"
+              :title="selectedRequest.date_of_request ? formatDate(selectedRequest.date_of_request) : '—'"
             />
-
-            <v-list-item subtitle="Date Completed" :title="selectedRequest.date_completed || '—'" />
-
+            <v-list-item subtitle="Date Completed"
+              :title="selectedRequest.date_completed ? formatDate(selectedRequest.date_completed) : '—'" />
             <v-list-item subtitle="Asset" :title="getAssetName(selectedRequest.vehicle_id)" />
             <v-list-item subtitle="Requisitioner" :title="selectedRequest.requisitioner || '—'" />
-            <v-list-item
-              subtitle="Problem Encountered"
-              :title="selectedRequest.problem_details || '—'"
-            />
-            <v-list-item
-              subtitle="Diagnosis & Action Taken"
-              :title="selectedRequest.work_details || '—'"
-            />
+            <v-list-item subtitle="Problem Encountered" :title="selectedRequest.problem_details || '—'" />
+            <v-list-item subtitle="Diagnosis & Action Taken" :title="selectedRequest.work_details || '—'" />
             <v-list-item subtitle="Remarks" :title="selectedRequest.remarks || '—'" />
             <v-list-item subtitle="Conducted By" :title="selectedRequest.conducted_by || '—'" />
             <v-list-item
               v-if="selectedRequest.asset_type === 'Vehicle'"
               subtitle="Mileage"
-              :title="selectedRequest.mileage ? selectedRequest.mileage + ' km' : '—'"
+              :title="selectedRequest.mileage ? Number(selectedRequest.mileage).toLocaleString() + ' km' : '—'"
             />
             <v-list-item
               v-if="selectedRequest.asset_type === 'Non-Vehicular'"
               subtitle="Hours of Operation"
-              :title="
-                selectedRequest.hours_of_operation
-                  ? selectedRequest.hours_of_operation + ' hrs'
-                  : '—'
-              "
+              :title="selectedRequest.hours_of_operation ? selectedRequest.hours_of_operation + ' hrs' : '—'"
             />
             <v-list-item
               subtitle="Cost"
-              :title="
-                selectedRequest.cost ? '₱' + Number(selectedRequest.cost).toLocaleString() : '—'
-              "
-            />
-            <v-list-item
-              v-if="selectedRequest.status === 'Completed'"
-              subtitle="Date Completed"
-              :title="
-                selectedRequest.date_completed ? formatDate(selectedRequest.date_completed) : '—'
-              "
+              :title="selectedRequest.cost ? '₱' + Number(selectedRequest.cost).toLocaleString() : '—'"
             />
           </v-list>
         </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-btn color="primary" variant="flat" size="large" prepend-icon="mdi-pencil" class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedRequest)">Edit Record</v-btn>
+          <v-btn color="error" variant="outlined" size="large" prepend-icon="mdi-delete" class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedRequest)">Delete</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
 
@@ -586,6 +563,33 @@
           <v-btn color="error" variant="flat" :loading="deleting" @click="deleteRequest">
             Delete
           </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Add Year Dialog -->
+    <v-dialog v-model="addYearDialog" max-width="360">
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <v-icon start>mdi-calendar-plus</v-icon>
+          Add New Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="newYear"
+            label="Year"
+            variant="outlined"
+            density="comfortable"
+            type="number"
+            placeholder="e.g. 2027"
+            hint="Adds year to the filter — existing records still visible under All Years"
+            persistent-hint
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="addYearDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="confirmAddYear">Add Year</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -726,15 +730,28 @@ const search = ref('')
 const statusFilter = ref('All')
 const yearFilter = ref(null)
 
+const addYearDialog = ref(false)
+const newYear = ref(new Date().getFullYear() + 1)
+const extraYears = ref([])
+
 const yearOptions = computed(() => {
   const cur = new Date().getFullYear()
-  return [
+  const base = [
     { title: 'All Years', value: null },
     { title: String(cur + 1), value: cur + 1 },
     { title: String(cur), value: cur },
     { title: String(cur - 1), value: cur - 1 },
     { title: String(cur - 2), value: cur - 2 },
   ]
+  const baseValues = base.map((o) => o.value)
+  const extras = extraYears.value
+    .filter((y) => !baseValues.includes(y))
+    .map((y) => ({ title: String(y), value: y }))
+  return [...base, ...extras].sort((a, b) => {
+    if (a.value === null) return -1
+    if (b.value === null) return 1
+    return b.value - a.value
+  })
 })
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
@@ -1053,18 +1070,11 @@ async function generateRequestNo() {
 //   value    — what the user typed or selected (may be a string or an object)
 //   options  — the current list for that field (used to check for duplicates)
 
-async function onComboboxUpdate(category, value, optionsRef) {
-  // Guard against undefined/null — Vuetify can fire this during render cycles
+async function onComboboxUpdate(category, value, optionsList) {
   if (value === undefined || value === null) return
-
-  // Items are now plain strings, so value is always a string
   const text = String(value).trim()
   if (!text) return
-
-  // Check if this value already exists in the current options list
-  const exists = optionsRef.value.some((o) => o.toLowerCase() === text.toLowerCase())
-
-  // Only save if it's genuinely new — not in defaults AND not already saved
+  const exists = optionsList.some((o) => o.toLowerCase() === text.toLowerCase())
   if (!exists) {
     await addDropdownOption(category, text)
   }
@@ -1219,9 +1229,19 @@ async function fetchAssets() {
   if (!error) assetList.value = data
 }
 
-// WHAT: Placeholder for Add Year — expand later when year-specific logic is needed.
 function addYear() {
-  showSnackbar('Add Year feature coming soon', 'info')
+  newYear.value = new Date().getFullYear() + 1
+  addYearDialog.value = true
+}
+
+function confirmAddYear() {
+  const y = Number(newYear.value)
+  if (!y || y < 2000 || y > 2100) return
+  if (!extraYears.value.includes(y)) {
+    extraYears.value = [...extraYears.value, y]
+  }
+  yearFilter.value = y
+  addYearDialog.value = false
 }
 
 async function openAddDialog() {

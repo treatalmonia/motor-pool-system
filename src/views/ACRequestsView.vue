@@ -111,7 +111,9 @@
           </v-col>
         </v-row>
 
-        <!-- Data Table -->
+        <!-- Data Table --><p class="text-caption text-medium-emphasis mb-2">
+          Click any row to view details · Double-click to edit
+        </p>
         <v-data-table
           :headers="headers"
           :items="filteredRequests"
@@ -120,6 +122,11 @@
           no-data-text="No AC service requests found"
           items-per-page="10"
           rounded="lg"
+          :row-props="({ item }) => ({
+            style: { cursor: 'pointer' },
+            onClick: () => viewRequest(item),
+            onDblclick: () => openEditDialog(item)
+          })"
         >
           <!-- Request No Column -->
           <template v-slot:item.request_no="{ item }">
@@ -161,27 +168,8 @@
 
           <!-- Actions Column -->
           <template v-slot:item.actions="{ item }">
-            <v-btn
-              icon="mdi-eye"
-              size="small"
-              variant="text"
-              color="info"
-              @click="viewRequest(item)"
-            />
-            <v-btn
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              color="primary"
-              @click="openEditDialog(item)"
-            />
-            <v-btn
-              icon="mdi-delete"
-              size="small"
-              variant="text"
-              color="error"
-              @click="openDeleteDialog(item)"
-            />
+            <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -311,7 +299,7 @@
     </v-dialog>
 <!-- TODO: I want to delete the delete functionality to each dropdown-->
     <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="500">
+    <v-dialog v-model="viewDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
           <span class="text-h6">Request Details</span>
@@ -347,6 +335,14 @@
             <v-list-item subtitle="Remarks" :title="selectedRequest.remarks || '—'" />
           </v-list>
         </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-btn color="primary" variant="flat" size="large" prepend-icon="mdi-pencil" class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedRequest)">Edit Record</v-btn>
+          <v-btn color="error" variant="outlined" size="large" prepend-icon="mdi-delete" class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedRequest)">Delete</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
 

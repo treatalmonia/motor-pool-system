@@ -7,7 +7,9 @@
           <div>
             <h2 class="text-h5 font-weight-bold">AC Unit Registry</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
-              Manage all air conditioner units across 6 buildings
+              Manage all air conditioner units across {{ buildings.length }} building{{
+                buildings.length !== 1 ? 's' : ''
+              }}
             </p>
           </div>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
@@ -28,27 +30,47 @@
                 <v-icon size="20">mdi-air-conditioner</v-icon>
               </v-avatar>
               <div>
-                <p class="text-medium-emphasis text-body-2" style="line-height:1.2">Total AC Units</p>
-                <p class="text-h5 font-weight-bold" style="line-height:1.2">{{ buildingFilteredUnits.length }}</p>
+                <p class="text-medium-emphasis text-body-2" style="line-height: 1.2">
+                  Total AC Units
+                </p>
+                <p class="text-h5 font-weight-bold" style="line-height: 1.2">
+                  {{ buildingFilteredUnits.length }}
+                </p>
               </div>
             </div>
             <!-- 2×2 breakdown grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;">
-              <div class="d-flex align-center justify-space-between" style="gap:4px">
-                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Floor-Mntd</span>
-                <span class="text-caption font-weight-bold text-primary">{{ typeCount('Floor-Mounted') }}</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px">
+              <div class="d-flex align-center justify-space-between" style="gap: 4px">
+                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
+                  >Floor-Mntd</span
+                >
+                <span class="text-caption font-weight-bold text-primary">{{
+                  typeCount('Floor-Mounted')
+                }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap:4px">
-                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Wall-Mntd</span>
-                <span class="text-caption font-weight-bold text-info">{{ typeCount('Wall-Mounted') }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap: 4px">
+                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
+                  >Wall-Mntd</span
+                >
+                <span class="text-caption font-weight-bold text-info">{{
+                  typeCount('Wall-Mounted')
+                }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap:4px">
-                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Window</span>
-                <span class="text-caption font-weight-bold text-warning">{{ typeCount('Window Type') }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap: 4px">
+                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
+                  >Window</span
+                >
+                <span class="text-caption font-weight-bold text-warning">{{
+                  typeCount('Window Type')
+                }}</span>
               </div>
-              <div class="d-flex align-center justify-space-between" style="gap:4px">
-                <span class="text-caption text-medium-emphasis" style="white-space:nowrap">Ceiling</span>
-                <span class="text-caption font-weight-bold" style="color:#7c3aed">{{ typeCount('Ceiling Type') }}</span>
+              <div class="d-flex align-center justify-space-between" style="gap: 4px">
+                <span class="text-caption text-medium-emphasis" style="white-space: nowrap"
+                  >Ceiling</span
+                >
+                <span class="text-caption font-weight-bold" style="color: #7c3aed">{{
+                  typeCount('Ceiling Type')
+                }}</span>
               </div>
             </div>
           </v-card-text>
@@ -152,6 +174,9 @@
         </v-row>
 
         <!-- Data Table -->
+        <p class="text-caption text-medium-emphasis mb-2">
+          Click any row to view details · Double-click to edit
+        </p>
         <v-data-table
           :headers="headers"
           :items="filteredUnits"
@@ -160,6 +185,13 @@
           no-data-text="No AC units found"
           items-per-page="10"
           rounded="lg"
+          :row-props="
+            ({ item }) => ({
+              style: { cursor: 'pointer' },
+              onClick: () => viewUnit(item),
+              onDblclick: () => openEditDialog(item),
+            })
+          "
         >
           <!-- Unit Type Column -->
           <template v-slot:item.unit_type="{ item }">
@@ -188,27 +220,8 @@
 
           <!-- Actions Column -->
           <template v-slot:item.actions="{ item }">
-            <v-btn
-              icon="mdi-eye"
-              size="small"
-              variant="text"
-              color="info"
-              @click="viewUnit(item)"
-            />
-            <v-btn
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              color="primary"
-              @click="openEditDialog(item)"
-            />
-            <v-btn
-              icon="mdi-delete"
-              size="small"
-              variant="text"
-              color="error"
-              @click="openDeleteDialog(item)"
-            />
+            <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -281,24 +294,50 @@
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.brand"
-                :items="brands"
+                :items="brandOptions"
                 label="Brand / Make"
                 variant="outlined"
                 density="comfortable"
                 hint="Select or type your own"
                 persistent-hint
+                clearable
+                @update:modelValue="onBrandUpdate"
               />
+              <div v-if="getSavedOptions('ac_brand').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('ac_brand')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
             <v-col cols="12" sm="6">
               <v-combobox
                 v-model="form.capacity"
-                :items="capacities"
+                :items="capacityOptions"
                 label="Capacity"
                 variant="outlined"
                 density="comfortable"
                 hint="Select or type your own"
                 persistent-hint
+                clearable
+                @update:modelValue="onCapacityUpdate"
               />
+              <div v-if="getSavedOptions('ac_capacity').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('ac_capacity')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
             <v-col cols="12" sm="6">
               <v-select
@@ -360,7 +399,7 @@
     </v-dialog>
 
     <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="500">
+    <v-dialog v-model="viewDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
           <span class="text-h6">AC Unit Details</span>
@@ -388,15 +427,32 @@
             <v-list-item subtitle="Floor" :title="selectedUnit.floor || '—'" />
             <v-list-item subtitle="Area / Room" :title="selectedUnit.area_room || '—'" />
             <v-list-item subtitle="Unit Type" :title="selectedUnit.unit_type || '—'" />
-            <v-list-item subtitle="AC Identification Code" :title="selectedUnit.ac_identification_code || '—'" />
+            <v-list-item
+              subtitle="AC Identification Code"
+              :title="selectedUnit.ac_identification_code || '—'"
+            />
             <v-list-item subtitle="Brand / Make" :title="selectedUnit.brand || '—'" />
             <v-list-item subtitle="Capacity" :title="selectedUnit.capacity || '—'" />
             <v-list-item subtitle="Technology" :title="selectedUnit.technology || '—'" />
-            <v-list-item subtitle="Serial No. (Indoor)" :title="selectedUnit.serial_no_indoor || '—'" />
-            <v-list-item subtitle="Serial No. (Outdoor)" :title="selectedUnit.serial_no_outdoor || '—'" />
+            <v-list-item
+              subtitle="Serial No. (Indoor)"
+              :title="selectedUnit.serial_no_indoor || '—'"
+            />
+            <v-list-item
+              subtitle="Serial No. (Outdoor)"
+              :title="selectedUnit.serial_no_outdoor || '—'"
+            />
             <v-list-item subtitle="Remarks" :title="selectedUnit.remarks || '—'" />
           </v-list>
         </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-btn color="primary" variant="flat" size="large" prepend-icon="mdi-pencil" class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedUnit)">Edit Record</v-btn>
+          <v-btn color="error" variant="outlined" size="large" prepend-icon="mdi-delete" class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedUnit)">Delete</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
 
@@ -408,7 +464,8 @@
           <h3 class="text-h6 mb-2">Delete AC Unit?</h3>
           <p class="text-medium-emphasis">
             Are you sure you want to delete the AC unit in
-            <strong>{{ selectedUnit?.area_room }}</strong>? This cannot be undone.
+            <strong>{{ selectedUnit?.area_room }}</strong
+            >? This cannot be undone.
           </p>
         </v-card-text>
         <v-card-actions class="pa-4 pt-0">
@@ -451,11 +508,78 @@ const unitTypeFilter = ref('All')
 const buildings = ref([])
 const floors = ref([])
 const unitTypes = ['Floor-Mounted', 'Wall-Mounted', 'Window Type', 'Ceiling Type']
-const brands = [
+
+const DEFAULT_BRANDS = [
   'Midea', 'Koppel', 'Matrix', 'Gen. Royal', 'Daikin',
   'Samsung', 'Kolin', 'Carrier', 'Sharp', 'LG', 'Condura',
 ]
-const capacities = ['1.0 HP', '1.5 HP', '2.0 HP', '2.5 HP', '3.0 TR', '3.0 HP', '5.0 TR']
+const DEFAULT_CAPACITIES = ['1.0 HP', '1.5 HP', '2.0 HP', '2.5 HP', '3.0 TR', '3.0 HP', '5.0 TR']
+
+const dropdownOptions = ref([])
+
+async function fetchDropdownOptions() {
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .select('*')
+    .order('value', { ascending: true })
+  if (!error) dropdownOptions.value = data || []
+}
+
+async function addDropdownOption(category, value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return
+  const exists = dropdownOptions.value.some(
+    (o) => o.category === category && o.value.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (exists) return
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .insert({ category, value: trimmed })
+    .select()
+    .single()
+  if (!error && data) dropdownOptions.value.push(data)
+}
+
+async function deleteDropdownOption(id) {
+  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
+  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
+}
+
+function getSavedOptions(category) {
+  return dropdownOptions.value.filter((o) => o.category === category)
+}
+
+const brandOptions = computed(() => {
+  const saved = dropdownOptions.value.filter((o) => o.category === 'ac_brand').map((o) => o.value)
+  const defaults = DEFAULT_BRANDS.filter(
+    (d) => !saved.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...saved, ...defaults]
+})
+
+const capacityOptions = computed(() => {
+  const saved = dropdownOptions.value.filter((o) => o.category === 'ac_capacity').map((o) => o.value)
+  const defaults = DEFAULT_CAPACITIES.filter(
+    (d) => !saved.some((s) => s.toLowerCase() === d.toLowerCase()),
+  )
+  return [...saved, ...defaults]
+})
+
+async function onBrandUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  const exists = brandOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
+  if (!exists) await addDropdownOption('ac_brand', text)
+}
+
+async function onCapacityUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  const exists = capacityOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
+  if (!exists) await addDropdownOption('ac_capacity', text)
+}
 
 // ---- DIALOGS ----
 const formDialog = ref(false)
@@ -466,10 +590,18 @@ const selectedUnit = ref(null)
 
 // ---- FORM ----
 const defaultForm = {
-  building: '', floor: '', area_room: '', unit_type: '',
-  ac_identification_code: '', brand: '', capacity: '',
-  technology: 'Inverter', serial_no_indoor: '', serial_no_outdoor: '',
-  status: 'Active', remarks: '',
+  building: '',
+  floor: '',
+  area_room: '',
+  unit_type: '',
+  ac_identification_code: '',
+  brand: '',
+  capacity: '',
+  technology: 'Inverter',
+  serial_no_indoor: '',
+  serial_no_outdoor: '',
+  status: 'Active',
+  remarks: '',
 }
 const form = ref({ ...defaultForm })
 
@@ -506,13 +638,13 @@ function typeCount(type) {
 }
 
 const activeCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.status === 'Active').length
+  () => buildingFilteredUnits.value.filter((u) => u.status === 'Active').length,
 )
 const windowCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Window Type').length
+  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Window Type').length,
 )
 const ceilingCount = computed(
-  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length
+  () => buildingFilteredUnits.value.filter((u) => u.unit_type === 'Ceiling Type').length,
 )
 
 // Full filter (table)
@@ -545,12 +677,22 @@ const filteredUnits = computed(() => {
 
 // ---- HELPERS ----
 function statusColor(status) {
-  const colors = { Active: 'success', Inactive: 'grey', Transferred: 'warning', Decommissioned: 'error' }
+  const colors = {
+    Active: 'success',
+    Inactive: 'grey',
+    Transferred: 'warning',
+    Decommissioned: 'error',
+  }
   return colors[status] || 'grey'
 }
 
 function unitTypeColor(type) {
-  const colors = { 'Floor-Mounted': 'primary', 'Wall-Mounted': 'info', 'Window Type': 'warning', 'Ceiling Type': 'purple' }
+  const colors = {
+    'Floor-Mounted': 'primary',
+    'Wall-Mounted': 'info',
+    'Window Type': 'warning',
+    'Ceiling Type': 'purple',
+  }
   return colors[type] || 'grey'
 }
 
@@ -567,7 +709,10 @@ async function fetchFloors() {
 
 async function fetchUnits() {
   loading.value = true
-  const { data, error } = await supabase.from('ac_units').select('*').order('building', { ascending: true })
+  const { data, error } = await supabase
+    .from('ac_units')
+    .select('*')
+    .order('building', { ascending: true })
   if (error) showSnackbar('Failed to load AC units', 'error')
   else acUnits.value = data
   loading.value = false
@@ -627,21 +772,36 @@ async function saveUnit() {
 
   saving.value = true
   const payload = {
-    building: form.value.building, floor: form.value.floor, area_room: form.value.area_room,
-    unit_type: form.value.unit_type, ac_identification_code: form.value.ac_identification_code || null,
-    brand: form.value.brand, capacity: form.value.capacity, technology: form.value.technology,
-    serial_no_indoor: form.value.serial_no_indoor || null, serial_no_outdoor: form.value.serial_no_outdoor || null,
-    status: form.value.status, remarks: form.value.remarks,
+    building: form.value.building,
+    floor: form.value.floor,
+    area_room: form.value.area_room,
+    unit_type: form.value.unit_type,
+    ac_identification_code: form.value.ac_identification_code || null,
+    brand: form.value.brand,
+    capacity: form.value.capacity,
+    technology: form.value.technology,
+    serial_no_indoor: form.value.serial_no_indoor || null,
+    serial_no_outdoor: form.value.serial_no_outdoor || null,
+    status: form.value.status,
+    remarks: form.value.remarks,
   }
 
   if (isEditing.value) {
     const { error } = await supabase.from('ac_units').update(payload).eq('id', form.value.id)
     if (error) showSnackbar('Failed to update AC unit', 'error')
-    else { showSnackbar('AC unit updated successfully', 'success'); closeFormDialog(); await fetchUnits() }
+    else {
+      showSnackbar('AC unit updated successfully', 'success')
+      closeFormDialog()
+      await fetchUnits()
+    }
   } else {
     const { error } = await supabase.from('ac_units').insert(payload)
     if (error) showSnackbar('Failed to add AC unit', 'error')
-    else { showSnackbar('AC unit added successfully', 'success'); closeFormDialog(); await fetchUnits() }
+    else {
+      showSnackbar('AC unit added successfully', 'success')
+      closeFormDialog()
+      await fetchUnits()
+    }
   }
   saving.value = false
 }
@@ -650,7 +810,11 @@ async function deleteUnit() {
   deleting.value = true
   const { error } = await supabase.from('ac_units').delete().eq('id', selectedUnit.value.id)
   if (error) showSnackbar('Failed to delete AC unit', 'error')
-  else { showSnackbar('AC unit deleted successfully', 'success'); deleteDialog.value = false; await fetchUnits() }
+  else {
+    showSnackbar('AC unit deleted successfully', 'success')
+    deleteDialog.value = false
+    await fetchUnits()
+  }
   deleting.value = false
 }
 
@@ -660,6 +824,7 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
+  await fetchDropdownOptions()
   await fetchBuildings()
   await fetchFloors()
   await fetchUnits()

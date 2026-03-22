@@ -11,9 +11,24 @@
               Track preventive cleaning schedules for all AC units
             </p>
           </div>
-          <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            Add Cleaning Record
-          </v-btn>
+          <div class="d-flex align-center ga-2 flex-wrap">
+            <v-select
+              v-model="yearFilter"
+              :items="yearOptions"
+              item-title="title"
+              item-value="value"
+              label="Year"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="min-width: 120px"
+            />
+
+           
+            <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
+              Add Cleaning Record
+            </v-btn>
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -132,6 +147,9 @@
         </v-row>
 
         <!-- Data Table -->
+        <p class="text-caption text-medium-emphasis mb-2">
+          Click any row to view details · Double-click to edit
+        </p>
         <v-data-table
           :headers="headers"
           :items="filteredRecords"
@@ -143,8 +161,13 @@
         >
           <!-- Custom row for overdue highlighting -->
           <template v-slot:item="{ item, props }">
-            <tr v-bind="props"
-              :class="isOverdue(item) ? (isDark ? 'bg-red-darken-4' : 'bg-red-lighten-5') : ''">
+
+              <tr v-bind="props"
+              :class="isOverdue(item) ? (isDark ? 'bg-red-darken-4' : 'bg-red-lighten-5') : ''"
+              style="cursor:pointer"
+              @click="viewRecord(item)"
+              @dblclick="openEditDialog(item)"
+            >
               <!-- Building -->
               <td>{{ item.building }}</td>
 
@@ -195,27 +218,8 @@
 
               <!-- Actions -->
               <td class="text-center">
-                <v-btn
-                  icon="mdi-eye"
-                  size="small"
-                  variant="text"
-                  color="info"
-                  @click="viewRecord(item)"
-                />
-                <v-btn
-                  icon="mdi-pencil"
-                  size="small"
-                  variant="text"
-                  color="primary"
-                  @click="openEditDialog(item)"
-                />
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  @click="openDeleteDialog(item)"
-                />
+                <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
+                <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
               </td>
             </tr>
           </template>
@@ -293,13 +297,27 @@
 
             <!-- Conducted By -->
             <v-col cols="12" sm="6">
-              <v-text-field
+              <v-combobox
                 v-model="form.conducted_by"
+                :items="conductedByOptions"
                 label="Conducted By"
                 variant="outlined"
                 density="comfortable"
                 placeholder="Technician name"
+                clearable
+                @update:modelValue="onConductedByUpdate"
               />
+              <div v-if="getSavedOptions('conducted_by_ac').length" class="d-flex flex-wrap ga-1 mt-1">
+                <v-chip
+                  v-for="opt in getSavedOptions('conducted_by_ac')"
+                  :key="opt.id"
+                  size="small"
+                  closable
+                  @click:close="deleteDropdownOption(opt.id)"
+                >
+                  {{ opt.value }}
+                </v-chip>
+              </div>
             </v-col>
 
             <!-- Status -->
@@ -352,7 +370,7 @@
     </v-dialog>
 
     <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="500">
+    <v-dialog v-model="viewDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="pa-4 pb-0 d-flex align-center justify-space-between">
           <span class="text-h6">Cleaning Record Details</span>
@@ -386,6 +404,14 @@
             <v-list-item subtitle="Remarks" :title="selectedRecord.remarks || '—'" />
           </v-list>
         </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4">
+          <v-btn color="primary" variant="flat" size="large" prepend-icon="mdi-pencil" class="flex-grow-1"
+            @click="viewDialog = false; openEditDialog(selectedRecord)">Edit Record</v-btn>
+          <v-btn color="error" variant="outlined" size="large" prepend-icon="mdi-delete" class="flex-grow-1"
+            @click="viewDialog = false; openDeleteDialog(selectedRecord)">Delete</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
 
@@ -531,8 +557,68 @@ const buildingFilter = ref('All')
 const selectedBuilding = ref('')
 const today = new Date().toISOString().split('T')[0]
 
+// ---- YEAR FILTER ----
+const yearFilter = ref(null)
+const yearOptions = computed(() => {
+  const cur = new Date().getFullYear()
+  return [
+    { title: 'All Years', value: null },
+    { title: String(cur + 1), value: cur + 1 },
+    { title: String(cur), value: cur },
+    { title: String(cur - 1), value: cur - 1 },
+    { title: String(cur - 2), value: cur - 2 },
+  ]
+})
+
 // ---- BUILDINGS ----
 const buildings = ref([])
+
+// ---- DROPDOWN OPTIONS ----
+const dropdownOptions = ref([])
+
+async function fetchDropdownOptions() {
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .select('*')
+    .order('value', { ascending: true })
+  if (!error) dropdownOptions.value = data || []
+}
+
+async function addDropdownOption(category, value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return
+  const exists = dropdownOptions.value.some(
+    (o) => o.category === category && o.value.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (exists) return
+  const { data, error } = await supabase
+    .from('dropdown_options')
+    .insert({ category, value: trimmed })
+    .select()
+    .single()
+  if (!error && data) dropdownOptions.value.push(data)
+}
+
+async function deleteDropdownOption(id) {
+  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
+  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
+}
+
+function getSavedOptions(category) {
+  return dropdownOptions.value.filter((o) => o.category === category)
+}
+
+const conductedByOptions = computed(() =>
+  dropdownOptions.value.filter((o) => o.category === 'conducted_by_ac').map((o) => o.value)
+)
+
+async function onConductedByUpdate(value) {
+  if (!value) return
+  const text = String(value).trim()
+  if (!text) return
+  const exists = conductedByOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
+  if (!exists) await addDropdownOption('conducted_by_ac', text)
+}
 
 // ---- DIALOGS ----
 const formDialog = ref(false)
@@ -596,6 +682,14 @@ const filteredAcUnits = computed(() => {
 const filteredRecords = computed(() => {
   let result = cleaningRecords.value
 
+  if (yearFilter.value !== null) {
+    result = result.filter((r) => {
+      const yr = r.last_cleaning_date
+        ? new Date(r.last_cleaning_date + 'T00:00:00').getFullYear()
+        : null
+      return yr === yearFilter.value
+    })
+  }
   if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
@@ -904,6 +998,7 @@ function showSnackbar(message, color = 'success') {
 
 // ---- LIFECYCLE ----
 onMounted(async () => {
+  await fetchDropdownOptions()
   await fetchBuildings()
   await fetchAcUnits()
   await fetchRecords()

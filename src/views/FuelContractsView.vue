@@ -32,6 +32,17 @@
               Add Year
             </v-btn>
 
+            <v-btn
+              color="info"
+              variant="outlined"
+              prepend-icon="mdi-content-copy"
+              :loading="copying"
+              :disabled="availableYears.length < 2"
+              @click="openCopyYearDialog"
+            >
+              Copy from Previous Year
+            </v-btn>
+
             <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
               Add Contract
             </v-btn>
@@ -780,6 +791,64 @@
       </v-card>
     </v-dialog>
 
+    <!-- Copy from Previous Year Dialog -->
+    <v-dialog v-model="copyYearDialog" max-width="460" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-2">
+          <v-icon start color="info">mdi-content-copy</v-icon>
+          Copy Contracts from Previous Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            This will copy all contracts from
+            <strong>FY {{ copyFromYear }}</strong> into
+            <strong>FY {{ selectedYear }}</strong> with the same cost centers, fund clusters,
+            and contract amounts. Consumed amounts start at zero.
+            Existing contracts for FY {{ selectedYear }} will not be affected.
+          </p>
+          <v-alert type="warning" variant="tonal" density="compact" rounded="lg">
+            Only run this once per year. Duplicate contracts will be created if run again.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="copyYearDialog = false">Cancel</v-btn>
+          <v-btn color="info" variant="flat" :loading="copying" @click="confirmCopyYear">
+            Copy {{ copyFromYear }} → {{ selectedYear }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Copy from Previous Year Dialog -->
+    <v-dialog v-model="copyYearDialog" max-width="460" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-2">
+          <v-icon start color="info">mdi-content-copy</v-icon>
+          Copy Contracts from Previous Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            This will copy all contracts from
+            <strong>FY {{ copyFromYear }}</strong> into
+            <strong>FY {{ selectedYear }}</strong> with the same cost centers, fund clusters,
+            and contract amounts. Consumed amounts start at zero.
+            Existing contracts for FY {{ selectedYear }} will not be affected.
+          </p>
+          <v-alert type="warning" variant="tonal" density="compact" rounded="lg">
+            Only run this once per year. Duplicate contracts will be created if run again.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="copyYearDialog = false">Cancel</v-btn>
+          <v-btn color="info" variant="flat" :loading="copying" @click="confirmCopyYear">
+            Copy {{ copyFromYear }} → {{ selectedYear }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
@@ -811,6 +880,14 @@ const deleting = ref(false)
 const selectedYear = ref(new Date().getFullYear())
 const addYearDialog = ref(false)
 const newYear = ref(new Date().getFullYear() + 1)
+const copying = ref(false)
+const copyYearDialog = ref(false)
+
+const copyFromYear = computed(() => {
+  const sorted = [...availableYears.value].sort((a, b) => b - a)
+  const idx = sorted.indexOf(selectedYear.value)
+  return idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : selectedYear.value - 1
+})
 const availableYears = ref([new Date().getFullYear()])
 const search = ref('')
 const filterFund = ref('All Funds')
@@ -1030,6 +1107,58 @@ function confirmAddYear() {
   selectedYear.value = y
   addYearDialog.value = false
   refreshData()
+}
+
+function openCopyYearDialog() {
+  copyYearDialog.value = true
+}
+
+async function confirmCopyYear() {
+  copying.value = true
+  const fromYear = copyFromYear.value
+  const toYear = selectedYear.value
+
+  const { data: sourceContracts, error: fetchError } = await supabase
+    .from('fuel_contracts')
+    .select('*')
+    .eq('year', fromYear)
+    .order('fund_cluster')
+    .order('account_code')
+
+  if (fetchError || !sourceContracts?.length) {
+    showSnackbar(`No contracts found for FY ${fromYear}`, 'error')
+    copying.value = false
+    copyYearDialog.value = false
+    return
+  }
+
+  const newContracts = sourceContracts.map((c) => ({
+    year: toYear,
+    fund_cluster: c.fund_cluster,
+    po_number: c.po_number,
+    account_code: c.account_code,
+    cost_center_head: c.cost_center_head,
+    contract_amount: c.contract_amount,
+    allocated_diesel: c.allocated_diesel,
+    allocated_gasoline: c.allocated_gasoline,
+    mode_of_procurement: c.mode_of_procurement,
+    remarks: c.remarks || null,
+  }))
+
+  const { error: insertError } = await supabase.from('fuel_contracts').insert(newContracts)
+
+  if (insertError) {
+    showSnackbar('Failed to copy contracts: ' + insertError.message, 'error')
+  } else {
+    showSnackbar(
+      `${newContracts.length} contracts copied from FY ${fromYear} to FY ${toYear}. Update PO numbers and amounts as needed.`,
+      'success',
+    )
+    copyYearDialog.value = false
+    refreshData()
+  }
+
+  copying.value = false
 }
 
 async function fetchAllTransactions() {

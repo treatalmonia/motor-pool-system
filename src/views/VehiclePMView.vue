@@ -956,6 +956,33 @@
     >
       {{ snackbar.message }}
     </v-snackbar>
+
+    <!-- Add Year Dialog -->
+    <v-dialog v-model="addYearDialog" max-width="360">
+      <v-card rounded="lg">
+        <v-card-title class="pa-4 pb-0">
+          <v-icon start>mdi-calendar-plus</v-icon>
+          Add New Year
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="newYear"
+            label="Year"
+            variant="outlined"
+            density="comfortable"
+            type="number"
+            placeholder="e.g. 2027"
+            hint="Adds year to the filter — existing records still visible under All Years"
+            persistent-hint
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="addYearDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="confirmAddYear">Add Year</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -1014,17 +1041,28 @@ const statusFilter = ref('All')
 //      Previously defaulted to current year which hid older records — this caused
 //      the problem where records from the previous year were invisible.
 const yearFilter = ref(null)
+const addYearDialog = ref(false)
+const newYear = ref(new Date().getFullYear() + 1)
+const extraYears = ref([])
 
 const yearOptions = computed(() => {
   const cur = new Date().getFullYear()
-  // WHY: null value = "All Years" — must be first so it's the default visible option
-  return [
+  const base = [
     { title: 'All Years', value: null },
     { title: String(cur + 1), value: cur + 1 },
     { title: String(cur), value: cur },
     { title: String(cur - 1), value: cur - 1 },
     { title: String(cur - 2), value: cur - 2 },
   ]
+  const baseValues = base.map((o) => o.value)
+  const extras = extraYears.value
+    .filter((y) => !baseValues.includes(y))
+    .map((y) => ({ title: String(y), value: y }))
+  return [...base, ...extras].sort((a, b) => {
+    if (a.value === null) return -1
+    if (b.value === null) return 1
+    return b.value - a.value
+  })
 })
 const vehicleFilter = ref('All')
 const assetTypeFilter = ref('All')
@@ -1626,9 +1664,19 @@ async function fetchPMServiceTypes() {
   if (!error) pmServiceTypes.value = data
 }
 
-// WHAT: Placeholder for Add Year button.
 function addYear() {
-  showSnackbar('Add Year feature coming soon', 'info')
+  newYear.value = new Date().getFullYear() + 1
+  addYearDialog.value = true
+}
+
+function confirmAddYear() {
+  const y = Number(newYear.value)
+  if (!y || y < 2000 || y > 2100) return
+  if (!extraYears.value.includes(y)) {
+    extraYears.value = [...extraYears.value, y]
+  }
+  yearFilter.value = y
+  addYearDialog.value = false
 }
 
 function openAddDialog() {

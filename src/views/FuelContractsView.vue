@@ -1005,8 +1005,7 @@ async function onCostCenterHeadUpdate(value) {
   if (!value) return
   const text = String(value).trim()
   if (!text) return
-  const exists = costCenterHeadOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
-  if (!exists) await addDropdownOption('cost_center_head', text)
+  // Saving deferred to saveContract to avoid storing partial keystrokes
 }
 
 // ── TABLE HEADERS ──
@@ -1214,19 +1213,15 @@ async function onAccountCodeUpdate(value) {
   if (mapped && !form.value.po_number) {
     form.value.po_number = mapped
   }
-  // Save new account code if not in defaults
-  if (!accountCodeOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())) {
-    await addDropdownOption('account_code', text)
-  }
+  // Only save if the value exactly matches an existing option or is a final selection
+  // (saving is deferred to saveContract to avoid storing partial keystrokes)
 }
 
 async function onPONumberUpdate(value) {
   if (!value) return
   const text = String(value).trim()
   if (!text) return
-  if (!poNumberOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())) {
-    await addDropdownOption('po_number', text)
-  }
+  // Saving deferred to saveContract to avoid storing partial keystrokes
 }
 
 // ── FETCH ──
@@ -1413,6 +1408,7 @@ async function saveContract() {
     const { error } = await supabase.from('fuel_contracts').update(payload).eq('id', form.value.id)
     if (error) showSnackbar('Failed to update contract', 'error')
     else {
+      await saveCustomDropdownValues()
       showSnackbar('Contract updated', 'success')
       closeFormDialog()
       await refreshData()
@@ -1421,12 +1417,30 @@ async function saveContract() {
     const { error } = await supabase.from('fuel_contracts').insert(payload)
     if (error) showSnackbar('Failed to add contract', 'error')
     else {
+      await saveCustomDropdownValues()
       showSnackbar('Contract added', 'success')
       closeFormDialog()
       await refreshData()
     }
   }
   saving.value = false
+}
+
+// Saves custom (user-typed) values to dropdown_options only after a successful submit.
+// This prevents partial keystrokes from being stored as options.
+async function saveCustomDropdownValues() {
+  const accountCode = form.value.account_code?.trim()
+  const costCenterHead = form.value.cost_center_head?.trim()
+  const poNumber = form.value.po_number?.trim()
+  if (accountCode && !accountCodeOptions.value.some((o) => o.toLowerCase() === accountCode.toLowerCase())) {
+    await addDropdownOption('account_code', accountCode)
+  }
+  if (costCenterHead && !costCenterHeadOptions.value.some((o) => o.toLowerCase() === costCenterHead.toLowerCase())) {
+    await addDropdownOption('cost_center_head', costCenterHead)
+  }
+  if (poNumber && !poNumberOptions.value.some((o) => o.toLowerCase() === poNumber.toLowerCase())) {
+    await addDropdownOption('po_number', poNumber)
+  }
 }
 
 // ── DELETE ──

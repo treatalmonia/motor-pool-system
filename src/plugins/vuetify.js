@@ -7,6 +7,15 @@ import * as directives from 'vuetify/directives'
 export default createVuetify({
   components,
   directives,
+  // WHAT: Disables browser autocomplete suggestions on all input fields globally.
+  // WHY: Browser saves previous inputs and shows irrelevant suggestions on every field.
+  //      One global setting is faster than adding autocomplete="off" to every component.
+  defaults: {
+    VTextField: { autocomplete: 'off' },
+    VCombobox: { autocomplete: 'off' },
+    VSelect:   { autocomplete: 'off' },
+    VTextarea: { autocomplete: 'off' },
+  },
   theme: {
     defaultTheme: 'light',
     themes: {

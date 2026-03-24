@@ -935,10 +935,7 @@ const utilizedByOptions = computed(() => {
 
 async function onUtilizedByUpdate(value) {
   if (!value) return
-  const text = String(value).trim()
-  if (!text) return
-  const exists = utilizedByOptions.value.some((o) => o.toLowerCase() === text.toLowerCase())
-  if (!exists) await addDropdownOption('utilized_by', text)
+  // Saving deferred to saveTransaction to avoid storing partial keystrokes
 }
 
 // ── COMPUTED ──
@@ -1172,23 +1169,23 @@ function recalcTotal() {
 function onQuantityInput(e) {
   const raw = e.target.value.replace(/,/g, '')
   if (!isNaN(raw) && raw !== '') {
-    form.value.quantity = Number(raw)
+    form.value.quantity = parseFloat(raw)
     recalcTotal()
   }
 }
 function onQuantityBlur() {
-  form.value.quantity_display = form.value.quantity ? formatNumber(form.value.quantity) : ''
+  form.value.quantity_display = form.value.quantity != null ? formatNumberExact(form.value.quantity) : ''
 }
 
 function onUnitPriceInput(e) {
   const raw = e.target.value.replace(/,/g, '')
   if (!isNaN(raw) && raw !== '') {
-    form.value.unit_price = Number(raw)
+    form.value.unit_price = parseFloat(raw)
     recalcTotal()
   }
 }
 function onUnitPriceBlur() {
-  form.value.unit_price_display = form.value.unit_price ? formatNumber(form.value.unit_price) : ''
+  form.value.unit_price_display = form.value.unit_price != null ? formatNumberExact(form.value.unit_price) : ''
 }
 
 // ── VALIDATION ──
@@ -1237,6 +1234,7 @@ async function saveTransaction() {
       .eq('id', form.value.id)
     if (error) showSnackbar('Failed to update transaction', 'error')
     else {
+      await saveCustomDropdownValues()
       showSnackbar('Transaction updated', 'success')
       closeFormDialog()
       await fetchTransactions()
@@ -1245,12 +1243,22 @@ async function saveTransaction() {
     const { error } = await supabase.from('fuel_transactions').insert(payload)
     if (error) showSnackbar('Failed to add transaction', 'error')
     else {
+      await saveCustomDropdownValues()
       showSnackbar('Transaction added', 'success')
       closeFormDialog()
       await fetchTransactions()
     }
   }
   saving.value = false
+}
+
+// Saves custom (user-typed) dropdown values only after a successful submit.
+// This prevents partial keystrokes from being stored as options.
+async function saveCustomDropdownValues() {
+  const utilizedBy = form.value.utilized_by?.trim()
+  if (utilizedBy && !utilizedByOptions.value.some((o) => o.toLowerCase() === utilizedBy.toLowerCase())) {
+    await addDropdownOption('utilized_by', utilizedBy)
+  }
 }
 
 // ── WATCH vehicle to auto-fill plate number ──
@@ -1288,6 +1296,10 @@ function formatDate(dateStr) {
 function formatNumber(val) {
   if (val === null || val === undefined || val === '') return '0'
   return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
+}
+function formatNumberExact(val) {
+  if (val === null || val === undefined || val === '') return '0'
+  return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fundColor(fund) {
   const map = { RAF: 'blue', IGF: 'green', BRF: 'orange', TRF: 'purple' }

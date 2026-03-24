@@ -1462,29 +1462,29 @@ async function deleteContract() {
 // ── COMMA-FORMATTED INPUTS ──
 function onAmountInput(e) {
   const raw = e.target.value.replace(/,/g, '')
-  if (!isNaN(raw) && raw !== '') form.value.contract_amount = Number(raw)
+  if (!isNaN(raw) && raw !== '') form.value.contract_amount = parseFloat(raw)
 }
 function onAmountBlur() {
-  form.value.contract_amount_display = form.value.contract_amount
-    ? formatNumber(form.value.contract_amount)
+  form.value.contract_amount_display = form.value.contract_amount != null
+    ? formatNumberExact(form.value.contract_amount)
     : ''
 }
 function onDieselInput(e) {
   const raw = e.target.value.replace(/,/g, '')
-  if (!isNaN(raw) && raw !== '') form.value.allocated_diesel = Number(raw)
+  if (!isNaN(raw) && raw !== '') form.value.allocated_diesel = parseFloat(raw)
 }
 function onDieselBlur() {
-  form.value.allocated_diesel_display = form.value.allocated_diesel
-    ? formatNumber(form.value.allocated_diesel)
+  form.value.allocated_diesel_display = form.value.allocated_diesel != null
+    ? formatNumberExact(form.value.allocated_diesel)
     : ''
 }
 function onGasolineInput(e) {
   const raw = e.target.value.replace(/,/g, '')
-  if (!isNaN(raw) && raw !== '') form.value.allocated_gasoline = Number(raw)
+  if (!isNaN(raw) && raw !== '') form.value.allocated_gasoline = parseFloat(raw)
 }
 function onGasolineBlur() {
-  form.value.allocated_gasoline_display = form.value.allocated_gasoline
-    ? formatNumber(form.value.allocated_gasoline)
+  form.value.allocated_gasoline_display = form.value.allocated_gasoline != null
+    ? formatNumberExact(form.value.allocated_gasoline)
     : ''
 }
 
@@ -1492,6 +1492,10 @@ function onGasolineBlur() {
 function formatNumber(val) {
   if (val === null || val === undefined || val === '') return '0'
   return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
+}
+function formatNumberExact(val) {
+  if (val === null || val === undefined || val === '') return '0'
+  return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // formatCurrency: always shows the exact peso amount with 2 decimal places.

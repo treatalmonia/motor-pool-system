@@ -422,10 +422,7 @@
             size="large"
             prepend-icon="mdi-pencil"
             class="flex-grow-1"
-            @click="
-              viewDialog = false
-              openEditDialog(selectedAsset)
-            "
+            @click="viewDialog = false; openEditDialog(selectedAsset)"
             >Edit Record</v-btn
           >
           <v-btn
@@ -434,10 +431,7 @@
             size="large"
             prepend-icon="mdi-delete"
             class="flex-grow-1"
-            @click="
-              viewDialog = false
-              openDeleteDialog(selectedAsset)
-            "
+            @click="viewDialog = false; openDeleteDialog(selectedAsset)"
             >Delete</v-btn
           >
         </v-card-actions>

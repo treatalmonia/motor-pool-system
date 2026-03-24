@@ -1,6 +1,5 @@
 <template>
   <v-container fluid>
-
     <!-- ── Screen Controls ── -->
     <v-row class="mb-4 no-print">
       <v-col>
@@ -96,7 +95,6 @@
         class="fuel-page"
         :class="{ 'page-break-after': pIdx < pages.length - 1 }"
       >
-
         <!-- Official CSU Header -->
         <ReportHeader variant="standard" />
 
@@ -121,30 +119,30 @@
         <table class="fuel-table">
           <thead>
             <tr>
-              <th rowspan="2" class="col-date">DATE</th>
-              <th rowspan="2" class="col-or">O.R. #</th>
-              <th colspan="4" class="group-header">DIESEL</th>
-              <th colspan="4" class="group-header">GASOLINE</th>
-              <th rowspan="2" class="col-utilize">UTILIZED BY</th>
-              <th rowspan="2" class="col-vehicle">VEHICLE / EQUIPMENT</th>
-              <th rowspan="2" class="col-total">TOTAL AMOUNT DUE</th>
-              <th rowspan="2" class="col-charge">FUEL CHARGE TO</th>
-              <th rowspan="2" class="col-po">P.O. #</th>
+              <th rowspan="2" class="col-date th-base">DATE</th>
+              <th rowspan="2" class="col-or th-base">O.R. #</th>
+              <th colspan="4" class="group-header th-diesel">DIESEL</th>
+              <th colspan="4" class="group-header th-gasoline">GASOLINE</th>
+              <th rowspan="2" class="col-utilize th-base">UTILIZED BY</th>
+              <th rowspan="2" class="col-vehicle th-base">VEHICLE / EQUIPMENT</th>
+              <th rowspan="2" class="col-total th-total">TOTAL AMOUNT DUE</th>
+              <th rowspan="2" class="col-charge th-charge">FUEL CHARGE TO</th>
+              <th rowspan="2" class="col-po th-po">P.O. #</th>
             </tr>
             <tr>
-              <th class="sub-col">QTY</th>
-              <th class="sub-col">UNIT</th>
-              <th class="sub-col">UNIT COST</th>
-              <th class="sub-col">AMOUNT</th>
-              <th class="sub-col">QTY</th>
-              <th class="sub-col">UNIT</th>
-              <th class="sub-col">UNIT COST</th>
-              <th class="sub-col">AMOUNT</th>
+              <th class="sub-col sub-diesel">QTY</th>
+              <th class="sub-col sub-diesel">UNIT</th>
+              <th class="sub-col sub-diesel">UNIT COST</th>
+              <th class="sub-col sub-diesel">AMOUNT</th>
+              <th class="sub-col sub-gasoline">QTY</th>
+              <th class="sub-col sub-gasoline">UNIT</th>
+              <th class="sub-col sub-gasoline">UNIT COST</th>
+              <th class="sub-col sub-gasoline">AMOUNT</th>
             </tr>
           </thead>
 
-          <tbody>
-            <tr v-for="(row, rIdx) in page.rows" :key="rIdx">
+        <tbody>
+            <tr v-for="(row, rIdx) in page.rows" :key="rIdx" :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'">
               <!-- Date -->
               <td class="data-cell">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
@@ -224,18 +222,18 @@
                 <input v-else v-model="row.vehicle" class="edit-input" />
               </td>
               <!-- Total Amount Due -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-total-val">
                 {{ formatAmount(rowTotal(row)) }}
               </td>
               <!-- Fuel Charge To -->
-              <td class="data-cell">
+              <td class="data-cell td-charge-val">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.fuel_charge_to }}
                 </div>
                 <input v-else v-model="row.fuel_charge_to" class="edit-input" />
               </td>
               <!-- PO # -->
-              <td class="data-cell">
+              <td class="data-cell td-po-val">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.po_number }}
                 </div>
@@ -245,25 +243,24 @@
           </tbody>
         </table>
 
-        <!-- Footer totals -->
+      <!-- Footer totals -->
         <table class="fuel-footer-table">
           <tr>
-            <td class="footer-label">NO. OF LITER/S IN DIESEL</td>
-            <td class="footer-value">{{ formatQty(page.totalDieselQty) }}</td>
+            <td class="footer-label footer-label-diesel">NO. OF LITER/S IN DIESEL</td>
+            <td class="footer-value footer-value-diesel">{{ formatQty(page.totalDieselQty) }}</td>
           </tr>
           <tr>
-            <td class="footer-label">NO. OF LITER/S IN GASOLINE</td>
-            <td class="footer-value">{{ formatQty(page.totalGasolineQty) }}</td>
+            <td class="footer-label footer-label-gasoline">NO. OF LITER/S IN GASOLINE</td>
+            <td class="footer-value footer-value-gasoline">{{ formatQty(page.totalGasolineQty) }}</td>
           </tr>
           <tr class="footer-total-row">
             <td class="footer-label">TOTAL AMOUNT DUE</td>
-            <td class="footer-value">{{ formatAmount(page.totalAmount) }}</td>
+            <td class="footer-value footer-total-val">{{ formatAmount(page.totalAmount) }}</td>
           </tr>
         </table>
 
         <!-- Signatories -->
         <div class="fuel-signatories" :class="page.sigLayout">
-
           <!-- RAF / IGF / BRF layout: Prepared by | Checked by | Noted by -->
           <template v-if="page.sigLayout === 'three-col'">
             <div class="sig-col">
@@ -351,10 +348,8 @@
               </div>
             </div>
           </template>
-
         </div>
         <!-- end signatories -->
-
       </div>
       <!-- end v-for pages -->
     </div>
@@ -372,7 +367,6 @@
     >
       {{ editMode ? 'Done Editing' : 'Edit Fields' }}
     </v-btn>
-
   </v-container>
 </template>
 
@@ -382,15 +376,15 @@ import { supabase } from '../supabase'
 import ReportHeader from '../components/ReportHeader.vue'
 
 // ── State ──
-const loading              = ref(false)
-const editMode             = ref(false)
-const pages                = ref([])   // one entry per fund cluster
+const loading = ref(false)
+const editMode = ref(false)
+const pages = ref([]) // one entry per fund cluster
 const billingPeriodOptions = ref([])
-const fundClusterOptions   = ref([])
-const contractOptions      = ref([])
+const fundClusterOptions = ref([])
+const contractOptions = ref([])
 const selectedBillingPeriod = ref(null)
-const selectedFundCluster   = ref(null)
-const selectedContractId    = ref(null)
+const selectedFundCluster = ref(null)
+const selectedContractId = ref(null)
 
 // ── Computed ──
 const totalRows = computed(() => pages.value.reduce((s, p) => s + p.rows.length, 0))
@@ -421,7 +415,7 @@ function formatAmount(val) {
 }
 
 function rowTotal(row) {
-  const d = (Number(row.diesel_qty)   || 0) * (Number(row.diesel_unit_price)   || 0)
+  const d = (Number(row.diesel_qty) || 0) * (Number(row.diesel_unit_price) || 0)
   const g = (Number(row.gasoline_qty) || 0) * (Number(row.gasoline_unit_price) || 0)
   return d + g
 }
@@ -432,21 +426,21 @@ function getSig(fundCluster) {
   if (fc.includes('TRF')) {
     return {
       layout: 'two-col',
-      preparedByName:  'ENGR. ENA TIU-IBARRA',
+      preparedByName: 'ENGR. ENA TIU-IBARRA',
       preparedByTitle: 'Admin. Officer III, General Services',
-      notedByName:     'AR. CHRISTIAN DWIGHT C. DOLOTINA',
-      notedByTitle:    'Director, General Services',
+      notedByName: 'AR. CHRISTIAN DWIGHT C. DOLOTINA',
+      notedByTitle: 'Director, General Services',
     }
   }
   // RAF / IGF / BRF
   return {
     layout: 'three-col',
-    preparedByName:  'ROJIELAINE DIVINE AMPARO',
+    preparedByName: 'ROJIELAINE DIVINE AMPARO',
     preparedByTitle: 'DRAFTSMAN - 1',
-    checkedByName:   'ENGR. ENA TIU-IBARRA',
-    checkedByTitle:  'AO III, GSO - Transportation Unit',
-    notedByName:     'ENGR. MARIEL M. DELO',
-    notedByTitle:    'Director, General Services',
+    checkedByName: 'ENGR. ENA TIU-IBARRA',
+    checkedByTitle: 'AO III, GSO - Transportation Unit',
+    notedByName: 'ENGR. MARIEL M. DELO',
+    notedByTitle: 'Director, General Services',
   }
 }
 
@@ -459,7 +453,7 @@ async function fetchOptions() {
     .not('billing_period', 'is', null)
     .order('billing_period', { ascending: false })
 
-  const bpSet = [...new Set((bpData || []).map(r => r.billing_period).filter(Boolean))]
+  const bpSet = [...new Set((bpData || []).map((r) => r.billing_period).filter(Boolean))]
   billingPeriodOptions.value = bpSet
 
   // Distinct fund clusters
@@ -469,7 +463,7 @@ async function fetchOptions() {
     .not('fund_cluster', 'is', null)
     .order('fund_cluster')
 
-  const fcSet = [...new Set((fcData || []).map(r => r.fund_cluster).filter(Boolean))]
+  const fcSet = [...new Set((fcData || []).map((r) => r.fund_cluster).filter(Boolean))]
   fundClusterOptions.value = fcSet
 
   // Contracts for optional filter
@@ -478,7 +472,7 @@ async function fetchOptions() {
     .select('id, year, po_number, fund_cluster')
     .order('year', { ascending: false })
 
-  contractOptions.value = (cData || []).map(c => ({
+  contractOptions.value = (cData || []).map((c) => ({
     id: c.id,
     label: `${c.year} — ${c.fund_cluster} — PO# ${c.po_number}`,
   }))
@@ -501,11 +495,9 @@ async function loadData() {
     .order('fund_cluster')
     .order('date')
 
-  if (selectedFundCluster.value)
-    query = query.eq('fund_cluster', selectedFundCluster.value)
+  if (selectedFundCluster.value) query = query.eq('fund_cluster', selectedFundCluster.value)
 
-  if (selectedContractId.value)
-    query = query.eq('contract_id', selectedContractId.value)
+  if (selectedContractId.value) query = query.eq('contract_id', selectedContractId.value)
 
   const { data, error } = await query
 
@@ -517,7 +509,7 @@ async function loadData() {
 
   // Group by fund_cluster → one page per cluster
   const grouped = {}
-  data.forEach(tx => {
+  data.forEach((tx) => {
     const fc = tx.fund_cluster || 'UNSPECIFIED'
     if (!grouped[fc]) grouped[fc] = []
     grouped[fc].push(tx)
@@ -530,50 +522,50 @@ async function loadData() {
     // Diesel and Gasoline are separate transactions; we merge same-OR# transactions
     // onto one row when possible, otherwise keep separate
     const rowMap = {}
-    txList.forEach(tx => {
-      const key = tx.or_number || tx.id   // group by OR number
+    txList.forEach((tx) => {
+      const key = tx.or_number || tx.id // group by OR number
       if (!rowMap[key]) {
         rowMap[key] = {
-          date:               formatDate(tx.date),
-          or_number:          tx.or_number  || '',
-          diesel_qty:         null,
-          diesel_unit:        '',
-          diesel_unit_price:  null,
-          gasoline_qty:       null,
-          gasoline_unit:      '',
+          date: formatDate(tx.date),
+          or_number: tx.or_number || '',
+          diesel_qty: null,
+          diesel_unit: '',
+          diesel_unit_price: null,
+          gasoline_qty: null,
+          gasoline_unit: '',
           gasoline_unit_price: null,
-          utilized_by:        tx.utilized_by || '',
-          vehicle:            tx.vehicle     || '',
-          fuel_charge_to:     tx.fund_cluster || '',
-          po_number:          tx.po_number   || '',
-          _sortDate:          tx.date,
+          utilized_by: tx.utilized_by || '',
+          vehicle: tx.vehicle || '',
+          fuel_charge_to: tx.account_code || '',
+          po_number: tx.po_number || '',
+          _sortDate: tx.date,
         }
       }
       if ((tx.fuel_type || '').toLowerCase() === 'gasoline') {
-        rowMap[key].gasoline_qty         = tx.quantity
-        rowMap[key].gasoline_unit        = tx.unit || 'LTRS.'
-        rowMap[key].gasoline_unit_price  = tx.unit_price
+        rowMap[key].gasoline_qty = tx.quantity
+        rowMap[key].gasoline_unit = tx.unit || 'LTRS.'
+        rowMap[key].gasoline_unit_price = tx.unit_price
       } else {
         // diesel (default)
-        rowMap[key].diesel_qty           = tx.quantity
-        rowMap[key].diesel_unit          = tx.unit || 'LTRS.'
-        rowMap[key].diesel_unit_price    = tx.unit_price
+        rowMap[key].diesel_qty = tx.quantity
+        rowMap[key].diesel_unit = tx.unit || 'LTRS.'
+        rowMap[key].diesel_unit_price = tx.unit_price
       }
       // Take utilized_by / vehicle from whichever row has it
       if (tx.utilized_by) rowMap[key].utilized_by = tx.utilized_by
-      if (tx.vehicle)     rowMap[key].vehicle      = tx.vehicle
+      if (tx.vehicle) rowMap[key].vehicle = tx.vehicle
     })
 
     const rows = Object.values(rowMap).sort((a, b) => (a._sortDate > b._sortDate ? 1 : -1))
 
     // Compute totals
-    const totalDieselQty   = rows.reduce((s, r) => s + (Number(r.diesel_qty)   || 0), 0)
+    const totalDieselQty = rows.reduce((s, r) => s + (Number(r.diesel_qty) || 0), 0)
     const totalGasolineQty = rows.reduce((s, r) => s + (Number(r.gasoline_qty) || 0), 0)
-    const totalAmount      = rows.reduce((s, r) => s + rowTotal(r), 0)
+    const totalAmount = rows.reduce((s, r) => s + rowTotal(r), 0)
 
     // Only show fuel_charge_to on first row of each unique value
     let lastCharge = null
-    rows.forEach(r => {
+    rows.forEach((r) => {
       if (r.fuel_charge_to === lastCharge) {
         r.fuel_charge_to = ''
       } else {
@@ -586,20 +578,20 @@ async function loadData() {
 
     return {
       fundCluster,
-      contractor:      'UNIV GAS REFILLING STATION',
+      contractor: 'UNIV GAS REFILLING STATION',
       reportTitle,
       rows,
       totalDieselQty,
       totalGasolineQty,
       totalAmount,
-      sigLayout:       sig.layout === 'three-col' ? 'three-col' : 'two-col',
+      sigLayout: sig.layout === 'three-col' ? 'three-col' : 'two-col',
       sig: {
-        preparedByName:  sig.preparedByName  || '',
+        preparedByName: sig.preparedByName || '',
         preparedByTitle: sig.preparedByTitle || '',
-        checkedByName:   sig.checkedByName   || '',
-        checkedByTitle:  sig.checkedByTitle  || '',
-        notedByName:     sig.notedByName     || '',
-        notedByTitle:    sig.notedByTitle    || '',
+        checkedByName: sig.checkedByName || '',
+        checkedByTitle: sig.checkedByTitle || '',
+        notedByName: sig.notedByName || '',
+        notedByTitle: sig.notedByTitle || '',
       },
     }
   })
@@ -608,8 +600,12 @@ async function loadData() {
 }
 
 // ── Edit mode ──
-function enableEdit() { editMode.value = true }
-function toggleEdit()  { editMode.value = !editMode.value }
+function enableEdit() {
+  editMode.value = true
+}
+function toggleEdit() {
+  editMode.value = !editMode.value
+}
 
 // ── Print ──
 function printReport() {
@@ -646,8 +642,12 @@ onMounted(async () => {
   font-weight: bold;
   margin-bottom: 4px;
 }
-.fuel-contractor-label { margin-right: 8px; }
-.fuel-contractor-name  { font-weight: normal; }
+.fuel-contractor-label {
+  margin-right: 8px;
+}
+.fuel-contractor-name {
+  font-weight: normal;
+}
 
 /* ── Report title ── */
 .fuel-report-title {
@@ -666,20 +666,30 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 .fuel-table th {
-  background: #333;
-  color: white;
-  border: 1px solid #333;
+  border: 1px solid #aaa;
   padding: 4px 3px;
   text-align: center;
   font-size: 8px;
+  font-weight: bold;
 }
 .fuel-table td {
-  border: 1px solid #999;
+  border: 1px solid #aaa;
   vertical-align: middle;
 }
-.group-header { text-align: center; }
 
-/* Column widths */
+/* Header base (DATE, OR#, UTILIZE BY, VEHICLE) */
+.th-base    { background: #1F4E79; color: white; }
+.th-diesel  { background: #1F4E79; color: white; }
+.th-gasoline { background: #1E5631; color: white; }
+.th-total   { background: #FFD966; color: #000; }
+.th-charge  { background: #70AD47; color: white; }
+.th-po      { background: #70AD47; color: white; }
+
+/* Sub-headers */
+.sub-diesel   { background: #BDD7EE; color: #000; }
+.sub-gasoline { background: #C6EFCE; color: #000; }
+
+/* Column widths — original */
 .col-date    { width: 50px; }
 .col-or      { width: 52px; }
 .sub-col     { width: 46px; }
@@ -691,6 +701,15 @@ onMounted(async () => {
 
 .data-cell { padding: 3px 4px; min-height: 22px; }
 .num-cell  { text-align: right; }
+
+/* Row striping */
+.row-even { background: #ffffff; }
+.row-odd  { background: #EBF3FB; }
+
+/* Colored data cells */
+.td-total-val  { font-weight: bold; background: #FFF2CC; }
+.td-charge-val { background: #E2EFDA; font-weight: bold; text-align: center; }
+.td-po-val     { background: #E2EFDA; font-weight: bold; text-align: center; }
 
 /* ── Footer totals ── */
 .fuel-footer-table {
@@ -707,11 +726,14 @@ onMounted(async () => {
   padding-right: 16px;
 }
 .footer-value { text-align: right; width: 120px; font-weight: bold; }
-.footer-total-row .footer-label,
-.footer-total-row .footer-value {
-  background: #333;
-  color: white;
-}
+
+.footer-label-diesel  { background: #BDD7EE; color: #000; }
+.footer-value-diesel  { background: #BDD7EE; color: #000; }
+.footer-label-gasoline { background: #C6EFCE; color: #000; }
+.footer-value-gasoline { background: #C6EFCE; color: #000; }
+
+.footer-total-row .footer-label { background: #1F4E79; color: white; }
+.footer-total-val { background: #FFD966; color: #000; font-weight: bold; font-size: 10px; }
 
 /* ── Signatories ── */
 .fuel-signatories {
@@ -719,19 +741,36 @@ onMounted(async () => {
   gap: 40px;
   margin-top: 20px;
 }
-.three-col { justify-content: space-between; }
-.two-col   { justify-content: flex-start; gap: 120px; }
+.three-col {
+  justify-content: space-between;
+}
+.two-col {
+  justify-content: flex-start;
+  gap: 120px;
+}
 
-.sig-col    { min-width: 180px; }
-.sig-role   { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
-.sig-spacer { height: 28px; }
+.sig-col {
+  min-width: 180px;
+}
+.sig-role {
+  font-size: 10px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.sig-spacer {
+  height: 28px;
+}
 .sig-name {
   border-top: 1px solid #333;
   font-weight: bold;
   font-size: 10px;
   padding-top: 2px;
 }
-.sig-title  { font-size: 9px; color: #333; margin-top: 2px; }
+.sig-title {
+  font-size: 9px;
+  color: #333;
+  margin-top: 2px;
+}
 
 /* ── Editable field hints (screen only) ── */
 .editable-field {
@@ -756,23 +795,40 @@ onMounted(async () => {
   background: #e3f2fd;
   outline: none;
 }
-.contractor-input { font-size: 10px; font-weight: bold; }
-.title-input      { font-size: 11px; font-weight: bold; text-align: center; }
-.cell-text        { white-space: pre-wrap; word-break: break-word; }
+.contractor-input {
+  font-size: 10px;
+  font-weight: bold;
+}
+.title-input {
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+}
+.cell-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
 /* ══════════════════════
    PRINT STYLES
 ══════════════════════ */
 @media print {
-  .no-print { display: none !important; }
+  .no-print {
+    display: none !important;
+  }
 
-  body, .v-app, .v-main, .v-container {
+  body,
+  .v-app,
+  .v-main,
+  .v-container {
     background: white !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  .print-area { font-size: 8px; }
+  .print-area {
+    font-size: 8px;
+  }
 
   .fuel-page {
     max-width: 100%;
@@ -783,11 +839,20 @@ onMounted(async () => {
     page-break-inside: avoid;
   }
 
-  .page-break-after { page-break-after: always; }
+  .page-break-after {
+    page-break-after: always;
+  }
 
-  .fuel-table, .fuel-footer-table { font-size: 7.5px; }
-  .fuel-table th { font-size: 7px; }
-  .fuel-report-title { font-size: 10px; }
+  .fuel-table,
+  .fuel-footer-table {
+    font-size: 7.5px;
+  }
+  .fuel-table th {
+    font-size: 7px;
+  }
+  .fuel-report-title {
+    font-size: 10px;
+  }
 
   .editable-field {
     cursor: default;

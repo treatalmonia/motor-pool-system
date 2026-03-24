@@ -719,10 +719,7 @@
             size="large"
             prepend-icon="mdi-pencil"
             class="flex-grow-1"
-            @click="
-              viewDialog = false
-              openEditDialog(selectedTx)
-            "
+            @click="viewDialog = false; openEditDialog(selectedTx)"
           >
             Edit Record
           </v-btn>
@@ -732,10 +729,7 @@
             size="large"
             prepend-icon="mdi-delete"
             class="flex-grow-1"
-            @click="
-              viewDialog = false
-              openDeleteDialog(selectedTx)
-            "
+            @click="viewDialog = false; openDeleteDialog(selectedTx)"
           >
             Delete
           </v-btn>

@@ -1351,9 +1351,9 @@ function openEditDialog(contract) {
   selectedContract.value = contract
   form.value = {
     ...contract,
-    contract_amount_display: formatNumber(contract.contract_amount),
-    allocated_diesel_display: formatNumber(contract.allocated_diesel),
-    allocated_gasoline_display: formatNumber(contract.allocated_gasoline),
+    contract_amount_display: formatNumberExact(contract.contract_amount),
+    allocated_diesel_display: formatNumberExact(contract.allocated_diesel),
+    allocated_gasoline_display: formatNumberExact(contract.allocated_gasoline),
   }
   errors.value = {}
   formDialog.value = true
@@ -1490,8 +1490,8 @@ function onGasolineBlur() {
 
 // ── HELPERS ──
 function formatNumber(val) {
-  if (val === null || val === undefined || val === '') return '0'
-  return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
+  if (val === null || val === undefined || val === '') return '0.00'
+  return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function formatNumberExact(val) {
   if (val === null || val === undefined || val === '') return '0'

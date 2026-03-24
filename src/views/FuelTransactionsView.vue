@@ -159,11 +159,13 @@
         :items="filteredTransactions"
         :loading="loading"
         items-per-page="15"
-        :row-props="({ item }) => ({
-          style: { cursor: 'pointer' },
-          onClick: () => openViewDialog(item),
-          onDblclick: () => openEditDialog(item)
-        })"
+        :row-props="
+          ({ item }) => ({
+            style: { cursor: 'pointer' },
+            onClick: () => openViewDialog(item),
+            onDblclick: () => openEditDialog(item),
+          })
+        "
       >
         <!-- Date -->
         <template #item.date="{ item }">
@@ -241,18 +243,31 @@
         </template>
 
         <template #body.append>
-          <tr v-if="filteredTransactions.length > 0" style="background:var(--v-theme-surface);border-top:2px solid rgba(0,0,0,0.12)">
-            <td colspan="4" style="padding:10px 14px;font-size:12px;font-weight:600">
+          <tr
+            v-if="filteredTransactions.length > 0"
+            style="background: var(--v-theme-surface); border-top: 2px solid rgba(0, 0, 0, 0.12)"
+          >
+            <td colspan="4" style="padding: 10px 14px; font-size: 12px; font-weight: 600">
               Totals ({{ filteredTransactions.length }} records)
             </td>
-            <td style="padding:10px 14px;text-align:right;font-size:12px;font-weight:700">
-              {{ formatNumber(filteredTransactions.reduce((s,t) => s + (t.quantity||0), 0)) }} L
+            <td style="padding: 10px 14px; text-align: right; font-size: 12px; font-weight: 700">
+              {{ formatNumber(filteredTransactions.reduce((s, t) => s + (t.quantity || 0), 0)) }} L
             </td>
-            <td style="padding:10px 14px"></td>
-            <td style="padding:10px 14px;text-align:right;font-size:12px;font-weight:700;color:#e65100">
-              ₱{{ formatNumber(filteredTransactions.reduce((s,t) => s + (t.total_amount||0), 0)) }}
+            <td style="padding: 10px 14px"></td>
+            <td
+              style="
+                padding: 10px 14px;
+                text-align: right;
+                font-size: 12px;
+                font-weight: 700;
+                color: #e65100;
+              "
+            >
+              ₱{{
+                formatNumber(filteredTransactions.reduce((s, t) => s + (t.total_amount || 0), 0))
+              }}
             </td>
-            <td colspan="4" style="padding:10px 14px"></td>
+            <td colspan="4" style="padding: 10px 14px"></td>
           </tr>
         </template>
       </v-data-table>
@@ -524,7 +539,10 @@
                         class="text-caption font-weight-medium"
                         :class="item.raw.balance < 0 ? 'text-error' : 'text-success'"
                       >
-                        {{ item.raw.balance < 0 ? '−' : '' }}₱{{ formatNumber(Math.abs(item.raw.balance)) }} left
+                        {{ item.raw.balance < 0 ? '−' : '' }}₱{{
+                          formatNumber(Math.abs(item.raw.balance))
+                        }}
+                        left
                       </span>
                     </template>
                   </v-list-item>
@@ -563,9 +581,13 @@
             <!-- Fuel Charge To label — shows fund + account code for ISO form reference -->
             <v-col cols="12" sm="6">
               <v-text-field
-                :model-value="selectedContractSummary
-                  ? selectedContractSummary.fund_cluster + ' — ' + selectedContractSummary.account_code
-                  : ''"
+                :model-value="
+                  selectedContractSummary
+                    ? selectedContractSummary.fund_cluster +
+                      ' — ' +
+                      selectedContractSummary.account_code
+                    : ''
+                "
                 label="Fuel Charge To"
                 variant="outlined"
                 density="comfortable"
@@ -697,7 +719,10 @@
             size="large"
             prepend-icon="mdi-pencil"
             class="flex-grow-1"
-            @click="viewDialog = false; openEditDialog(selectedTx)"
+            @click="
+              viewDialog = false
+              openEditDialog(selectedTx)
+            "
           >
             Edit Record
           </v-btn>
@@ -707,7 +732,10 @@
             size="large"
             prepend-icon="mdi-delete"
             class="flex-grow-1"
-            @click="viewDialog = false; openDeleteDialog(selectedTx)"
+            @click="
+              viewDialog = false
+              openDeleteDialog(selectedTx)
+            "
           >
             Delete
           </v-btn>
@@ -851,8 +879,18 @@ const headers = [
 
 // ── BILLING PERIODS ──
 const MONTH_NAMES = [
-  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+  'JANUARY',
+  'FEBRUARY',
+  'MARCH',
+  'APRIL',
+  'MAY',
+  'JUNE',
+  'JULY',
+  'AUGUST',
+  'SEPTEMBER',
+  'OCTOBER',
+  'NOVEMBER',
+  'DECEMBER',
 ]
 
 function getBillingPeriod(dateStr) {
@@ -885,10 +923,26 @@ const billingPeriods = computed(() => {
 const dropdownOptions = ref([])
 
 const DEFAULT_UTILIZED_BY = [
-  'OPQMS', 'VPRIE', 'OAS', 'CAA', 'MAPX', 'RDPO', 'HRMO', 'ECO',
-  'CAO', 'SUPPLY OFFICE', 'PROCUREMENT OFFICE', 'OFFICE OF THE PRESIDENT',
-  'EXTENSION SERVICES', 'RESEARCH SERVICES', 'ICT OFFICE', 'REGISTRAR',
-  'GUIDANCE AND COUNSELING', 'NSTP', 'CULTURE AND ARTS', 'SOM',
+  'OPQMS',
+  'VPRIE',
+  'OAS',
+  'CAA',
+  'MAPX',
+  'RDPO',
+  'HRMO',
+  'ECO',
+  'CAO',
+  'SUPPLY OFFICE',
+  'PROCUREMENT OFFICE',
+  'OFFICE OF THE PRESIDENT',
+  'EXTENSION SERVICES',
+  'RESEARCH SERVICES',
+  'ICT OFFICE',
+  'REGISTRAR',
+  'GUIDANCE AND COUNSELING',
+  'NSTP',
+  'CULTURE AND ARTS',
+  'SOM',
 ]
 
 async function fetchDropdownOptions() {
@@ -1017,7 +1071,7 @@ const selectedContractSummary = computed(() => {
   if (!form.value.contract_id) return null
   const contract = filteredContractOptions.value.find((c) => c.id === form.value.contract_id)
   if (!contract) return null
-  const currentTxAmount = isEditing.value ? (selectedTx.value?.total_amount || 0) : 0
+  const currentTxAmount = isEditing.value ? selectedTx.value?.total_amount || 0 : 0
   const pendingAmount = form.value.total_amount || 0
   const adjustedBalance = contract.balance + currentTxAmount - pendingAmount
   return { ...contract, balance: adjustedBalance }
@@ -1108,9 +1162,9 @@ function openEditDialog(tx) {
   form.value = {
     ...tx,
     date_display: formatDate(tx.date),
-    quantity_display: formatNumber(tx.quantity),
-    unit_price_display: formatNumber(tx.unit_price),
-    total_amount_display: formatNumber(tx.total_amount),
+    quantity_display: formatNumberExact(tx.quantity),
+    unit_price_display: formatNumberExact(tx.unit_price),
+    total_amount_display: formatNumberExact(tx.total_amount),
   }
   errors.value = {}
   formDialog.value = true
@@ -1163,7 +1217,7 @@ function recalcTotal() {
   const qty = form.value.quantity || 0
   const price = form.value.unit_price || 0
   form.value.total_amount = Math.round(qty * price * 100) / 100
-  form.value.total_amount_display = formatNumber(form.value.total_amount)
+  form.value.total_amount_display = formatNumberExact(form.value.total_amount)
 }
 
 function onQuantityInput(e) {
@@ -1174,7 +1228,8 @@ function onQuantityInput(e) {
   }
 }
 function onQuantityBlur() {
-  form.value.quantity_display = form.value.quantity != null ? formatNumberExact(form.value.quantity) : ''
+  form.value.quantity_display =
+    form.value.quantity != null ? formatNumberExact(form.value.quantity) : ''
 }
 
 function onUnitPriceInput(e) {
@@ -1185,7 +1240,8 @@ function onUnitPriceInput(e) {
   }
 }
 function onUnitPriceBlur() {
-  form.value.unit_price_display = form.value.unit_price != null ? formatNumberExact(form.value.unit_price) : ''
+  form.value.unit_price_display =
+    form.value.unit_price != null ? formatNumberExact(form.value.unit_price) : ''
 }
 
 // ── VALIDATION ──
@@ -1256,20 +1312,26 @@ async function saveTransaction() {
 // This prevents partial keystrokes from being stored as options.
 async function saveCustomDropdownValues() {
   const utilizedBy = form.value.utilized_by?.trim()
-  if (utilizedBy && !utilizedByOptions.value.some((o) => o.toLowerCase() === utilizedBy.toLowerCase())) {
+  if (
+    utilizedBy &&
+    !utilizedByOptions.value.some((o) => o.toLowerCase() === utilizedBy.toLowerCase())
+  ) {
     await addDropdownOption('utilized_by', utilizedBy)
   }
 }
 
 // ── WATCH vehicle to auto-fill plate number ──
-watch(() => form.value.vehicle, (vehicleName) => {
-  if (!vehicleName || form.value.utilization_type === 'Non-Vehicular') {
-    form.value.plate_number = ''
-    return
-  }
-  const match = assets.value.find((a) => a.asset_name === vehicleName)
-  form.value.plate_number = match?.plate_number || ''
-})
+watch(
+  () => form.value.vehicle,
+  (vehicleName) => {
+    if (!vehicleName || form.value.utilization_type === 'Non-Vehicular') {
+      form.value.plate_number = ''
+      return
+    }
+    const match = assets.value.find((a) => a.asset_name === vehicleName)
+    form.value.plate_number = match?.plate_number || ''
+  },
+)
 
 // ── DELETE ──
 async function deleteTx() {
@@ -1294,8 +1356,8 @@ function formatDate(dateStr) {
   return `${mm}/${dd}/${yy}`
 }
 function formatNumber(val) {
-  if (val === null || val === undefined || val === '') return '0'
-  return Number(val).toLocaleString('en-PH', { maximumFractionDigits: 2 })
+  if (val === null || val === undefined || val === '') return '0.00'
+  return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function formatNumberExact(val) {
   if (val === null || val === undefined || val === '') return '0'

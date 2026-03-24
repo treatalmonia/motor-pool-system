@@ -759,10 +759,7 @@ onMounted(async () => {
 .col-vehicle {
   width: 90px;
 }
-.col-total {
-  width: 70px;
-  text-align: right;
-}
+.col-total   { width: 70px; text-align: center; }
 .col-charge {
   width: 110px;
 }
@@ -770,13 +767,8 @@ onMounted(async () => {
   width: 80px;
 }
 
-.data-cell {
-  padding: 3px 4px;
-  min-height: 22px;
-}
-.num-cell {
-  text-align: right;
-}
+.data-cell { padding: 3px 4px; min-height: 22px; text-align: center; }
+.num-cell  { text-align: center; }
 
 /* ── Data cell column colors ── */
 /* Diesel data cells — light sky blue */
@@ -794,17 +786,8 @@ onMounted(async () => {
   color: #7b3f00;
 }
 /* Fuel Charge To + PO# — plain white, bold */
-.td-charge-val {
-  background: #ffffff;
-  font-weight: bold;
-  font-size: 7.5px;
-  text-align: center;
-}
-.td-po-val {
-  background: #ffffff;
-  font-weight: bold;
-  text-align: center;
-}
+.td-charge-val { background: #ffffff; font-weight: bold; font-size: 7.5px; text-align: center; vertical-align: middle; }
+.td-po-val     { background: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; }
 
 /* ── Footer totals ── */
 .fuel-footer-table {
@@ -820,18 +803,14 @@ onMounted(async () => {
 }
 .footer-label {
   font-weight: bold;
-  text-align: right;
-  padding-right: 16px;
+  text-align: center;
+  padding-right: 0;
 }
-.footer-value {
-  text-align: right;
-  width: 130px;
-  font-weight: bold;
-}
+.footer-value { text-align: center; width: 130px; font-weight: bold; }
 
 /* Diesel footer — sky blue */
 .footer-label-diesel {
-  background: #90caf9;
+  background: #1565c0;
   color: #0d2137;
 }
 .footer-value-diesel {
@@ -840,7 +819,7 @@ onMounted(async () => {
 }
 /* Gasoline footer — light green */
 .footer-label-gasoline {
-  background: #a5d6a7;
+  background: #2e7d32;
   color: #1b3d1c;
 }
 .footer-value-gasoline {
@@ -849,13 +828,13 @@ onMounted(async () => {
 }
 /* Total footer — dark header + yellow value */
 .footer-total-row .footer-label {
-  background: #f9a825;
+  background:#f9a825 ;
   color: #000;
   font-size: 10px;
   font-weight: bold;
 }
 .footer-total-val {
-  background: #f9a825;
+  background: #fff9c4 ;
   color: #000;
   font-weight: bold;
   font-size: 11px;

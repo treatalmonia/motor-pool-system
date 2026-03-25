@@ -471,18 +471,7 @@
                 clearable
                 @update:modelValue="onUtilizedByUpdate"
               />
-              <!-- Saved custom entries with delete button -->
-              <div v-if="getSavedOptions('utilized_by').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('utilized_by')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+
             </v-col>
 
             <!-- ── SECTION 4: Charge To ── -->
@@ -497,8 +486,7 @@
             <!-- Charge To autocomplete -->
             <v-col cols="12">
               <p class="text-caption text-medium-emphasis mb-1">
-                Search by cost center name, PO number, or account code. Only showing FY
-                {{ filterYear }} contracts.
+                Search by cost center name, PO number, or account code.
               </p>
               <v-autocomplete
                 v-model="form.contract_id"
@@ -962,14 +950,9 @@ async function addDropdownOption(category, value) {
   if (!error && data) dropdownOptions.value.push(data)
 }
 
-async function deleteDropdownOption(id) {
-  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
-  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
-}
 
-function getSavedOptions(category) {
-  return dropdownOptions.value.filter((o) => o.category === category)
-}
+
+
 
 const utilizedByOptions = computed(() => {
   const saved = dropdownOptions.value
@@ -1057,7 +1040,7 @@ const filteredContractOptions = computed(() => {
 })
 
 const contractBalanceHint = computed(() => {
-  if (!form.value.contract_id) return 'Only showing FY ' + filterYear.value + ' contracts'
+  if (!form.value.contract_id) return 'Only showing current year contracts'
   return ''
 })
 

@@ -87,6 +87,7 @@
       </div>
 
       <table class="efhr-header-table">
+        <tbody>
         <tr>
           <td class="hdr-label">Equipment / Facility Name</td>
           <td class="hdr-value" colspan="3">
@@ -169,6 +170,7 @@
             <input v-else v-model="editableInfo.otherInfo" class="edit-input" />
           </td>
         </tr>
+        </tbody>
       </table>
 
       <!-- Source legend — screen only -->
@@ -298,7 +300,7 @@
             <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
           </div>
         </div>
-       
+
       </div>
 
       <div class="efhr-form-code">

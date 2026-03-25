@@ -275,20 +275,20 @@
 
         <!-- Footer totals -->
         <table class="fuel-footer-table">
-          <tr>
-            <td class="footer-label footer-label-diesel">NO. OF LITER/S IN DIESEL</td>
-            <td class="footer-value footer-value-diesel">{{ formatQty(page.totalDieselQty) }}</td>
-          </tr>
-          <tr>
-            <td class="footer-label footer-label-gasoline">NO. OF LITER/S IN GASOLINE</td>
-            <td class="footer-value footer-value-gasoline">
-              {{ formatQty(page.totalGasolineQty) }}
-            </td>
-          </tr>
-          <tr class="footer-total-row">
-            <td class="footer-label">TOTAL AMOUNT DUE</td>
-            <td class="footer-value footer-total-val">{{ formatAmount(page.totalAmount) }}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td class="footer-label footer-label-diesel">NO. OF LITER/S IN DIESEL</td>
+              <td class="footer-value footer-value-diesel">{{ formatQty(page.totalDieselQty) }}</td>
+            </tr>
+            <tr>
+              <td class="footer-label footer-label-gasoline">NO. OF LITER/S IN GASOLINE</td>
+              <td class="footer-value footer-value-gasoline">{{ formatQty(page.totalGasolineQty) }}</td>
+            </tr>
+            <tr class="footer-total-row">
+              <td class="footer-label">TOTAL AMOUNT DUE</td>
+              <td class="footer-value footer-total-val">{{ formatAmount(page.totalAmount) }}</td>
+            </tr>
+          </tbody>
         </table>
 
         <!-- Signatories -->

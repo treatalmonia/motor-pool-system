@@ -70,27 +70,29 @@
         </div>
 
         <table class="pmc-info-table">
-          <tr>
-            <td class="info-label">Equipment/Facility Name</td>
-            <td class="info-value">
-              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.name }}</span>
-              <input v-else v-model="editableInfo.name" class="edit-input" />
-            </td>
-          </tr>
-          <tr>
-            <td class="info-label">EQF CODE</td>
-            <td class="info-value">
-              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.eqfCode }}</span>
-              <input v-else v-model="editableInfo.eqfCode" class="edit-input" />
-            </td>
-          </tr>
-          <tr>
-            <td class="info-label">Location</td>
-            <td class="info-value">
-              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.location }}</span>
-              <input v-else v-model="editableInfo.location" class="edit-input" />
-            </td>
-          </tr>
+          <tbody>
+            <tr>
+              <td class="info-label">Equipment/Facility Name</td>
+              <td class="info-value">
+                <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.name }}</span>
+                <input v-else v-model="editableInfo.name" class="edit-input" />
+              </td>
+            </tr>
+            <tr>
+              <td class="info-label">EQF CODE</td>
+              <td class="info-value">
+                <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.eqfCode }}</span>
+                <input v-else v-model="editableInfo.eqfCode" class="edit-input" />
+              </td>
+            </tr>
+            <tr>
+              <td class="info-label">Location</td>
+              <td class="info-value">
+                <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.location }}</span>
+                <input v-else v-model="editableInfo.location" class="edit-input" />
+              </td>
+            </tr>
+          </tbody>
         </table>
 
         <!-- Maintenance Objectives -->

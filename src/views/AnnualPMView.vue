@@ -764,7 +764,7 @@ function printProgram() {
       table.main { width: 100%; border-collapse: collapse; font-size: 9px; }
       table.main th { background: #1B5E20; color: white; padding: 4px 5px; border: 1px solid #ccc; text-align: center; font-size: 9px; }
       table.main td { vertical-align: middle; }
-    </style>
+    ${'</style>'}
   </head><body>
 
     <div class="header-wrap">

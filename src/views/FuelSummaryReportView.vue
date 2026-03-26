@@ -141,8 +141,12 @@
             </tr>
           </thead>
 
-        <tbody>
-            <tr v-for="(row, rIdx) in page.rows" :key="rIdx" :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'">
+          <tbody>
+            <tr
+              v-for="(row, rIdx) in page.rows"
+              :key="rIdx"
+              :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'"
+            >
               <!-- Date -->
               <td class="data-cell">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
@@ -158,54 +162,80 @@
                 <input v-else v-model="row.or_number" class="edit-input" />
               </td>
               <!-- Diesel: QTY -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-diesel-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.diesel_qty ? formatQty(row.diesel_qty) : '' }}
                 </div>
-                <input v-else v-model="row.diesel_qty" class="edit-input" type="number" step="0.01" />
+                <input
+                  v-else
+                  v-model="row.diesel_qty"
+                  class="edit-input"
+                  type="number"
+                  step="0.01"
+                />
               </td>
               <!-- Diesel: UNIT -->
-              <td class="data-cell">
+              <td class="data-cell td-diesel-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
-                  {{ row.diesel_qty ? (row.diesel_unit || 'LTRS.') : '' }}
+                  {{ row.diesel_qty ? row.diesel_unit || 'LTRS.' : '' }}
                 </div>
                 <input v-else v-model="row.diesel_unit" class="edit-input" />
               </td>
               <!-- Diesel: UNIT COST -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-diesel-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.diesel_qty ? formatCost(row.diesel_unit_price) : '' }}
                 </div>
-                <input v-else v-model="row.diesel_unit_price" class="edit-input" type="number" step="0.01" />
+                <input
+                  v-else
+                  v-model="row.diesel_unit_price"
+                  class="edit-input"
+                  type="number"
+                  step="0.01"
+                />
               </td>
               <!-- Diesel: AMOUNT -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-diesel-data">
                 {{ row.diesel_qty ? formatAmount(row.diesel_qty * row.diesel_unit_price) : '' }}
               </td>
               <!-- Gasoline: QTY -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-gasoline-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.gasoline_qty ? formatQty(row.gasoline_qty) : '' }}
                 </div>
-                <input v-else v-model="row.gasoline_qty" class="edit-input" type="number" step="0.01" />
+                <input
+                  v-else
+                  v-model="row.gasoline_qty"
+                  class="edit-input"
+                  type="number"
+                  step="0.01"
+                />
               </td>
               <!-- Gasoline: UNIT -->
-              <td class="data-cell">
+              <td class="data-cell td-gasoline-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
-                  {{ row.gasoline_qty ? (row.gasoline_unit || 'LTRS.') : '' }}
+                  {{ row.gasoline_qty ? row.gasoline_unit || 'LTRS.' : '' }}
                 </div>
                 <input v-else v-model="row.gasoline_unit" class="edit-input" />
               </td>
               <!-- Gasoline: UNIT COST -->
-              <td class="data-cell num-cell">
+              <td class="data-cell num-cell td-gasoline-data">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.gasoline_qty ? formatCost(row.gasoline_unit_price) : '' }}
                 </div>
-                <input v-else v-model="row.gasoline_unit_price" class="edit-input" type="number" step="0.01" />
+                <input
+                  v-else
+                  v-model="row.gasoline_unit_price"
+                  class="edit-input"
+                  type="number"
+                  step="0.01"
+                />
               </td>
               <!-- Gasoline: AMOUNT -->
-              <td class="data-cell num-cell">
-                {{ row.gasoline_qty ? formatAmount(row.gasoline_qty * row.gasoline_unit_price) : '' }}
+              <td class="data-cell num-cell td-gasoline-data">
+                {{
+                  row.gasoline_qty ? formatAmount(row.gasoline_qty * row.gasoline_unit_price) : ''
+                }}
               </td>
               <!-- Utilized By -->
               <td class="data-cell">
@@ -243,7 +273,7 @@
           </tbody>
         </table>
 
-      <!-- Footer totals -->
+        <!-- Footer totals -->
         <table class="fuel-footer-table">
           <tbody>
             <tr>
@@ -553,9 +583,10 @@ async function loadData() {
         rowMap[key].diesel_unit = tx.unit || 'LTRS.'
         rowMap[key].diesel_unit_price = tx.unit_price
       }
-      // Take utilized_by / vehicle from whichever row has it
+      // Take utilized_by / vehicle / fuel_charge_to from whichever row has it
       if (tx.utilized_by) rowMap[key].utilized_by = tx.utilized_by
       if (tx.vehicle) rowMap[key].vehicle = tx.vehicle
+      if (tx.account_code) rowMap[key].fuel_charge_to = tx.account_code
     })
 
     const rows = Object.values(rowMap).sort((a, b) => (a._sortDate > b._sortDate ? 1 : -1))
@@ -564,16 +595,6 @@ async function loadData() {
     const totalDieselQty = rows.reduce((s, r) => s + (Number(r.diesel_qty) || 0), 0)
     const totalGasolineQty = rows.reduce((s, r) => s + (Number(r.gasoline_qty) || 0), 0)
     const totalAmount = rows.reduce((s, r) => s + rowTotal(r), 0)
-
-    // Only show fuel_charge_to on first row of each unique value
-    let lastCharge = null
-    rows.forEach((r) => {
-      if (r.fuel_charge_to === lastCharge) {
-        r.fuel_charge_to = ''
-      } else {
-        lastCharge = r.fuel_charge_to
-      }
-    })
 
     // Build title
     const reportTitle = `SUMMARY OF FUEL CONSUMPTION — ${selectedBillingPeriod.value} — ${fundCluster}`
@@ -666,6 +687,8 @@ onMounted(async () => {
   border-collapse: collapse;
   font-size: 8.5px;
   margin-bottom: 8px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 .fuel-table th {
   border: 1px solid #aaa;
@@ -679,63 +702,143 @@ onMounted(async () => {
   vertical-align: middle;
 }
 
-/* Header base (DATE, OR#, UTILIZE BY, VEHICLE) */
-.th-base    { background: #1F4E79; color: white; }
-.th-diesel  { background: #1F4E79; color: white; }
-.th-gasoline { background: #1E5631; color: white; }
-.th-total   { background: #FFD966; color: #000; }
-.th-charge  { background: #70AD47; color: white; }
-.th-po      { background: #70AD47; color: white; }
+/* ── Header colors ── */
+/* DATE, OR#, UTILIZED BY, VEHICLE — white with dark text */
+.th-base {
+  background: #ffffff;
+  color: #000;
+}
+/* DIESEL group — sky blue; sub-headers — lighter blue */
+.th-diesel {
+  background: #1565c0;
+  color: white;
+}
+.sub-diesel {
+  background: #90caf9;
+  color: #0d2137;
+  font-weight: bold;
+}
+/* GASOLINE group — green; sub-headers — lighter green */
+.th-gasoline {
+  background: #2e7d32;
+  color: white;
+}
+.sub-gasoline {
+  background: #a5d6a7;
+  color: #1b3d1c;
+  font-weight: bold;
+}
+/* TOTAL AMOUNT DUE — yellow/gold */
+.th-total {
+  background: #f9a825;
+  color: #000;
+}
+/* FUEL CHARGE TO + PO# — white with dark text */
+.th-charge {
+  background: #ffffff;
+  color: #000;
+}
+.th-po {
+  background: #ffffff;
+  color: #000;
+}
 
-/* Sub-headers */
-.sub-diesel   { background: #BDD7EE; color: #000; }
-.sub-gasoline { background: #C6EFCE; color: #000; }
+/* ── Column widths ── */
+.col-date {
+  width: 50px;
+}
+.col-or {
+  width: 52px;
+}
+.sub-col {
+  width: 46px;
+}
+.col-utilize {
+  width: 90px;
+}
+.col-vehicle {
+  width: 90px;
+}
+.col-total   { width: 70px; text-align: center; }
+.col-charge {
+  width: 110px;
+}
+.col-po {
+  width: 80px;
+}
 
-/* Column widths — original */
-.col-date    { width: 50px; }
-.col-or      { width: 52px; }
-.sub-col     { width: 46px; }
-.col-utilize { width: 90px; }
-.col-vehicle { width: 90px; }
-.col-total   { width: 70px; text-align: right; }
-.col-charge  { width: 100px; }
-.col-po      { width: 80px; }
+.data-cell { padding: 3px 4px; min-height: 22px; text-align: center; }
+.num-cell  { text-align: center; }
 
-.data-cell { padding: 3px 4px; min-height: 22px; }
-.num-cell  { text-align: right; }
-
-/* Row striping */
-.row-even { background: #ffffff; }
-.row-odd  { background: #EBF3FB; }
-
-/* Colored data cells */
-.td-total-val  { font-weight: bold; background: #FFF2CC; }
-.td-charge-val { background: #E2EFDA; font-weight: bold; text-align: center; }
-.td-po-val     { background: #E2EFDA; font-weight: bold; text-align: center; }
+/* ── Data cell column colors ── */
+/* Diesel data cells — light sky blue */
+.td-diesel-data {
+  background: #e3f2fd;
+}
+/* Gasoline data cells — light green */
+.td-gasoline-data {
+  background: #e8f5e9;
+}
+/* Total Amount Due — light yellow */
+.td-total-val {
+  background: #fff9c4;
+  font-weight: bold;
+  color: #7b3f00;
+}
+/* Fuel Charge To + PO# — plain white, bold */
+.td-charge-val { background: #ffffff; font-weight: bold; font-size: 7.5px; text-align: center; vertical-align: middle; }
+.td-po-val     { background: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; }
 
 /* ── Footer totals ── */
 .fuel-footer-table {
-  width: 100%;
+  width: 50%;
+  margin-left: auto;
   border-collapse: collapse;
   font-size: 9px;
   margin-bottom: 16px;
 }
-.fuel-footer-table td { border: 1px solid #bbb; padding: 4px 8px; }
+.fuel-footer-table td {
+  border: 1px solid #aaa;
+  padding: 5px 10px;
+}
 .footer-label {
   font-weight: bold;
-  background: #f5f5f5;
-  text-align: right;
-  padding-right: 16px;
+  text-align: center;
+  padding-right: 0;
 }
-.footer-value { text-align: right; width: 120px; font-weight: bold; }
+.footer-value { text-align: center; width: 130px; font-weight: bold; }
 
-.footer-label-diesel  { background: #BDD7EE; color: #000; }
-.footer-value-diesel  { background: #BDD7EE; color: #000; }
-.footer-label-gasoline { background: #C6EFCE; color: #000; }
-.footer-value-gasoline { background: #C6EFCE; color: #000; }
-
-.footer-total-row .footer-label { background: #1F4E79; color: white; }
-.footer-total-val { background: #FFD966; color: #000; font-weight: bold; font-size: 10px; }
+/* Diesel footer — sky blue */
+.footer-label-diesel {
+  background: #1565c0;
+  color: #0d2137;
+}
+.footer-value-diesel {
+  background: #90caf9;
+  color: #0d2137;
+}
+/* Gasoline footer — light green */
+.footer-label-gasoline {
+  background: #2e7d32;
+  color: #1b3d1c;
+}
+.footer-value-gasoline {
+  background: #a5d6a7;
+  color: #1b3d1c;
+}
+/* Total footer — dark header + yellow value */
+.footer-total-row .footer-label {
+  background:#f9a825 ;
+  color: #000;
+  font-size: 10px;
+  font-weight: bold;
+}
+.footer-total-val {
+  background: #fff9c4 ;
+  color: #000;
+  font-weight: bold;
+  font-size: 11px;
+}
 
 /* ── Signatories ── */
 .fuel-signatories {
@@ -814,6 +917,11 @@ onMounted(async () => {
 /* ══════════════════════
    PRINT STYLES
 ══════════════════════ */
+@page {
+  size: landscape;
+  margin: 10mm 12mm;
+}
+
 @media print {
   .no-print {
     display: none !important;

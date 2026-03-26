@@ -122,7 +122,7 @@
           <v-col cols="12" sm="3">
             <v-select
               v-model="statusFilter"
-              :items="['All', 'Pending', 'Forwarded to Tech.', 'Completed', 'Overdue']"
+              :items="['All', 'Pending', 'Forwarded to Tech.', 'Completed']"
               label="Status"
               variant="outlined"
               density="compact"

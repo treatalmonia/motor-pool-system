@@ -405,7 +405,7 @@ const deleteDialog = ref(false)
 const isEditing = ref(false)
 const selectedRequest = ref(null)
 
-// TODO: always shows "—" for Area/Room
+
 // ---- FORM ----
 const defaultForm = {
   request_no: '',
@@ -524,7 +524,7 @@ async function generateRequestNo() {
   }
 
   const lastNo = data[0].request_no
-  const lastSequence = parseInt(lastNo.split('-')[2])
+  const lastSequence = parseInt(lastNo.split('-')[2]) || 0
   const nextSequence = String(lastSequence + 1).padStart(3, '0')
   return `${prefix}${nextSequence}`
 }

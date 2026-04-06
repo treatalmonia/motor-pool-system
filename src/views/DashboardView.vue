@@ -545,7 +545,7 @@ function formatDate(d) {
   })
 }
 function srColor(s) {
-  return { 'In Progress': 'warning', Completed: 'success', Cancelled: 'grey' }[s] || 'grey'
+  return { Pending: 'warning', 'In Progress': 'info', Completed: 'success', Cancelled: 'grey' }[s] || 'grey'
 }
 function daysUntil(d) {
   if (!d) return 0
@@ -975,7 +975,7 @@ async function loadAssetTable() {
         total_amount: Math.round(allAmt * 100) / 100,
       }
     })
-    .filter((r) => r.withdrawals > 0 || true) // show all assets
+    .filter(() => true) // show all assets, including those with no withdrawals
 
   loadingAssets.value = false
 }

@@ -35,68 +35,43 @@
 
     <!-- Summary Cards -->
 
+   <!-- Summary Cards -->
     <v-row class="mb-4">
-      <v-col cols="12" sm="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="48">
-              <v-icon>mdi-snowflake</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Total Records</p>
-              <p class="text-h5 font-weight-bold">{{ cleaningRecords.length }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="warning" variant="tonal" size="48">
-              <v-icon>mdi-clock-outline</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Pending</p>
-              <p class="text-h5 font-weight-bold">{{ pendingCount }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="info" variant="tonal" size="48">
-              <v-icon>mdi-account-wrench</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Forwarded to Tech.</p>
-              <p class="text-h5 font-weight-bold">{{ forwardedCount }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="2">
-        <v-card rounded="lg" elevation="0" border>
-          <v-card-text class="d-flex align-center ga-3">
-            <v-avatar color="success" variant="tonal" size="48">
-              <v-icon>mdi-check-circle</v-icon>
-            </v-avatar>
-            <div>
-              <p class="text-medium-emphasis text-body-2">Completed</p>
-              <p class="text-h5 font-weight-bold">{{ completedCount }}</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="3">
+      <v-col cols="12" sm="4">
         <v-card rounded="lg" elevation="0" border>
           <v-card-text class="d-flex align-center ga-3">
             <v-avatar color="error" variant="tonal" size="48">
               <v-icon>mdi-alert-circle</v-icon>
             </v-avatar>
             <div>
-              <p class="text-medium-emphasis text-body-2">Overdue</p>
-              <p class="text-h5 font-weight-bold">{{ overdueCount }}</p>
+              <p class="text-medium-emphasis text-body-2">Overdue Cleaning</p>
+              <p class="text-h5 font-weight-bold text-error">{{ overdueCount }}</p>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="d-flex align-center ga-3">
+            <v-avatar color="primary" variant="tonal" size="48">
+              <v-icon>mdi-calendar-today</v-icon>
+            </v-avatar>
+            <div>
+              <p class="text-medium-emphasis text-body-2">Due Today</p>
+              <p class="text-h5 font-weight-bold text-primary">{{ dueTodayCount }}</p>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="0" border>
+          <v-card-text class="d-flex align-center ga-3">
+            <v-avatar color="warning" variant="tonal" size="48">
+              <v-icon>mdi-clock-alert</v-icon>
+            </v-avatar>
+            <div>
+              <p class="text-medium-emphasis text-body-2">Due Soon</p>
+              <p class="text-h5 font-weight-bold text-warning">{{ dueSoonCount }}</p>
             </div>
           </v-card-text>
         </v-card>
@@ -122,7 +97,9 @@
           <v-col cols="12" sm="3">
             <v-select
               v-model="statusFilter"
-              :items="['All', 'Pending', 'Forwarded to Tech.', 'Completed', 'Overdue']"
+              :items="statusOptions"
+              item-title="title"
+              item-value="value"
               label="Status"
               variant="outlined"
               density="compact"
@@ -158,40 +135,59 @@
           no-data-text="No cleaning records found"
           items-per-page="10"
           rounded="lg"
+          :row-props="({ item }) => ({
+            style: { cursor: 'pointer', ...getRowStyle(item) },
+            onClick: () => viewRecord(item),
+            onDblclick: () => openEditDialog(item),
+          })"
         >
-          <!-- Custom row for overdue highlighting -->
-          <template v-slot:item="{ item, props }">
+          <!-- Last Cleaning column -->
+          <template v-slot:item.last_cleaning_date="{ item }">
+            {{ formatDate(item.last_cleaning_date) }}
+          </template>
 
-              <tr v-bind="props"
-              :class="isOverdue(item) ? (isDark ? 'bg-red-darken-4' : 'bg-red-lighten-5') : ''"
-              style="cursor:pointer"
-              @click="viewRecord(item)"
-              @dblclick="openEditDialog(item)"
-            >
-              <!-- Building -->
-              <td>{{ item.building }}</td>
+          <!-- Date Completed column -->
+          <template v-slot:item.date_accomplished="{ item }">
+            {{ formatDate(item.date_accomplished) }}
+          </template>
 
-              <!-- Area / Room -->
-              <td>{{ item.area_room }}</td>
+          <!-- Next Cleaning column -->
+          <template v-slot:item.next_cleaning_date="{ item }">
+            <span :class="{
+              'text-error font-weight-bold': getDateStatus(item) === 'overdue',
+              'text-primary font-weight-bold': getDateStatus(item) === 'due-today',
+              'text-warning font-weight-bold': getDateStatus(item) === 'due-soon',
+            }">
+              {{ formatDate(item.next_cleaning_date) }}
+            </span>
+          </template>
 
-              <!-- Last Cleaning -->
-              <td>{{ formatDate(item.last_cleaning_date) }}</td>
+          <!-- Conducted By column -->
+          <template v-slot:item.conducted_by="{ item }">
+            {{ item.conducted_by || '—' }}
+          </template>
 
-              <!-- Date Completed -->
-              <td>{{ formatDate(item.date_accomplished) }}</td>
-
-              <!-- Next Cleaning -->
-              <td>
-                <span :class="isOverdue(item) ? 'text-error font-weight-bold' : ''">
-                  {{ formatDate(item.next_cleaning_date) }}
-                </span>
-              </td>
-
-              <!-- Conducted By -->
-              <td>{{ item.conducted_by || '—' }}</td>
-
-              <!-- Status -->
-              <td>
+          <!-- Status column -->
+          <template v-slot:item.status="{ item }">
+            <div class="d-flex align-center ga-1">
+              <template v-if="item.status === 'Pending'">
+                <v-chip
+                  :color="statusColor(item.status)"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ item.status }}
+                </v-chip>
+                <v-btn
+                  size="x-small"
+                  color="success"
+                  variant="tonal"
+                  icon="mdi-check"
+                  title="Mark as Completed"
+                  @click.stop="quickUpdateStatus(item, 'Completed')"
+                />
+              </template>
+              <template v-else>
                 <v-menu>
                   <template v-slot:activator="{ props }">
                     <v-chip
@@ -214,14 +210,14 @@
                     />
                   </v-list>
                 </v-menu>
-              </td>
+              </template>
+            </div>
+          </template>
 
-              <!-- Actions -->
-              <td class="text-center">
-                <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
-                <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
-              </td>
-            </tr>
+          <!-- Actions column -->
+          <template v-slot:item.actions="{ item }">
+            <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click.stop="openEditDialog(item)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click.stop="openDeleteDialog(item)" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -378,31 +374,97 @@
         </v-card-title>
 
         <v-card-text class="pa-4" v-if="selectedRecord">
-          <!-- Badges -->
+          <!-- Status badges -->
           <div class="mb-4 d-flex ga-2 flex-wrap">
             <v-chip :color="statusColor(selectedRecord.status)" size="large" variant="tonal">
               {{ selectedRecord.status }}
             </v-chip>
-            <v-chip v-if="isOverdue(selectedRecord)" color="error" size="large" variant="tonal">
-              <v-icon start>mdi-alert</v-icon>
-              OVERDUE
+            <v-chip v-if="getDateStatus(selectedRecord) === 'overdue'" color="error" size="large" variant="tonal">
+              <v-icon start>mdi-alert</v-icon>OVERDUE
+            </v-chip>
+            <v-chip v-if="getDateStatus(selectedRecord) === 'due-today'" color="primary" size="large" variant="tonal">
+              <v-icon start>mdi-calendar-today</v-icon>DUE TODAY
+            </v-chip>
+            <v-chip v-if="getDateStatus(selectedRecord) === 'due-soon'" color="warning" size="large" variant="tonal">
+              <v-icon start>mdi-clock-alert</v-icon>DUE SOON
             </v-chip>
           </div>
 
-          <v-list lines="two" density="compact">
-            <v-list-item subtitle="Building" :title="selectedRecord.building || '—'" />
-            <v-list-item subtitle="Area / Room" :title="selectedRecord.area_room || '—'" />
-            <v-list-item
-              subtitle="Last Cleaning Date"
-              :title="selectedRecord.last_cleaning_date || '—'"
-            />
-            <v-list-item
-              subtitle="Next Cleaning Date"
-              :title="selectedRecord.next_cleaning_date || '—'"
-            />
-            <v-list-item subtitle="Conducted By" :title="selectedRecord.conducted_by || '—'" />
-            <v-list-item subtitle="Remarks" :title="selectedRecord.remarks || '—'" />
-          </v-list>
+          <!-- Quick status update -->
+          <div class="d-flex ga-2 flex-wrap mb-4 align-center">
+            <span class="text-caption text-medium-emphasis">Quick update:</span>
+            <v-chip
+              v-for="s in ['Pending', 'Forwarded to Tech.', 'Completed']"
+              :key="s"
+              :color="statusColor(s)"
+              :variant="selectedRecord.status === s ? 'flat' : 'outlined'"
+              size="small"
+              style="cursor: pointer"
+              @click="quickUpdateStatus(selectedRecord, s); viewDialog = false"
+            >
+              {{ s }}
+            </v-chip>
+          </div>
+
+          <!-- Section: Location & Unit -->
+          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">LOCATION & UNIT</p>
+          <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
+            <v-card-text class="pa-3">
+              <v-row density="comfortable">
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Building</p>
+                  <p class="text-body-2 font-weight-medium">{{ selectedRecord.building || '—' }}</p>
+                </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Area / Room</p>
+                  <p class="text-body-2 font-weight-medium">{{ selectedRecord.area_room || '—' }}</p>
+                </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Conducted By</p>
+                  <p class="text-body-2 font-weight-medium">{{ selectedRecord.conducted_by || '—' }}</p>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+
+          <!-- Section: Cleaning Schedule -->
+          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">CLEANING SCHEDULE</p>
+          <v-card variant="tonal" color="grey" rounded="lg" class="mb-4">
+            <v-card-text class="pa-3">
+              <v-row density="comfortable">
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Last Cleaning Date</p>
+                  <p class="text-body-2 font-weight-medium">{{ formatDate(selectedRecord.last_cleaning_date) }}</p>
+                </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Date Completed</p>
+                  <p class="text-body-2 font-weight-medium">{{ formatDate(selectedRecord.date_accomplished) }}</p>
+                </v-col>
+                <v-col cols="6">
+                  <p class="text-caption text-medium-emphasis">Next Cleaning Date</p>
+                  <p
+                    class="text-body-2 font-weight-bold"
+                    :class="{
+                      'text-error': getDateStatus(selectedRecord) === 'overdue',
+                      'text-primary': getDateStatus(selectedRecord) === 'due-today',
+                      'text-warning': getDateStatus(selectedRecord) === 'due-soon',
+                      'text-success': getDateStatus(selectedRecord) === 'ok',
+                    }"
+                  >
+                    {{ formatDate(selectedRecord.next_cleaning_date) }}
+                  </p>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+
+          <!-- Section: Remarks -->
+          <p class="text-caption text-medium-emphasis font-weight-bold mb-2">REMARKS</p>
+          <v-card variant="tonal" color="grey" rounded="lg">
+            <v-card-text class="pa-3">
+              <p class="text-body-2">{{ selectedRecord.remarks || 'No remarks.' }}</p>
+            </v-card-text>
+          </v-card>
         </v-card-text>
 
         <v-divider />
@@ -538,8 +600,6 @@
     </v-dialog>
 
     <!-- Snackbar -->
-
-    <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -672,16 +732,57 @@ const headers = [
 ]
 
 // ---- COMPUTED ----
-const pendingCount = computed(
-  () => cleaningRecords.value.filter((r) => r.status === 'Pending').length,
+
+// Date-based urgency status — mirrors VehiclePMView.getDateStatus()
+// Rules: past due = 'overdue', exactly today = 'due-today', within 7 days = 'due-soon', else 'ok'
+// Only non-Completed records can be overdue or due-soon
+function getDateStatus(record) {
+  if (record.status === 'Completed') return 'ok'
+  if (!record.next_cleaning_date) return 'ok'
+  const now = new Date(today)
+  const due = new Date(record.next_cleaning_date + 'T00:00:00')
+  const diffDays = Math.round((due - now) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return 'overdue'
+  if (diffDays === 0) return 'due-today'
+  if (diffDays <= 7) return 'due-soon'
+  return 'ok'
+}
+
+// Row background color — same logic as VehiclePMView
+function getRowStyle(record) {
+  const s = getDateStatus(record)
+  const dark = isDark.value
+  if (s === 'overdue')   return { backgroundColor: dark ? '#3b1212' : '#fff1f1' }
+  if (s === 'due-today') return { backgroundColor: dark ? '#0d2137' : '#e3f2fd' }
+  if (s === 'due-soon')  return { backgroundColor: dark ? '#2d2a0a' : '#fffde7' }
+  return {}
+}
+
+// Summary card counts — based on date status, not stored status
+const overdueCount = computed(
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'overdue').length,
 )
-const forwardedCount = computed(
-  () => cleaningRecords.value.filter((r) => r.status === 'Forwarded to Tech.').length,
+const dueTodayCount = computed(
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'due-today').length,
 )
-const completedCount = computed(
-  () => cleaningRecords.value.filter((r) => r.status === 'Completed').length,
+const dueSoonCount = computed(
+  () => filteredRecords.value.filter((r) => getDateStatus(r) === 'due-soon').length,
 )
-const overdueCount = computed(() => cleaningRecords.value.filter((r) => isOverdue(r)).length)
+
+// Status filter dropdown with live counts
+const statusOptions = computed(() => {
+  const statuses = ['Pending', 'Forwarded to Tech.', 'Completed', 'Overdue']
+  const allCount = cleaningRecords.value.length
+  return [
+    { title: `All (${allCount})`, value: 'All' },
+    ...statuses.map((s) => {
+      const count = s === 'Overdue'
+        ? cleaningRecords.value.filter((r) => getDateStatus(r) === 'overdue').length
+        : cleaningRecords.value.filter((r) => r.status === s).length
+      return { title: `${s} (${count})`, value: s }
+    }),
+  ]
+})
 
 const filteredAcUnits = computed(() => {
   if (!selectedBuilding.value) return []
@@ -704,7 +805,9 @@ const filteredRecords = computed(() => {
       return yr === yearFilter.value
     })
   }
-  if (statusFilter.value !== 'All') {
+  if (statusFilter.value === 'Overdue') {
+    result = result.filter((r) => getDateStatus(r) === 'overdue')
+  } else if (statusFilter.value !== 'All') {
     result = result.filter((r) => r.status === statusFilter.value)
   }
   if (buildingFilter.value !== 'All') {
@@ -738,11 +841,6 @@ function onStatusChange(newStatus) {
   if (newStatus === 'Completed' && !form.value.date_accomplished) {
     form.value.date_accomplished = today
   }
-}
-function isOverdue(record) {
-  if (record.status === 'Completed') return false
-  if (!record.next_cleaning_date) return false
-  return record.next_cleaning_date < today
 }
 
 function statusColor(status) {

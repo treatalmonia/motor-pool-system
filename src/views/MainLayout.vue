@@ -129,7 +129,7 @@
           to="/fuel-summary-report"
           rounded="lg"
         />
-      <v-list-item
+        <v-list-item
           prepend-icon="mdi-file-document-edit"
           title="Annual PM Program"
           to="/annual-pm"
@@ -139,7 +139,7 @@
     </v-navigation-drawer>
 
     <!-- Top Bar -->
-    <v-app-bar elevation="1" :width="drawer ? 'calc(100% - 260px)' : '100%'">
+    <v-app-bar elevation="1" :width="drawer ? 'calc(100% - 300px)' : '100%'">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>{{ currentPageTitle }}</v-app-bar-title>
       <template v-slot:append>

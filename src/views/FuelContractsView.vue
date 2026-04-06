@@ -474,11 +474,7 @@
                 clearable
                 @update:modelValue="onPONumberUpdate"
               />
-              <div v-if="getSavedOptions('po_number').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip v-for="opt in getSavedOptions('po_number')" :key="opt.id" size="small" closable @click:close="deleteDropdownOption(opt.id)">
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+
             </v-col>
 
             <!-- Account Code -->
@@ -494,11 +490,7 @@
                 clearable
                 @update:modelValue="onAccountCodeUpdate"
               />
-              <div v-if="getSavedOptions('account_code').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip v-for="opt in getSavedOptions('account_code')" :key="opt.id" size="small" closable @click:close="deleteDropdownOption(opt.id)">
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+
             </v-col>
             <!-- Cost Center Head -->
             <v-col cols="12" sm="6">
@@ -513,17 +505,7 @@
                 clearable
                 @update:modelValue="onCostCenterHeadUpdate"
               />
-              <div v-if="getSavedOptions('cost_center_head').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('cost_center_head')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+
             </v-col>
 
             <!-- Contract Amount -->
@@ -980,14 +962,8 @@ async function addDropdownOption(category, value) {
   if (!error && data) dropdownOptions.value.push(data)
 }
 
-async function deleteDropdownOption(id) {
-  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
-  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
-}
 
-function getSavedOptions(category) {
-  return dropdownOptions.value.filter((o) => o.category === category)
-}
+
 
 const costCenterHeadOptions = computed(() => {
   const saved = dropdownOptions.value

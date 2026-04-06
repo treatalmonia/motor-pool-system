@@ -89,7 +89,7 @@
       <table class="efhr-header-table">
         <tbody>
         <tr>
-          <td class="hdr-label">Equipment / Facility Name</td>
+          <td class="hdr-label">Equipment</td>
           <td class="hdr-value" colspan="3">
             <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
               editableInfo.name

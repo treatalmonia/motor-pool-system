@@ -2,7 +2,11 @@
   <v-app>
     <!-- Sidebar Navigation -->
     <v-navigation-drawer v-model="drawer" permanent width="300" color="#003300">
-      <v-list-item title="Fleet Manager System" subtitle="CSU General Services" nav class="py-4">
+      <v-list-item title="Fleet Manager System" nav class="py-4">
+        <template v-slot:subtitle>
+          <span style="color: #a5d6a7; font-size: 11px;">Transportation Port</span><br>
+          <span style="color: #81c784; font-size: 10px;">CSU General Services</span>
+        </template>
         <template v-slot:prepend>
           <v-icon color="primary" size="32">mdi-car-wrench</v-icon>
         </template>
@@ -12,12 +16,12 @@
 
       <v-list density="compact" nav>
         <!-- ── MAIN ── -->
-        <v-list-subheader>MAIN</v-list-subheader>
+        <v-list-subheader style="color: #a5d6a7 !important; font-weight: 700; font-size: 10px; letter-spacing: 1px;">MAIN</v-list-subheader>
 
         <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" rounded="lg" />
 
         <!-- ── MOTOR POOL ── -->
-        <v-list-subheader>MOTOR POOL</v-list-subheader>
+        <v-list-subheader style="color: #a5d6a7 !important; font-weight: 700; font-size: 10px; letter-spacing: 1px;">MOTOR POOL</v-list-subheader>
 
         <v-list-item prepend-icon="mdi-car" title="Asset Registry" to="/vehicles" rounded="lg" />
         <v-list-item
@@ -68,7 +72,7 @@
         />
 
         <!-- ── AIR CONDITIONER ── -->
-        <v-list-subheader>AIR CONDITIONER</v-list-subheader>
+        <v-list-subheader style="color: #a5d6a7 !important; font-weight: 700; font-size: 10px; letter-spacing: 1px;">AIR CONDITIONER</v-list-subheader>
 
         <v-list-item
           prepend-icon="mdi-air-conditioner"
@@ -91,7 +95,7 @@
 
         <!-- ── FUEL MONITORING ── -->
         <!-- Renamed from "FUEL MANAGEMENT" to match the new module naming -->
-        <v-list-subheader>FUEL MONITORING</v-list-subheader>
+        <v-list-subheader style="color: #a5d6a7 !important; font-weight: 700; font-size: 10px; letter-spacing: 1px;">FUEL MONITORING</v-list-subheader>
 
         <!-- Fuel Allocation Monitoring: renamed from "Fuel Contracts" -->
         <v-list-item
@@ -109,7 +113,7 @@
         />
 
         <!-- ── PRINTABLE REPORTS ── -->
-        <v-list-subheader>PRINTABLE REPORTS</v-list-subheader>
+        <v-list-subheader style="color: #a5d6a7 !important; font-weight: 700; font-size: 10px; letter-spacing: 1px;">PRINTABLE REPORTS</v-list-subheader>
 
         <v-list-item
           prepend-icon="mdi-clipboard-check"

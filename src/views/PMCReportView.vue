@@ -4,7 +4,7 @@
       <v-col>
         <div class="d-flex align-center justify-space-between">
           <div>
-            <h2 class="text-h5 font-weight-bold">Preventive Maintenance Checklist</h2>
+            <h2 class="text-h5 font-weight-bold">Equipment Preventive Maintenance Checklist</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">Generate printable PMC report per vehicle per year</p>
           </div>
           <v-btn variant="outlined" prepend-icon="mdi-printer" @click="printReport" :disabled="!selectedVehicle">
@@ -65,14 +65,14 @@
         <ReportHeader variant="standard" />
 
         <div class="pmc-title-block">
-          <div class="pmc-title">PREVENTIVE MAINTENANCE CHECKLIST</div>
+          <div class="pmc-title">EQUIPMENT PREVENTIVE MAINTENANCE CHECKLIST</div>
           <div class="pmc-subtitle">For the year {{ selectedYear }}</div>
         </div>
 
         <table class="pmc-info-table">
           <tbody>
             <tr>
-              <td class="info-label">Equipment/Facility Name</td>
+              <td class="info-label">Equipment</td>
               <td class="info-value">
                 <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.name }}</span>
                 <input v-else v-model="editableInfo.name" class="edit-input" />
@@ -173,6 +173,17 @@
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
+          <div class="signatory-item">
+            <span class="signatory-label">Noted by:</span>
+            <div class="signatory-name">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.notedByName }}</span>
+              <input v-else v-model="editableInfo.notedByName" class="edit-input" />
+            </div>
+            <div class="signatory-title">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.notedByTitle }}</span>
+              <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
+            </div>
+          </div>
         </div>
         <div class="form-code"><span>F-GEN-PMC-003a</span><span>Rev. 3 10/19/2023</span></div>
       </div>
@@ -242,6 +253,17 @@
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
+          <div class="signatory-item">
+            <span class="signatory-label">Noted by:</span>
+            <div class="signatory-name">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.notedByName }}</span>
+              <input v-else v-model="editableInfo.notedByName" class="edit-input" />
+            </div>
+            <div class="signatory-title">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.notedByTitle }}</span>
+              <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
+            </div>
+          </div>
         </div>
         <div class="form-code"><span>F-GEN-PMC-003a</span><span>Rev. 3 10/19/2023</span></div>
       </div>
@@ -277,6 +299,8 @@ const editableInfo = ref({
   location:        'CARAGA STATE UNIVERSITY, MAIN CAMPUS',
   reviewedByName:  'ENGR. ENA TIU-IBARRA',
   reviewedByTitle: 'AO III, General Services',
+  notedByName:     'ENGR. MARIEL M. DELO',
+  notedByTitle:    'Director, General Services',
 })
 
 const objectives = ref([
@@ -535,8 +559,8 @@ onMounted(async () => {
 .edit-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9.5px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; }
 .cell-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; resize: none; }
 .cell-text { white-space: pre-wrap; word-break: break-word; }
-.pmc-signatory-block { display: flex; justify-content: flex-start; margin-top: 16px; margin-bottom: 8px; }
-.signatory-item { min-width: 280px; }
+.pmc-signatory-block { display: flex; justify-content: flex-start; gap: 80px; margin-top: 16px; margin-bottom: 8px; }
+.signatory-item { min-width: 260px; }
 .signatory-label { font-size: 10px; font-weight: bold; margin-right: 8px; }
 .signatory-name { margin-top: 24px; border-top: 1px solid #333; font-weight: bold; font-size: 10px; padding-top: 2px; min-width: 240px; }
 .signatory-title { font-size: 9.5px; color: #333; margin-top: 2px; }

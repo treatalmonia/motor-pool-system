@@ -158,26 +158,12 @@
                 </td>
                 <td class="comp-cell">{{ row.component }}</td>
                 <td class="task-cell">{{ row.task }}</td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_daily" size="14" color="success">mdi-check-bold</v-icon>
-                </td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_weekly" size="14" color="success">mdi-check-bold</v-icon>
-                </td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_monthly" size="14" color="success">mdi-check-bold</v-icon>
-                </td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_quarterly" size="14" color="success"
-                    >mdi-check-bold</v-icon
-                  >
-                </td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_biannual" size="14" color="success">mdi-check-bold</v-icon>
-                </td>
-                <td class="freq-cell">
-                  <v-icon v-if="row.freq_annual" size="14" color="success">mdi-check-bold</v-icon>
-                </td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_daily }"></td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_weekly }"></td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_monthly }"></td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_quarterly }"></td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_biannual }"></td>
+                <td class="freq-cell" :class="{ 'freq-checked': row.freq_annual }"></td>
                 <td class="resp-cell">{{ row.responsible }}</td>
                 <td class="rem-cell">{{ row.remarks }}</td>
                 <td class="act-cell">
@@ -909,6 +895,9 @@ onMounted(async () => {
 }
 .s-act {
   width: 80px;
+}
+.freq-checked {
+  background-color: #f9dc07 !important;
 }
 
 /* Objectives */

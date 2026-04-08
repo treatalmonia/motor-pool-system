@@ -100,7 +100,7 @@
             <tr>
               <th rowspan="2" class="col-po">P.O. #</th>
               <th rowspan="2" class="col-account">ACCOUNT CODE / COST CENTER</th>
-              <th rowspan="2" class="col-amount">ACCOUNT AMOUNT</th>
+              <th rowspan="2" class="col-amount">CONTRACT AMOUNT</th>
               <th :colspan="MONTHS.length" class="group-consumption">CONSUMPTION</th>
               <th rowspan="2" class="col-balance">BALANCE</th>
             </tr>
@@ -201,8 +201,10 @@
 
         <!-- Form code -->
         <div class="form-code">
-          <span>F-GEN-PMC-003a <br>
-Rev. 3 10/19/2023</span>
+          <span
+            >F-GEN-PMC-003a <br />
+            Rev. 3 10/19/2023</span
+          >
         </div>
       </div>
     </div>

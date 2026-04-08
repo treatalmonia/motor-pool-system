@@ -133,6 +133,15 @@
           to="/fuel-summary-report"
           rounded="lg"
         />
+
+        <v-list-item
+          prepend-icon="mdi-file-table"
+          title="Fuel Balance Report"
+          to="/fuel-balance-report"
+          rounded="lg"
+        />
+
+
         <v-list-item
           prepend-icon="mdi-file-document-edit"
           title="Annual PM Program"

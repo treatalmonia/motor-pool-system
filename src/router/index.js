@@ -76,7 +76,7 @@ const router = createRouter({
           component: () => import('../views/FuelTransactionsView.vue'),
         },
 
-       
+
 
 
         // Keep the old fuel-summary-report route alive so any existing
@@ -95,11 +95,14 @@ const router = createRouter({
           name: 'PMCReport',
           component: () => import('../views/PMCReportView.vue'),
         },
+
+
         {
           path: 'efhr-report',
           name: 'EFHRReport',
           component: () => import('../views/EFHRReportView.vue'),
         },
+        { path: '/fuel-balance-report', component: () => import('../views/FuelBalanceReportView.vue') },
       ],
     },
   ],

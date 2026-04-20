@@ -720,78 +720,84 @@
       <!--    Replaces the heavy full data-table              -->
       <!-- ══════════════════════════════════════════════════ -->
       <div class="section-label mb-3">
-        <span>Top Vehicle Consumption — FY {{ selectedYear }}</span>
+        <span>Vehicle Consumption — FY {{ selectedYear }}</span>
       </div>
       <v-row density="comfortable" class="mb-4">
         <v-col cols="12">
-          <v-card rounded="lg" elevation="0" border class="kpi-card">
+          <v-card rounded="lg" elevation="0" border>
             <v-card-text class="pa-4">
-              <div v-if="top5Assets.length === 0" class="empty-state-panel">
-                <v-icon size="36" color="grey-lighten-1" class="mb-2">mdi-car-outline</v-icon>
-                <p class="text-caption text-medium-emphasis mb-3">
-                  No fuel transactions recorded yet
-                </p>
-                <v-btn
-                  size="small"
-                  variant="tonal"
-                  color="primary"
-                  to="/fuel-transactions"
-                  prepend-icon="mdi-plus"
-                >
-                  Add Transaction
-                </v-btn>
-              </div>
-              <div v-else>
-                <div
-                  v-for="(asset, i) in top5Assets"
-                  :key="asset.id"
-                  class="top5-row d-flex align-center ga-3 py-2 clickable-row"
-                  @click="$router.push('/fuel-transactions')"
-                >
-                  <div class="top5-rank text-caption font-weight-bold text-medium-emphasis">
-                    {{ i + 1 }}
+              <div class="d-flex align-center justify-space-between mb-3 flex-wrap ga-2">
+                <div>
+                  <div class="text-subtitle-2 font-weight-bold">
+                    Vehicle Consumption — {{ selectedYear }}
                   </div>
+                  <div class="text-caption text-medium-emphasis">
+                    Withdrawals, liters consumed, and total amount per asset
+                  </div>
+                </div>
+                <div class="d-flex ga-2 align-center flex-wrap">
+                  <v-btn-toggle
+                    v-model="assetTypeFilterDash"
+                    mandatory
+                    density="compact"
+                    variant="outlined"
+                    color="primary"
+                    rounded="lg"
+                  >
+                    <v-btn value="All" size="small">All</v-btn>
+                    <v-btn value="Vehicle" size="small">Vehicle</v-btn>
+                    <v-btn value="Non-Vehicular" size="small">Non-Vehicle</v-btn>
+                  </v-btn-toggle>
+                  <v-text-field
+                    v-model="assetSearch"
+                    placeholder="Search asset..."
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    clearable
+                    style="max-width: 200px"
+                  />
+                </div>
+              </div>
+              <v-data-table
+                :headers="assetTableHeaders"
+                :items="filteredAssetRows"
+                density="compact"
+                :items-per-page="10"
+                class="asset-table"
+                :sort-by="[{ key: 'total_liters', order: 'desc' }]"
+                :row-props="({ item }) => item.withdrawals === 0 ? { class: 'row-inactive' } : {}"
+              >
+                <template #item.asset_type="{ item }">
                   <v-chip
-                    :color="asset.asset_type === 'Vehicle' ? 'primary' : 'warning'"
+                    :color="item.asset_type === 'Vehicle' ? 'primary' : 'warning'"
                     size="x-small"
                     variant="tonal"
-                    class="flex-shrink-0"
                   >
-                    {{ asset.asset_type === 'Vehicle' ? 'V' : 'NV' }}
+                    {{ item.asset_type }}
                   </v-chip>
-                  <div class="flex-grow-1 min-width-0">
-                    <div class="text-body-2 font-weight-medium text-truncate">
-                      {{ asset.asset_name }}
-                    </div>
-                    <div class="top5-bar-track mt-1">
-                      <div
-                        class="top5-bar-fill"
-                        :style="`width: ${asset.pct}%; background: ${asset.asset_type === 'Vehicle' ? '#1565c0' : '#c9960c'}`"
-                      />
-                    </div>
-                  </div>
-                  <div class="text-right flex-shrink-0">
-                    <div class="text-body-2 font-weight-bold">
-                      {{ formatNum(asset.total_liters) }} L
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      {{ formatCurrency(asset.total_amount) }}
-                    </div>
-                  </div>
-                </div>
-                <v-divider class="my-3" />
-                <div class="d-flex justify-end">
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="primary"
-                    to="/fuel-transactions"
-                    append-icon="mdi-arrow-right"
-                  >
-                    View All Transactions
-                  </v-btn>
-                </div>
-              </div>
+                </template>
+                <template #item.fuel_type="{ item }">
+                  <span class="text-caption">{{ item.fuel_type }}</span>
+                </template>
+                <template #item.total_liters="{ item }">
+                  <span class="font-weight-medium">{{ formatNum(item.total_liters) }} L</span>
+                </template>
+                <template #item.total_amount="{ item }">
+                  <span class="font-weight-medium">{{ formatCurrency(item.total_amount) }}</span>
+                </template>
+                <template #item.diesel_liters="{ item }">
+                  <span class="text-caption">{{
+                    item.diesel_liters > 0 ? formatNum(item.diesel_liters) + ' L' : '—'
+                  }}</span>
+                </template>
+                <template #item.gasoline_liters="{ item }">
+                  <span class="text-caption">{{
+                    item.gasoline_liters > 0 ? formatNum(item.gasoline_liters) + ' L' : '—'
+                  }}</span>
+                </template>
+              </v-data-table>
             </v-card-text>
           </v-card>
         </v-col>
@@ -820,6 +826,59 @@ function updateRefreshTime() {
 
 // ── Single loading flag ──
 const loadingAll = ref(true)
+const allFuelTx = ref([])
+const allAssets = ref([])
+
+// ── Asset consumption table ──
+const assetTypeFilterDash = ref('All')
+const assetSearch = ref('')
+const assetTableHeaders = [
+  { title: 'Asset', key: 'asset_name', sortable: true },
+  { title: 'Type', key: 'asset_type', sortable: true },
+  { title: 'Withdrawals', key: 'withdrawals', sortable: true, align: 'end' },
+  { title: 'Diesel (L)', key: 'diesel_liters', sortable: true, align: 'end' },
+  { title: 'Gasoline (L)', key: 'gasoline_liters', sortable: true, align: 'end' },
+  { title: 'Total (L)', key: 'total_liters', sortable: true, align: 'end' },
+  { title: 'Total Amount', key: 'total_amount', sortable: true, align: 'end' },
+]
+const filteredAssetRows = computed(() => {
+  // Build per-asset summary from ALL raw fuel transactions for the selected year
+  const map = new Map()
+  ;(allFuelTx.value || []).forEach((t) => {
+    const name = t.vehicle?.trim()
+    if (!name) return
+    const assetMatch = (allAssets.value || []).find(a => a.asset_name?.trim().toUpperCase() === name.toUpperCase())
+const lookedUpType = assetMatch?.asset_type || (t.utilization_type === 'Vehicular' ? 'Vehicle' : 'Non-Vehicular')
+if (!map.has(name)) {
+  map.set(name, {
+    asset_name: name,
+    asset_type: lookedUpType,
+        withdrawals: 0,
+        diesel_liters: 0,
+        gasoline_liters: 0,
+        total_liters: 0,
+        total_amount: 0,
+      })
+    }
+    const row = map.get(name)
+    row.withdrawals += 1
+    row.total_liters += t.quantity || 0
+    row.total_amount += t.total_amount || 0
+    if (t.fuel_type === 'Diesel') row.diesel_liters += t.quantity || 0
+    else if (t.fuel_type === 'Gasoline') row.gasoline_liters += t.quantity || 0
+  })
+
+  let rows = [...map.values()]
+
+  if (assetTypeFilterDash.value === 'Vehicle') rows = rows.filter((r) => r.asset_type === 'Vehicle')
+  else if (assetTypeFilterDash.value === 'Non-Vehicular')
+    rows = rows.filter((r) => r.asset_type === 'Non-Vehicular')
+  if (assetSearch.value) {
+    const q = assetSearch.value.toLowerCase()
+    rows = rows.filter((r) => r.asset_name?.toLowerCase().includes(q))
+  }
+  return rows.sort((a, b) => b.total_liters - a.total_liters)
+})
 
 // ── KPI cards — each links to its module ──
 const kpiCards = ref([
@@ -888,16 +947,7 @@ const dieselPct = computed(() => {
   return Math.round((fuelStats.value.dieselLiters / total) * 100)
 })
 
-// ── Top 5 assets by liters ──
-const assetRows = ref([])
-const top5Assets = computed(() => {
-  const withFuel = assetRows.value.filter((r) => r.total_liters > 0)
-  const maxL = withFuel.length > 0 ? Math.max(...withFuel.map((r) => r.total_liters)) : 1
-  return withFuel
-    .sort((a, b) => b.total_liters - a.total_liters)
-    .slice(0, 5)
-    .map((r) => ({ ...r, pct: Math.round((r.total_liters / maxL) * 100) }))
-})
+
 
 // ── SR, PM, AC ──
 const recentSR = ref([])
@@ -1076,24 +1126,7 @@ async function loadAll() {
   }
 
   // ── Asset rows (for Top 5) ──
-  assetRows.value = allVehicles.map((v) => {
-    const nm = (v.asset_name || '').toLowerCase()
-    const matching = txRows.filter((r) => (r.vehicle || '').toLowerCase().includes(nm))
-    const dL = matching
-      .filter((r) => r.fuel_type === 'Diesel')
-      .reduce((s, r) => s + (Number(r.quantity) || 0), 0)
-    const gL = matching
-      .filter((r) => r.fuel_type === 'Gasoline')
-      .reduce((s, r) => s + (Number(r.quantity) || 0), 0)
-    const allAmt = matching.reduce((s, r) => s + (Number(r.total_amount) || 0), 0)
-    return {
-      id: v.id,
-      asset_name: v.asset_name,
-      asset_type: v.asset_type,
-      total_liters: Math.round((dL + gL) * 100) / 100,
-      total_amount: Math.round(allAmt * 100) / 100,
-    }
-  })
+ 
 
   // ── Fuel budget ──
   const consumedMap = new Map()
@@ -1192,7 +1225,14 @@ async function loadAll() {
   upcomingACCleaning.value = acRes.data || []
 
   updateRefreshTime()
-  loadingAll.value = false
+ allFuelTx.value = txRows
+
+const { data: vehicleTypeData } = await supabase
+  .from('vehicles')
+  .select('asset_name, asset_type')
+allAssets.value = vehicleTypeData || []
+
+loadingAll.value = false
 }
 
 onMounted(() => loadAll())

@@ -187,63 +187,65 @@
     </v-card>
 
     <!-- Detail Popup -->
-    <transition name="ml-fade">
-      <div v-if="detailOpen" class="ml-overlay" @click.self="detailOpen = false">
-        <div class="ml-detail">
-          <button class="ml-detail__close" @click="detailOpen = false">✕</button>
-          <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
-          <h3 class="ml-detail__title">Service Record</h3>
-          <div class="ml-detail__grid">
-            <!-- WHAT: Shows the date this maintenance was performed -->
-            <!-- WHY: current_odometer removed — it was redundant and the field no longer exists -->
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Date Conducted</span>
-              <span class="ml-detail__val">
-                {{ formatDate(detailRecord?.date_performed) || '—' }}
-              </span>
-            </div>
+    <Teleport to="body">
+      <transition name="ml-fade">
+        <div v-if="detailOpen" class="ml-overlay" @click.self="detailOpen = false">
+          <div class="ml-detail">
+            <button class="ml-detail__close" @click="detailOpen = false">✕</button>
+            <p class="ml-detail__eyebrow">{{ detailVehicle }} · {{ detailTask }}</p>
+            <h3 class="ml-detail__title">Service Record</h3>
+            <div class="ml-detail__grid">
+              <!-- WHAT: Shows the date this maintenance was performed -->
+              <!-- WHY: current_odometer removed — it was redundant and the field no longer exists -->
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Date Conducted</span>
+                <span class="ml-detail__val">
+                  {{ formatDate(detailRecord?.date_performed) || '—' }}
+                </span>
+              </div>
 
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Odometer Reading</span>
-              <span class="ml-detail__val">
-                {{
-                  detailRecord?.odometer_reading
-                    ? Number(detailRecord.odometer_reading).toLocaleString() + ' km'
-                    : '—'
-                }}
-              </span>
-            </div>
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Mechanic / Conducted By</span>
-              <span class="ml-detail__val">{{ detailRecord?.conducted_by || '—' }}</span>
-            </div>
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Next Due Date</span>
-              <span
-                class="ml-detail__val"
-                :class="detailRecord?.next_due_date < today ? 'ml-detail__val--overdue' : ''"
-              >
-                {{ formatDate(detailRecord?.next_due_date) || '—' }}
-              </span>
-            </div>
-            <div class="ml-detail__item">
-              <span class="ml-detail__key">Next Due Odometer</span>
-              <span class="ml-detail__val">
-                {{
-                  detailRecord?.next_due_odometer
-                    ? Number(detailRecord.next_due_odometer).toLocaleString() + ' km'
-                    : '—'
-                }}
-              </span>
-            </div>
-            <div class="ml-detail__item ml-detail__item--full" v-if="detailRecord?.remarks">
-              <span class="ml-detail__key">Remarks</span>
-              <span class="ml-detail__val">{{ detailRecord.remarks }}</span>
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Odometer Reading</span>
+                <span class="ml-detail__val">
+                  {{
+                    detailRecord?.odometer_reading
+                      ? Number(detailRecord.odometer_reading).toLocaleString() + ' km'
+                      : '—'
+                  }}
+                </span>
+              </div>
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Mechanic / Conducted By</span>
+                <span class="ml-detail__val">{{ detailRecord?.conducted_by || '—' }}</span>
+              </div>
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Next Due Date</span>
+                <span
+                  class="ml-detail__val"
+                  :class="detailRecord?.next_due_date < today ? 'ml-detail__val--overdue' : ''"
+                >
+                  {{ formatDate(detailRecord?.next_due_date) || '—' }}
+                </span>
+              </div>
+              <div class="ml-detail__item">
+                <span class="ml-detail__key">Next Due Odometer</span>
+                <span class="ml-detail__val">
+                  {{
+                    detailRecord?.next_due_odometer
+                      ? Number(detailRecord.next_due_odometer).toLocaleString() + ' km'
+                      : '—'
+                  }}
+                </span>
+              </div>
+              <div class="ml-detail__item ml-detail__item--full" v-if="detailRecord?.remarks">
+                <span class="ml-detail__key">Remarks</span>
+                <span class="ml-detail__val">{{ detailRecord.remarks }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </transition>
+      </transition>
+    </Teleport>
 
     <!-- WHY: Print area removed — printing is now handled by PMCReportView -->
 
@@ -358,7 +360,13 @@ const matrixGroups = computed(() => {
   const groups = filteredAssets.value.map((vehicle) => {
     const vehicleRecords = pmRecords.value.filter((r) => r.vehicle_id === vehicle.id)
 
-    const rows = pmServiceTypes.value.map((st) => {
+    const isVehicleAsset = vehicle.asset_type === 'Vehicle'
+    const applicableServiceTypes = pmServiceTypes.value.filter((st) =>
+      isVehicleAsset
+        ? st.months_between_service > 0 || st.km_between_service > 0
+        : st.months_between_service_nv > 0,
+    )
+    const rows = applicableServiceTypes.map((st) => {
       const records = vehicleRecords.filter(
         (r) => r.service_type?.toLowerCase() === st.service_type?.toLowerCase(),
       )
@@ -387,8 +395,10 @@ const matrixGroups = computed(() => {
 
       return {
         service_type: st.service_type,
-        km_between_service: st.km_between_service,
-        months_between_service: st.months_between_service,
+        km_between_service: isVehicleAsset ? st.km_between_service : null,
+        months_between_service: isVehicleAsset
+          ? st.months_between_service
+          : st.months_between_service_nv,
         monthCells,
         latestRecord,
       }
@@ -532,7 +542,7 @@ function showSnackbar(message, color = 'success') {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--c-accent);
   margin: 0 0 4px;
 }

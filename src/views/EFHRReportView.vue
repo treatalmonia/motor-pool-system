@@ -88,88 +88,88 @@
 
       <table class="efhr-header-table">
         <tbody>
-        <tr>
-          <td class="hdr-label">Equipment</td>
-          <td class="hdr-value" colspan="3">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.name
-            }}</span>
-            <input v-else v-model="editableInfo.name" class="edit-input" />
-          </td>
-        </tr>
-        <tr>
-          <td class="hdr-label">EQF Code</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.eqfCode
-            }}</span>
-            <input v-else v-model="editableInfo.eqfCode" class="edit-input" />
-          </td>
-          <td class="hdr-label">Model</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.model
-            }}</span>
-            <input v-else v-model="editableInfo.model" class="edit-input" />
-          </td>
-        </tr>
-        <tr>
-          <td class="hdr-label">Serial / Plate No.</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.plateNo
-            }}</span>
-            <input v-else v-model="editableInfo.plateNo" class="edit-input" />
-          </td>
-          <td class="hdr-label">Date Purchased</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.datePurchased
-            }}</span>
-            <input v-else v-model="editableInfo.datePurchased" class="edit-input" />
-          </td>
-        </tr>
-        <tr>
-          <td class="hdr-label">Supplier</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.supplier
-            }}</span>
-            <input v-else v-model="editableInfo.supplier" class="edit-input" />
-          </td>
-          <td class="hdr-label">Custodian</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.custodian
-            }}</span>
-            <input v-else v-model="editableInfo.custodian" class="edit-input" />
-          </td>
-        </tr>
-        <tr>
-          <td class="hdr-label">Department</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.department
-            }}</span>
-            <input v-else v-model="editableInfo.department" class="edit-input" />
-          </td>
-          <td class="hdr-label">Contact No.</td>
-          <td class="hdr-value">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.contactNo
-            }}</span>
-            <input v-else v-model="editableInfo.contactNo" class="edit-input" />
-          </td>
-        </tr>
-        <tr>
-          <td class="hdr-label">Other Information</td>
-          <td class="hdr-value" colspan="3">
-            <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
-              editableInfo.otherInfo
-            }}</span>
-            <input v-else v-model="editableInfo.otherInfo" class="edit-input" />
-          </td>
-        </tr>
+          <tr>
+            <td class="hdr-label">Equipment</td>
+            <td class="hdr-value" colspan="3">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.name
+              }}</span>
+              <input v-else v-model="editableInfo.name" class="edit-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="hdr-label">EQF Code</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.eqfCode
+              }}</span>
+              <input v-else v-model="editableInfo.eqfCode" class="edit-input" />
+            </td>
+            <td class="hdr-label">Model</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.model
+              }}</span>
+              <input v-else v-model="editableInfo.model" class="edit-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="hdr-label">Serial / Plate No.</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.plateNo
+              }}</span>
+              <input v-else v-model="editableInfo.plateNo" class="edit-input" />
+            </td>
+            <td class="hdr-label">Date Purchased</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.datePurchased
+              }}</span>
+              <input v-else v-model="editableInfo.datePurchased" class="edit-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="hdr-label">Supplier</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.supplier
+              }}</span>
+              <input v-else v-model="editableInfo.supplier" class="edit-input" />
+            </td>
+            <td class="hdr-label">Custodian</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.custodian
+              }}</span>
+              <input v-else v-model="editableInfo.custodian" class="edit-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="hdr-label">Department</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.department
+              }}</span>
+              <input v-else v-model="editableInfo.department" class="edit-input" />
+            </td>
+            <td class="hdr-label">Contact No.</td>
+            <td class="hdr-value">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.contactNo
+              }}</span>
+              <input v-else v-model="editableInfo.contactNo" class="edit-input" />
+            </td>
+          </tr>
+          <tr>
+            <td class="hdr-label">Other Information</td>
+            <td class="hdr-value" colspan="3">
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
+                editableInfo.otherInfo
+              }}</span>
+              <input v-else v-model="editableInfo.otherInfo" class="edit-input" />
+            </td>
+          </tr>
         </tbody>
       </table>
 
@@ -186,7 +186,7 @@
           <tr>
             <th class="col-date-start">Date Start</th>
             <th class="col-date-end">Date End</th>
-            <th class="col-ref">Reference No.</th>
+            <th class="col-ref">Request Number</th>
             <th class="col-repaired">Repaired By</th>
             <th class="col-particulars">Particulars</th>
             <th class="col-expenses">Expenses</th>
@@ -300,7 +300,6 @@
             <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
           </div>
         </div>
-
       </div>
 
       <div class="efhr-form-code">
@@ -442,8 +441,11 @@ async function loadData() {
   // ── Service Requests ──
   let srQ = supabase
     .from('vehicle_service_requests')
-    .select('request_no, date_of_request, conducted_by, problem_details, work_details, cost')
+    .select(
+      'request_no, date_of_request, date_completed, conducted_by, problem_details, work_details, cost',
+    )
     .eq('vehicle_id', vid)
+    .eq('status', 'Completed')
     .order('date_of_request')
   if (from) srQ = srQ.gte('date_of_request', from)
   if (to) srQ = srQ.lte('date_of_request', to)
@@ -453,6 +455,7 @@ async function loadData() {
     .from('vehicle_pm_log')
     .select('id, service_type, date_performed, date_accomplished, conducted_by, cost, remarks')
     .eq('vehicle_id', vid)
+    .eq('status', 'Completed')
     .order('date_performed')
   if (from) pmQ = pmQ.gte('date_performed', from)
   if (to) pmQ = pmQ.lte('date_performed', to)
@@ -466,7 +469,7 @@ async function loadData() {
   const srRows = (srRes.data || []).map((r) => ({
     _sort: r.date_of_request || '',
     date_start: formatDate(r.date_of_request),
-    date_end: '', // no end date on service requests
+    date_end: formatDate(r.date_completed),
     reference_no: r.request_no || '', // ← Reference No = SR Number (user requirement)
     repaired_by: r.conducted_by || '',
     // Particulars = Diagnosis (problem_details) + Action Taken (work_details) per user requirement
@@ -479,7 +482,7 @@ async function loadData() {
     _sort: r.date_performed || '',
     date_start: formatDate(r.date_performed),
     date_end: formatDate(r.date_accomplished),
-    reference_no: `PM-${r.id}`,
+    reference_no: '',
     repaired_by: r.conducted_by || '',
     particulars: [r.service_type, r.remarks].filter(Boolean).join('\n'),
     expenses: r.cost ?? '',

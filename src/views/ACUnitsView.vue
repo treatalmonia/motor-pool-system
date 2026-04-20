@@ -299,19 +299,10 @@
                 hint="Select or type your own"
                 persistent-hint
                 clearable
-                @update:modelValue="onBrandUpdate"
+                @keydown.enter="onBrandUpdate(form.brand)"
+                @blur="onBrandUpdate(form.brand)"
               />
-              <div v-if="getSavedOptions('ac_brand').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('ac_brand')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+              
             </v-col>
             <v-col cols="12" sm="6">
               <v-combobox
@@ -323,19 +314,10 @@
                 hint="Select or type your own"
                 persistent-hint
                 clearable
-                @update:modelValue="onCapacityUpdate"
+                @keydown.enter="onCapacityUpdate(form.capacity)"
+                @blur="onCapacityUpdate(form.capacity)"
               />
-              <div v-if="getSavedOptions('ac_capacity').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('ac_capacity')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
+
             </v-col>
             <v-col cols="12" sm="6">
               <v-select
@@ -595,14 +577,7 @@ async function addDropdownOption(category, value) {
   if (!error && data) dropdownOptions.value.push(data)
 }
 
-async function deleteDropdownOption(id) {
-  const { error } = await supabase.from('dropdown_options').delete().eq('id', id)
-  if (!error) dropdownOptions.value = dropdownOptions.value.filter((o) => o.id !== id)
-}
 
-function getSavedOptions(category) {
-  return dropdownOptions.value.filter((o) => o.category === category)
-}
 
 const brandOptions = computed(() => {
   const saved = dropdownOptions.value.filter((o) => o.category === 'ac_brand').map((o) => o.value)

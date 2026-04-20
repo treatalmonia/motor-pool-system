@@ -470,6 +470,9 @@
           <p class="text-body-2 text-medium-emphasis mb-4">
             Select a building and floor, then type one room name per line. All rooms will share the same unit type, brand, capacity, and technology.
           </p>
+          <v-alert type="info" variant="tonal" density="compact" class="mb-4" icon="mdi-information-outline">
+            AC Identification Codes will be auto-generated for each room. Serial numbers can be filled in later by editing each unit individually.
+          </v-alert>
           <v-row>
             <v-col cols="12" sm="6">
               <v-combobox v-model="bulk.building" :items="buildings" label="Building *"

@@ -286,7 +286,8 @@
                 label="AC Identification Code"
                 variant="outlined"
                 density="comfortable"
-                placeholder="e.g. AC-001"
+                hint="Auto-generated — you may edit if needed"
+                persistent-hint
               />
             </v-col>
             <v-col cols="12" sm="6">
@@ -302,7 +303,7 @@
                 @keydown.enter="onBrandUpdate(form.brand)"
                 @blur="onBrandUpdate(form.brand)"
               />
-              
+
             </v-col>
             <v-col cols="12" sm="6">
               <v-combobox
@@ -798,9 +799,19 @@ async function fetchUnits() {
   loading.value = false
 }
 
-function openAddDialog() {
+async function generateNextCode() {
+  const codes = acUnits.value
+    .map((u) => u.ac_identification_code)
+    .filter((c) => c && /^AC-\d+$/.test(c))
+    .map((c) => parseInt(c.replace('AC-', ''), 10))
+  const highest = codes.length ? Math.max(...codes) : 0
+  return `AC-${String(highest + 1).padStart(3, '0')}`
+}
+
+async function openAddDialog() {
   isEditing.value = false
   form.value = { ...defaultForm }
+  form.value.ac_identification_code = await generateNextCode()
   errors.value = {}
   formDialog.value = true
 }

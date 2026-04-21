@@ -374,8 +374,6 @@ must-sort
                 hint="Select or type your own"
                 persistent-hint
                 clearable
-                @keydown.enter="onBrandUpdate(form.brand)"
-                @blur="onBrandUpdate(form.brand)"
               />
             </v-col>
             <v-col cols="12" sm="6">
@@ -388,8 +386,6 @@ must-sort
                 hint="Select or type your own"
                 persistent-hint
                 clearable
-                @keydown.enter="onCapacityUpdate(form.capacity)"
-                @blur="onCapacityUpdate(form.capacity)"
               />
             </v-col>
             <v-col cols="12" sm="6">
@@ -1282,6 +1278,8 @@ async function saveUnit() {
     await fetchFloors()
   }
 
+  if (form.value.brand) await onBrandUpdate(form.value.brand)
+  if (form.value.capacity) await onCapacityUpdate(form.value.capacity)
   saving.value = true
   const payload = {
     building: form.value.building,

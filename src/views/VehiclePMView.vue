@@ -432,20 +432,7 @@
                 density="comfortable"
                 placeholder="Type or select name"
                 clearable
-                @update:modelValue="onConductedByUpdate"
               />
-              <!-- Saved custom entries with delete button -->
-              <div v-if="getSavedOptions('conducted_by').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('conducted_by')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
             </v-col>
 
             <!-- Cost -->
@@ -1742,6 +1729,7 @@ function validateForm() {
 
 async function saveRecord() {
   if (!validateForm()) return
+  if (form.value.conducted_by) await onConductedByUpdate(form.value.conducted_by)
   saving.value = true
 
   const payload = {

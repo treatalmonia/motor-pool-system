@@ -301,19 +301,7 @@
                 density="comfortable"
                 placeholder="Technician name"
                 clearable
-                @update:modelValue="onConductedByUpdate"
               />
-              <div v-if="getSavedOptions('conducted_by_ac').length" class="d-flex flex-wrap ga-1 mt-1">
-                <v-chip
-                  v-for="opt in getSavedOptions('conducted_by_ac')"
-                  :key="opt.id"
-                  size="small"
-                  closable
-                  @click:close="deleteDropdownOption(opt.id)"
-                >
-                  {{ opt.value }}
-                </v-chip>
-              </div>
             </v-col>
 
             <!-- Status -->
@@ -960,6 +948,7 @@ async function saveRecord() {
     await supabase.from('buildings').insert({ name: selectedBuilding.value })
     await fetchBuildings()
   }
+  if (form.value.conducted_by) await onConductedByUpdate(form.value.conducted_by)
   saving.value = true
 
   const payload = {

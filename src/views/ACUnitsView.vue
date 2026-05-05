@@ -186,7 +186,7 @@
           items-per-page="10"
           rounded="lg"
           :custom-key-sort="{ ac_identification_code: (a, b) => acCodeSort(a, b) }"
-:sort-by="[{ key: 'ac_identification_code', order: 'asc' }]"
+v-model:sort-by="sortBy"
 must-sort
           :row-props="
             ({ item }) => ({
@@ -806,6 +806,7 @@ must-sort
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 
+const sortBy = ref([{ key: 'ac_identification_code', order: 'asc' }])
 // ---- DATA ----
 const acUnits = ref([])
 const loading = ref(false)
@@ -1120,7 +1121,9 @@ async function saveBulk() {
     await fetchFloors()
   }
 
-  const rows = roomLines.map((room) => ({
+  const nextCode = await generateNextCode()
+  const baseNum = parseInt(nextCode.replace('AC-', ''), 10)
+  const rows = roomLines.map((room, i) => ({
     building: bulk.value.building,
     floor: bulk.value.floor,
     area_room: room,
@@ -1129,6 +1132,7 @@ async function saveBulk() {
     brand: bulk.value.brand || null,
     capacity: bulk.value.capacity || null,
     status: 'Active',
+    ac_identification_code: `AC-${String(baseNum + i).padStart(3, '0')}`,
   }))
 
   const { error } = await supabase.from('ac_units').insert(rows)

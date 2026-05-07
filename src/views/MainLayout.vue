@@ -140,6 +140,12 @@
           to="/fuel-balance-report"
           rounded="lg"
         />
+        <v-list-item
+          prepend-icon="mdi-gas-station"
+          title="Consumption Per Assets"
+          to="/consumption-per-assets"
+          rounded="lg"
+        />
 
 
         <v-list-item
@@ -218,6 +224,7 @@ const pageTitles = {
   '/fuel-transactions': 'Fuel Transactions',
 
   '/fuel-summary-report': 'Fuel Summary Report', // kept for backward compatibility
+  '/consumption-per-assets': 'Consumption Per Assets Report',
 
   // Printable Reports
   '/pmc-report': 'PMC Report',

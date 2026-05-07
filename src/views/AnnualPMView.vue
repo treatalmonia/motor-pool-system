@@ -926,7 +926,7 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 .sig-line {
-  border-top: 1px solid #333;
+ 
   margin: 0 auto 4px;
   width: 70%;
 }

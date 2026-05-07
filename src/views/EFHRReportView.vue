@@ -302,10 +302,7 @@
         </div>
       </div>
 
-      <div class="efhr-form-code">
-        <span>F-GEN-EFHR-004</span>
-        <span>Rev. 2 10/19/2023</span>
-      </div>
+
     </div>
 
     <v-btn
@@ -350,8 +347,8 @@ const editableInfo = ref({
   contactNo: '',
   otherInfo: '',
   preparedByName: 'ENGR. ENA TIU-IBARRA',
-  preparedByTitle: 'Engineer 1, General Services',
-  notedByName: 'AR. CHRISTIAN DWIGHT C. DOLOTINA',
+  preparedByTitle: 'AO III, Transportation Unit - General Services',
+  notedByName: 'ENGR. MARIEL M. DELO',
   notedByTitle: 'Director, General Services',
 })
 
@@ -672,8 +669,10 @@ tfoot td {
 }
 .efhr-signatories {
   display: flex;
-  gap: 80px;
+  justify-content: space-between;
   margin-top: 20px;
+  margin-bottom: 8px;
+  padding-right: 12%;
 }
 .signatory-col {
   min-width: 220px;
@@ -684,7 +683,7 @@ tfoot td {
   margin-bottom: 20px;
 }
 .sig-name {
-  border-top: 1px solid #333;
+
   font-weight: bold;
   font-size: 10px;
   padding-top: 2px;

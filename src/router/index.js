@@ -76,9 +76,6 @@ const router = createRouter({
           component: () => import('../views/FuelTransactionsView.vue'),
         },
 
-
-
-
         // Keep the old fuel-summary-report route alive so any existing
         // bookmarks or nav links do not break. It still loads the original
         // FuelSummaryReportView. You can remove this later once you have
@@ -96,13 +93,20 @@ const router = createRouter({
           component: () => import('../views/PMCReportView.vue'),
         },
 
-
         {
           path: 'efhr-report',
           name: 'EFHRReport',
           component: () => import('../views/EFHRReportView.vue'),
         },
-        { path: '/fuel-balance-report', component: () => import('../views/FuelBalanceReportView.vue') },
+        {
+          path: '/fuel-balance-report',
+          component: () => import('../views/FuelBalanceReportView.vue'),
+        },
+        {
+          path: '/consumption-per-assets',
+          name: 'ConsumptionPerAssets',
+          component: () => import('../views/ConsumptionPerAssetsReportView.vue'),
+        },
       ],
     },
   ],

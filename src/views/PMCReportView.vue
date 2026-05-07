@@ -185,7 +185,7 @@
             </div>
           </div>
         </div>
-        <div class="form-code"><span>F-GEN-PMC-003a</span><span>Rev. 3 10/19/2023</span></div>
+
       </div>
 
       <!-- PAGE 2: REPORT LOG -->
@@ -298,7 +298,7 @@ const editableInfo = ref({
   eqfCode:         '',
   location:        'CARAGA STATE UNIVERSITY, MAIN CAMPUS',
   reviewedByName:  'ENGR. ENA TIU-IBARRA',
-  reviewedByTitle: 'AO III, General Services',
+  reviewedByTitle: 'AO III, Transportation Unit - General Services',
   notedByName:     'ENGR. MARIEL M. DELO',
   notedByTitle:    'Director, General Services',
 })
@@ -559,10 +559,14 @@ onMounted(async () => {
 .edit-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9.5px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; }
 .cell-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; resize: none; }
 .cell-text { white-space: pre-wrap; word-break: break-word; }
-.pmc-signatory-block { display: flex; justify-content: flex-start; gap: 80px; margin-top: 16px; margin-bottom: 8px; }
+.pmc-signatory-block { display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-right: 12%; }
 .signatory-item { min-width: 260px; }
 .signatory-label { font-size: 10px; font-weight: bold; margin-right: 8px; }
-.signatory-name { margin-top: 24px; border-top: 1px solid #333; font-weight: bold; font-size: 10px; padding-top: 2px; min-width: 240px; }
+.signatory-name { margin-top: 24px; font-weight: bold; font-size: 10px; padding-top: 2px; min-width: 240px; }
 .signatory-title { font-size: 9.5px; color: #333; margin-top: 2px; }
 .form-code { display: flex; flex-direction: column; font-size: 8px; color: #666; margin-top: 8px; }
 

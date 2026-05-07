@@ -408,7 +408,7 @@
               <v-divider class="mb-1" />
               <p class="text-body-2 font-weight-medium text-medium-emphasis my-2">
                 <v-icon size="16" class="mr-1">mdi-car</v-icon>
-                Vehicle / Equipment
+                Vehicle / Non-Vehicular
               </p>
             </v-col>
 
@@ -422,7 +422,7 @@
               >
                 <v-btn value="Vehicular" prepend-icon="mdi-car"> Vehicular </v-btn>
                 <v-btn value="Non-Vehicular" prepend-icon="mdi-tractor">
-                  Non-vehicular equipment
+                  Non-Vehicular
                 </v-btn>
               </v-btn-toggle>
             </v-col>
@@ -1055,9 +1055,16 @@ const selectedContractSummary = computed(() => {
 })
 
 const vehicleOptions = computed(() => {
-  const fromAssets = assets.value.map((a) => a.asset_name)
-  const fromTx = [...new Set(transactions.value.map((t) => t.vehicle).filter(Boolean))]
-  return [...new Set([...fromAssets, ...fromTx])].sort()
+  if (form.value.utilization_type === 'Non-Vehicular') {
+    return assets.value
+      .filter((a) => a.asset_type === 'Non-Vehicle' || a.asset_type === 'Non-Vehicular')
+      .map((a) => a.asset_name)
+      .sort()
+  }
+  return assets.value
+    .filter((a) => a.asset_type === 'Vehicle' || a.asset_type === 'Vehicular')
+    .map((a) => a.asset_name)
+    .sort()
 })
 
 // ── FETCH ──

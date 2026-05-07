@@ -5,16 +5,12 @@
       <v-col>
         <div class="d-flex align-center justify-space-between flex-wrap ga-2">
           <div>
-            <h2 class="text-h5 font-weight-bold">Fuel Balance Per Account</h2>
+            <h2 class="text-h5 font-weight-bold">Consumption Per Assets</h2>
             <p class="text-medium-emphasis text-body-2 mt-1">
-              Generate printable fuel balance report per cost center account
+              Generate printable fuel consumption report per asset
             </p>
           </div>
           <div class="d-flex ga-2 align-center">
-            <!-- <v-btn-toggle v-model="orientation" mandatory variant="outlined" density="compact">
-              <v-btn value="portrait" prepend-icon="mdi-phone-rotate-portrait">Portrait</v-btn>
-              <v-btn value="landscape" prepend-icon="mdi-phone-rotate-landscape">Landscape</v-btn>
-            </v-btn-toggle> -->
             <v-btn
               variant="outlined"
               prepend-icon="mdi-printer"
@@ -43,22 +39,12 @@
               @update:modelValue="loadData"
             />
           </v-col>
-          <v-col cols="12" sm="3">
-            <v-select
-              v-model="selectedFundCluster"
-              :items="['All Funds', ...fundClusterOptions]"
-              label="Fund Cluster (optional)"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              @update:modelValue="loadData"
-            />
-          </v-col>
           <v-col cols="12" sm="3" class="d-flex align-center ga-2">
             <v-progress-circular v-if="loading" indeterminate size="24" width="2" />
             <span v-else-if="pages.length" class="text-caption text-medium-emphasis">
-              {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }} /
-              {{ totalAccounts }} account{{ totalAccounts !== 1 ? 's' : '' }}
+              {{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }} / {{ totalAssets }} asset{{
+                totalAssets !== 1 ? 's' : ''
+              }}
             </span>
           </v-col>
         </v-row>
@@ -68,9 +54,9 @@
     <!-- ── Empty State ── -->
     <v-card v-if="!pages.length && !loading" rounded="lg" elevation="0" border class="no-print">
       <v-card-text class="text-center pa-12">
-        <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-file-chart-outline</v-icon>
+        <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-car-outline</v-icon>
         <p class="text-h6 text-medium-emphasis">
-          Select a year to generate the Fuel Balance Per Account report
+          Select a year to generate the Consumption Per Assets report
         </p>
       </v-card-text>
     </v-card>
@@ -82,30 +68,40 @@
       <div
         v-for="(page, pIdx) in pages"
         :key="pIdx"
-        class="fba-page"
+        class="cpa-page"
         :class="{ 'page-break-after': pIdx < pages.length - 1 }"
       >
         <!-- Official CSU Header -->
         <ReportHeader variant="standard" />
 
         <!-- Report Title -->
-        <div class="fba-title-block">
-          <div class="fba-title">FUEL BALANCE PER ACCOUNT</div>
-          <div class="fba-subtitle">For the Year {{ selectedYear }} — {{ page.fundCluster }}</div>
+        <div class="cpa-title-block">
+          <div class="cpa-title">CONSUMPTION PER ASSETS</div>
+          <div class="cpa-subtitle">For the Year {{ selectedYear }}</div>
         </div>
 
+        <!-- Category Label -->
+        <div class="cpa-category-label">Category: {{ page.category }}</div>
+
         <!-- Main Table -->
-        <table class="fba-table">
+        <table class="cpa-table">
           <thead>
             <tr>
-              <th rowspan="2" class="col-po">P.O. #</th>
-              <th rowspan="2" class="col-account">ACCOUNT CODE / COST CENTER</th>
-              <th rowspan="2" class="col-amount">CONTRACT AMOUNT</th>
-              <th :colspan="MONTHS.length" class="group-consumption">CONSUMPTION</th>
-              <th rowspan="2" class="col-balance">BALANCE</th>
+              <th rowspan="2" class="col-asset-name">
+                {{ page.category === 'Vehicular' ? 'Name of Assets' : 'Name of Equipment' }}
+              </th>
+              <th v-for="m in MONTHS" :key="m.value" colspan="2" class="col-month-group">
+                {{ m.label }}
+              </th>
+              <th colspan="2" class="col-total-group">TOTAL</th>
             </tr>
             <tr>
-              <th v-for="m in MONTHS" :key="m.value" class="col-month">{{ m.label }}</th>
+              <template v-for="m in MONTHS" :key="m.value">
+                <th class="col-sub">Liters</th>
+                <th class="col-sub">Amount</th>
+              </template>
+              <th class="col-sub col-total-sub">Liters</th>
+              <th class="col-sub col-total-sub">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -114,74 +110,28 @@
               :key="rIdx"
               :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'"
             >
-              <!-- PO Number -->
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
-                  {{ row.po_number }}
-                </div>
-                <input v-else v-model="row.po_number" class="edit-input" />
+              <!-- Asset Name -->
+              <td class="data-cell cell-name">
+                <span v-if="!editMode">{{ row.assetName }}</span>
               </td>
-              <!-- Account Code -->
-              <td class="data-cell">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
-                  {{ row.account_code }}
-                </div>
-                <input v-else v-model="row.account_code" class="edit-input" />
-              </td>
-              <!-- Account Amount -->
-              <td class="data-cell num-cell td-amount">
-                <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
-                  {{ formatAmount(row.contract_amount) }}
-                </div>
-                <input
-                  v-else
-                  v-model="row.contract_amount"
-                  class="edit-input"
-                  type="number"
-                  step="0.01"
-                />
-              </td>
-              <!-- Monthly Consumptions -->
-              <td
-                v-for="m in MONTHS"
-                :key="m.value"
-                class="data-cell num-cell"
-                :class="row.monthlyConsumption[m.value] ? 'td-has-value' : 'td-empty'"
-              >
-                {{
-                  row.monthlyConsumption[m.value]
-                    ? formatAmount(row.monthlyConsumption[m.value])
-                    : ''
-                }}
-              </td>
-              <!-- Balance -->
-              <td
-                class="data-cell num-cell td-balance"
-                :class="row.balance < 0 ? 'td-negative' : 'td-positive'"
-              >
-                {{ formatAmount(row.balance) }}
-              </td>
-            </tr>
-
-            <!-- Totals row -->
-            <tr class="totals-row">
-              <td colspan="2" class="data-cell totals-label">TOTAL</td>
-              <td class="data-cell num-cell">{{ formatAmount(page.totalContractAmount) }}</td>
-              <td v-for="m in MONTHS" :key="m.value" class="data-cell num-cell">
-                {{ page.monthlyTotals[m.value] ? formatAmount(page.monthlyTotals[m.value]) : '' }}
-              </td>
-              <td
-                class="data-cell num-cell"
-                :class="page.totalBalance < 0 ? 'td-negative' : 'td-positive'"
-              >
-                {{ formatAmount(page.totalBalance) }}
-              </td>
+              <!-- Monthly Data -->
+              <template v-for="m in MONTHS" :key="m.value">
+                <td class="data-cell num-cell">
+                  {{ row.monthly[m.value] ? formatNum(row.monthly[m.value].liters) : '' }}
+                </td>
+                <td class="data-cell num-cell">
+                  {{ row.monthly[m.value] ? formatAmount(row.monthly[m.value].amount) : '' }}
+                </td>
+              </template>
+              <!-- Total -->
+              <td class="data-cell num-cell td-total">{{ formatNum(row.totalLiters) }}</td>
+              <td class="data-cell num-cell td-total">{{ formatAmount(row.totalAmount) }}</td>
             </tr>
           </tbody>
         </table>
 
         <!-- Signatories -->
-        <div class="fba-signatory-block">
+        <div class="cpa-signatory-block">
           <div class="signatory-item">
             <span class="signatory-label">Verified &amp; Checked by:</span>
             <div class="signatory-name">
@@ -213,9 +163,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Form code -->
-
       </div>
     </div>
 
@@ -258,11 +205,8 @@ const MONTHS = [
 // ── State ──
 const loading = ref(false)
 const editMode = ref(false)
-const orientation = ref('landscape')
 const pages = ref([])
-const fundClusterOptions = ref([])
 const selectedYear = ref(new Date().getFullYear())
-const selectedFundCluster = ref('All Funds')
 
 const signatoryId = ref(null)
 const editableInfo = ref({
@@ -278,11 +222,16 @@ const yearOptions = computed(() => {
   return [cur - 2, cur - 1, cur, cur + 1].reverse()
 })
 
-const totalAccounts = computed(() => pages.value.reduce((s, p) => s + p.rows.length, 0))
+const totalAssets = computed(() => pages.value.reduce((s, p) => s + p.rows.length, 0))
 
 // ── Formatters ──
 function formatAmount(val) {
-  if (val === null || val === undefined || val === '') return '0.00'
+  if (val === null || val === undefined || val === '' || val === 0) return ''
+  return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function formatNum(val) {
+  if (val === null || val === undefined || val === '' || val === 0) return ''
   return Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
@@ -292,85 +241,85 @@ async function loadData() {
   editMode.value = false
   pages.value = []
 
-  // 1. Fetch all contracts for the selected year
-  let contractQuery = supabase
-    .from('fuel_contracts')
-    .select('id, po_number, account_code, fund_cluster, contract_amount')
-    .eq('year', selectedYear.value)
-    .order('fund_cluster')
-    .order('account_code')
-
-  if (selectedFundCluster.value && selectedFundCluster.value !== 'All Funds') {
-    contractQuery = contractQuery.eq('fund_cluster', selectedFundCluster.value)
-  }
-
-  const { data: contracts, error: cErr } = await contractQuery
-  if (cErr || !contracts?.length) {
-    loading.value = false
-    return
-  }
-
-  // 2. Fetch all transactions for the selected year
+  // 1. Fetch all transactions for the selected year
   const { data: transactions, error: tErr } = await supabase
     .from('fuel_transactions')
-    .select('contract_id, total_amount, date')
+    .select('vehicle, plate_number, utilization_type, quantity, total_amount, date')
     .gte('date', `${selectedYear.value}-01-01`)
     .lte('date', `${selectedYear.value}-12-31`)
 
-  if (tErr) {
+  if (tErr || !transactions?.length) {
     loading.value = false
     return
   }
 
-  // 3. Build consumption map: contract_id → { month: total_amount }
-  const consumptionMap = {}
-  ;(transactions || []).forEach((tx) => {
-    if (!tx.contract_id) return
+  // 2. Fetch vehicles table for correct category lookup
+ // 2. Fetch vehicles table for correct category lookup — no status filter, get all assets
+  const { data: vehicleList } = await supabase
+    .from('vehicles')
+    .select('asset_name, asset_type')
+
+  // Build a simple map: asset_name (lowercase) → asset_type
+  const vehicleTypeMap = {}
+  ;(vehicleList || []).forEach((v) => {
+    if (v.asset_name) vehicleTypeMap[v.asset_name.trim().toLowerCase()] = v.asset_type
+  })
+
+  // 3. Build consumption map: assetKey → { category, assetName, month: { liters, amount } }
+  const assetMap = {}
+
+  transactions.forEach((tx) => {
+    // Use vehicle text directly from the transaction
+    const assetName = tx.vehicle?.trim() || 'Unknown'
+    // Look up category from vehicles table, fallback to utilization_type in transaction
+   // Resolve category from vehicles table, normalizing 'Vehicle' → 'Vehicular'
+    const rawType = vehicleTypeMap[assetName.trim().toLowerCase()] || tx.utilization_type || 'Non-Vehicular'
+    const category = rawType === 'Vehicle' ? 'Vehicular' : rawType === 'Non-Vehicle' ? 'Non-Vehicular' : rawType
+
+    // Use assetName + category as unique key
+    const key = `${category}__${assetName}`
+    if (!assetMap[key]) {
+      assetMap[key] = { assetName, category, monthly: {} }
+    }
+
     const month = new Date(tx.date + 'T00:00:00').getMonth() + 1
-    if (!consumptionMap[tx.contract_id]) consumptionMap[tx.contract_id] = {}
-    consumptionMap[tx.contract_id][month] =
-      (consumptionMap[tx.contract_id][month] || 0) + (tx.total_amount || 0)
+    if (!assetMap[key].monthly[month]) {
+      assetMap[key].monthly[month] = { liters: 0, amount: 0 }
+    }
+    assetMap[key].monthly[month].liters += Number(tx.quantity) || 0
+    assetMap[key].monthly[month].amount += Number(tx.total_amount) || 0
   })
 
-  // 4. Group contracts by fund_cluster → one page per fund cluster
-  const grouped = {}
-  contracts.forEach((c) => {
-    const fc = c.fund_cluster || 'UNSPECIFIED'
-    if (!grouped[fc]) grouped[fc] = []
-    grouped[fc].push(c)
+  // 4. Build rows with totals
+  const allRows = Object.values(assetMap).map((entry) => {
+    const totalLiters = Object.values(entry.monthly).reduce((s, m) => s + m.liters, 0)
+    const totalAmount = Object.values(entry.monthly).reduce((s, m) => s + m.amount, 0)
+    return {
+      assetName: entry.assetName,
+      category: entry.category,
+      monthly: entry.monthly,
+      totalLiters,
+      totalAmount,
+    }
   })
 
-  // 5. Build pages
-  pages.value = Object.entries(grouped).map(([fundCluster, contractList]) => {
-    const rows = contractList.map((c) => {
-      const monthly = consumptionMap[c.id] || {}
-      const totalConsumed = Object.values(monthly).reduce((s, v) => s + v, 0)
-      const balance = (c.contract_amount || 0) - totalConsumed
-      return {
-        po_number: c.po_number || '',
-        account_code: c.account_code || '',
-        contract_amount: c.contract_amount || 0,
-        monthlyConsumption: monthly,
-        totalConsumed,
-        balance,
-      }
-    })
+  // 5. Sort alphabetically by asset name within each category
+  allRows.sort((a, b) => a.assetName.localeCompare(b.assetName))
 
-    // Page totals
-    const totalContractAmount = rows.reduce((s, r) => s + r.contract_amount, 0)
-    const totalBalance = rows.reduce((s, r) => s + r.balance, 0)
-    const monthlyTotals = {}
-    MONTHS.forEach((m) => {
-      const total = rows.reduce((s, r) => s + (r.monthlyConsumption[m.value] || 0), 0)
-      if (total > 0) monthlyTotals[m.value] = total
-    })
+  // 6. Split into pages: Vehicular page first, Non-Vehicular page second
+  const categories = ['Vehicular', 'Non-Vehicular']
+  pages.value = categories
+    .map((cat) => ({
+      category: cat,
+      rows: allRows.filter((r) => {
+        // Match both 'Vehicular'/'Vehicle' and 'Non-Vehicular'/'Non-Vehicle'
+        if (cat === 'Vehicular') return r.category === 'Vehicular' || r.category === 'Vehicle'
+        return r.category === 'Non-Vehicular' || r.category === 'Non-Vehicle'
+      }),
+    }))
+    .filter((p) => p.rows.length > 0) // only include page if it has data
 
-    return { fundCluster, rows, totalContractAmount, totalBalance, monthlyTotals }
-  })
 
-  // 6. Populate fund cluster filter options
-  const fcSet = [...new Set(contracts.map((c) => c.fund_cluster).filter(Boolean))]
-  fundClusterOptions.value = fcSet
 
   loading.value = false
 }
@@ -396,6 +345,7 @@ async function loadSignatories() {
 function enableEdit() {
   editMode.value = true
 }
+
 async function toggleEdit() {
   if (editMode.value && signatoryId.value) {
     await supabase
@@ -414,11 +364,11 @@ async function toggleEdit() {
 
 function printReport() {
   editMode.value = false
-  const existing = document.getElementById('fba-print-style')
+  const existing = document.getElementById('cpa-print-style')
   if (existing) existing.remove()
   const style = document.createElement('style')
-  style.id = 'fba-print-style'
-  style.textContent = `@page { size: ${orientation.value}; margin: 4mm 6mm 10mm; }`
+  style.id = 'cpa-print-style'
+  style.textContent = `@page { size: landscape; margin: 4mm 6mm 10mm; }`
   document.head.appendChild(style)
   setTimeout(() => window.print(), 100)
 }
@@ -440,21 +390,21 @@ onMounted(() => {
 }
 
 /* ── Make the ReportHeader taller in this module only ── */
-.fba-page :deep(.report-header) {
+.cpa-page :deep(.report-header) {
   padding-bottom: 16px;
   margin-bottom: 16px;
 }
-.fba-page :deep(.logo-csu) {
+.cpa-page :deep(.logo-csu) {
   height: 130px;
 }
-.fba-page :deep(.logo-right) {
+.cpa-page :deep(.logo-right) {
   height: 110px;
 }
 
 /* ── Page block ── */
-.fba-page {
+.cpa-page {
   background: white;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto 40px;
   padding: 24px;
   border: 1px solid #e0e0e0;
@@ -462,173 +412,116 @@ onMounted(() => {
 }
 
 /* ── Title block ── */
-.fba-title-block {
+.cpa-title-block {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
-.fba-title {
+.cpa-title {
   font-size: 14px;
   font-weight: bold;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
-.fba-subtitle {
+.cpa-subtitle {
   font-size: 11px;
   font-weight: bold;
   margin-top: 2px;
   color: #333;
 }
 
+/* ── Category label ── */
+.cpa-category-label {
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #1f4e79;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ── Main table ── */
-.fba-table {
+.cpa-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 8.5px;
+  font-size: 8px;
   margin-bottom: 16px;
 }
 
-.fba-table th {
+.cpa-table th {
   border: 1px solid #aaa;
   padding: 4px 3px;
   text-align: center;
-  font-size: 8px;
+  font-size: 7.5px;
   font-weight: bold;
 }
 
-.fba-table td {
+.cpa-table td {
   border: 1px solid #aaa;
   vertical-align: middle;
 }
 
-/* Header colors */
-.fba-table thead tr:first-child th {
+/* ── Header: asset name column ── */
+.col-asset-name {
+  background: #1f4e79;
+  color: white;
+  width: 160px;
+  text-align: center;
+}
+
+/* ── Header: month group (JAN, FEB...) ── */
+.col-month-group {
   background: #1f4e79;
   color: white;
 }
 
-/* Consumption sub-header group */
-.group-consumption {
-  background: #1565c0;
-  color: white;
-}
-
-/* Month sub-headers */
-.col-month {
+/* ── Header: sub-columns (L / Amount) ── */
+.col-sub {
   background: #90caf9;
   color: #0d2137;
   font-weight: bold;
-  width: 52px;
+  width: 48px;
 }
 
-/* Column widths */
-.col-po {
-  width: 80px;
+/* ── Header: TOTAL group ── */
+.col-total-group {
   background: #1f4e79;
   color: white;
 }
-.col-account {
-  width: 160px;
-  background: #1f4e79;
-  color: white;
-}
-.col-amount {
-  width: 80px;
-  background: #f9a825;
-  color: #000;
-}
-.col-balance {
-  width: 80px;
-  background: #2e7d32;
-  color: white;
+
+/* ── Header: TOTAL sub-columns ── */
+.col-total-sub {
+  background: #90caf9 !important;
+  color: #0d2137 !important;
 }
 
+/* ── Data cells ── */
 .data-cell {
-  padding: 3px 5px;
-  min-height: 22px;
-  text-align: center;
+  padding: 3px 4px;
+  min-height: 20px;
+}
+.cell-name {
+  text-align: left;
+  padding-left: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .num-cell {
-  text-align: center;
+  text-align: right;
+  padding-right: 4px;
 }
 
-/* Row striping */
+/* ── Row striping ── */
 .row-even {
   background: #ffffff;
 }
 .row-odd {
-  background: #f3f8ff;
+  background: #ffffff;
 }
 
-/* Cell value styles */
-.td-amount {
-  background: #fff9c4;
+/* ── Total cell ── */
+.td-total {
   font-weight: bold;
-}
-.td-has-value {
   background: #e3f2fd;
-}
-.td-empty {
-  background: #fafafa;
-  color: #bbb;
-}
-.td-balance {
-  font-weight: bold;
-}
-.td-positive {
-  color: #1b5e20;
-  background: #e8f5e9;
-}
-.td-negative {
-  color: #b71c1c;
-  background: #ffebee;
-}
-
-/* Totals row */
-.totals-row td {
-  background: #1f4e79;
-  color: white;
-  font-weight: bold;
-  border-color: #1f4e79;
-}
-.totals-label {
-  text-align: right;
-  padding-right: 8px;
-}
-
-/* ── Signatories ── */
-.fba-signatory-block {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  margin-bottom: 8px;
-  padding-right: 12%;
-}
-.signatory-item {
-  min-width: 220px;
-}
-.signatory-label {
-  font-size: 10px;
-  font-weight: bold;
-}
-.signatory-name {
-  margin-top: 24px;
-
-  font-weight: bold;
-  font-size: 10px;
-  padding-top: 2px;
-  min-width: 200px;
-}
-.signatory-title {
-  font-size: 9.5px;
-  color: #333;
-  margin-top: 2px;
-}
-
-/* ── Form code ── */
-.form-code {
-  font-size: 8px;
-  color: #666;
-  margin-top: 8px;
 }
 
 /* ── Editable fields ── */
@@ -654,9 +547,40 @@ onMounted(() => {
   background: #e3f2fd;
   outline: none;
 }
-.cell-text {
-  white-space: pre-wrap;
-  word-break: break-word;
+
+/* ── Signatories ── */
+.cpa-signatory-block {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-right: 12%;
+}
+.signatory-item {
+  min-width: 220px;
+}
+.signatory-label {
+  font-size: 10px;
+  font-weight: bold;
+}
+.signatory-name {
+  margin-top: 24px;
+  font-weight: bold;
+  font-size: 10px;
+  padding-top: 2px;
+  min-width: 200px;
+}
+.signatory-title {
+  font-size: 9.5px;
+  color: #333;
+  margin-top: 2px;
+}
+
+/* ── Form code ── */
+.form-code {
+  font-size: 8px;
+  color: #666;
+  margin-top: 8px;
 }
 
 /* ══════════════════
@@ -677,10 +601,10 @@ onMounted(() => {
   }
 
   .print-area {
-    font-size: 8px;
+    font-size: 7.5px;
   }
 
-  .fba-page {
+  .cpa-page {
     max-width: 100%;
     padding: 4mm 6mm 10mm;
     border: none;
@@ -688,14 +612,14 @@ onMounted(() => {
     margin: 0;
   }
 
-  .fba-page :deep(.report-header) {
+  .cpa-page :deep(.report-header) {
     padding-bottom: 16px;
     margin-bottom: 16px;
   }
-  .fba-page :deep(.logo-csu) {
+  .cpa-page :deep(.logo-csu) {
     height: 130px;
   }
-  .fba-page :deep(.logo-right) {
+  .cpa-page :deep(.logo-right) {
     height: 110px;
   }
 
@@ -703,13 +627,13 @@ onMounted(() => {
     page-break-after: always;
   }
 
-  .fba-table {
-    font-size: 7.5px;
-  }
-  .fba-table th {
+  .cpa-table {
     font-size: 7px;
   }
-  .fba-title {
+  .cpa-table th {
+    font-size: 6.5px;
+  }
+  .cpa-title {
     font-size: 13px;
   }
 

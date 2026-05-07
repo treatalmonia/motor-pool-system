@@ -459,8 +459,8 @@ function getSig(fundCluster) {
     return {
       layout: 'two-col',
       preparedByName: 'ENGR. ENA TIU-IBARRA',
-      preparedByTitle: 'Admin. Officer III, General Services',
-      notedByName: 'AR. CHRISTIAN DWIGHT C. DOLOTINA',
+      preparedByTitle: 'AO III, Transportation Unit - General Services',
+      notedByName: 'ENGR. MARIEL M. DELO',
       notedByTitle: 'Director, General Services',
     }
   }
@@ -866,7 +866,7 @@ onMounted(async () => {
   height: 28px;
 }
 .sig-name {
-  border-top: 1px solid #333;
+
   font-weight: bold;
   font-size: 10px;
   padding-top: 2px;

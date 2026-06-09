@@ -348,9 +348,9 @@
                 {{
                   item.contract_amount > 0
                     ? Math.min(
-                        Math.round((item.consumed_amount / item.contract_amount) * 100),
+                        parseFloat(((item.consumed_amount / item.contract_amount) * 100).toFixed(2)),
                         999,
-                      ) + '%'
+                      ).toFixed(2) + '%'
                     : '—'
                 }}
               </span>
@@ -1111,7 +1111,7 @@ const enrichedContracts = computed(() =>
       consumed_diesel: stats.consumed_diesel,
       consumed_gasoline: stats.consumed_gasoline,
       transactions: stats.transactions,
-      pct_used: contractAmt > 0 ? Math.round((consumed / contractAmt) * 100) : 0,
+      pct_used: contractAmt > 0 ? parseFloat(((consumed / contractAmt) * 100).toFixed(2)) : 0,
     }
   }),
 )

@@ -502,7 +502,7 @@ onMounted(() => {
 
 /* Header colors */
 .fba-table thead tr:first-child th {
-  background: #013220;
+  background: #2e7d32;
   color: white;
 }
 val
@@ -514,8 +514,8 @@ val
 
 /* Month sub-headers */
 .col-month {
-  background: #013220;
-  color: white;
+  background: #a5d6a7;
+  color: #0d2137;
   font-weight: bold;
   width: 52px;
 }
@@ -538,7 +538,7 @@ val
 }
 .col-balance {
   width: 80px;
-  background: #013220;
+  background: #2e7d32;
   color: white;
 }
 
@@ -585,7 +585,7 @@ val
 
 /* Totals row */
 .totals-row td {
-  background: #013220;
+  background: #2e7d32;
   color: white;
   font-weight: bold;
   border-color: #2e7d32;

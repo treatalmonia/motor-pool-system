@@ -626,11 +626,12 @@ onMounted(async () => {
 }
 
 .fuel-table th {
-  border: 1px solid #2e7d32;
+  border: 1px solid #aaa;
   padding: 4px 3px;
   text-align: center;
   font-size: 8px;
   font-weight: bold;
+  /* color: white */
 }
 
 .fuel-table td {
@@ -641,49 +642,49 @@ onMounted(async () => {
 /* ── Header colors ── */
 /* DATE, OR#, UTILIZED BY, VEHICLE — white with dark text */
 .th-base {
-  background: #ffffff;
-  color: #000;
+  background: #013220;
+  color: white;
 }
 
 /* DIESEL group — sky blue; sub-headers — lighter blue */
 .th-diesel {
-  background: #1565c0;
+  background: #013220;
   color: white;
 }
 
 .sub-diesel {
-  background: #90caf9;
-  color: #0d2137;
+  background: #013220;
+  color: white;
   font-weight: bold;
 }
 
 /* GASOLINE group — green; sub-headers — lighter green */
 .th-gasoline {
-  background: #2e7d32;
+  background: #013220;
   color: white;
 }
 
 .sub-gasoline {
-  background: #a5d6a7;
-  color: #1b3d1c;
+  background: #013220;
+  color: white;
   font-weight: bold;
 }
 
 /* TOTAL AMOUNT DUE — yellow/gold */
 .th-total {
-  background: #f9a825;
-  color: #000;
+  background: #013220;
+  color: white;
 }
 
 /* FUEL CHARGE TO + PO# — white with dark text */
 .th-charge {
-  background: #ffffff;
-  color: #000;
+  background: #013220;
+  color: white;
 }
 
 .th-po {
-  background: #ffffff;
-  color: #000;
+  background: #013220;
+  color: white;
 }
 
 /* ── Column widths ── */
@@ -732,20 +733,20 @@ onMounted(async () => {
 
 /* ── Data cell column colors ── */
 /* Diesel data cells — light sky blue */
-.td-diesel-data {
+/* .td-diesel-data {
   background: #e3f2fd;
-}
+} */
 
 /* Gasoline data cells — light green */
-.td-gasoline-data {
+/* .td-gasoline-data {
   background: #e8f5e9;
-}
+} */
 
 /* Total Amount Due — light yellow */
 .td-total-val {
-  background: #fff9c4;
+  background: white;
   font-weight: bold;
-  color: #7b3f00;
+  color: black;
 }
 
 /* Fuel Charge To + PO# — plain white, bold */
@@ -792,36 +793,35 @@ onMounted(async () => {
 
 /* Diesel footer — sky blue */
 .footer-label-diesel {
-  background: #1565c0;
-  color: #0d2137;
+  background: #013220;
+  color: white;
 }
 
 .footer-value-diesel {
-  background: #90caf9;
-  color: #0d2137;
+  background: white;
+
 }
 
 /* Gasoline footer — light green */
 .footer-label-gasoline {
-  background: #2e7d32;
-  color: #1b3d1c;
+  background: #013220;
+  color: white;
 }
 
 .footer-value-gasoline {
-  background: #a5d6a7;
-  color: #1b3d1c;
+  background: white;
 }
 
 /* Total footer — dark header + yellow value */
 .footer-total-row .footer-label {
-  background: #f9a825;
-  color: #000;
+  background: #013220;
+  color: white;
   font-size: 10px;
   font-weight: bold;
 }
 
 .footer-total-val {
-  background: #fff9c4;
+  background: white;
   color: #000;
   font-weight: bold;
   font-size: 11px;

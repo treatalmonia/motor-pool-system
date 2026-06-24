@@ -577,10 +577,10 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 .efhr-table th {
-  background: #2e7d32;
+  background: #013220;
   color: white;
   padding: 5px 6px;
-  border: 1px solid #2e7d32;
+  border: 1px solid #999;
   text-align: left;
   font-size: 9.5px;
 }
@@ -621,14 +621,17 @@ tfoot td {
 .total-label {
   text-align: right;
   font-weight: bold;
-  background: #f5f5f5;
+  background: #013220;
   font-size: 10px;
+  color: white;
+  padding-right: 12px;
 }
 .total-value {
   text-align: right;
   font-weight: bold;
   font-size: 10px;
   width: 90px;
+
 }
 .editable-field {
   cursor: pointer;

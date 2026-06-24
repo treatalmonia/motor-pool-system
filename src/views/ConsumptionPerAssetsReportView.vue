@@ -462,7 +462,7 @@ onMounted(() => {
 
 /* ── Header: asset name column ── */
 .col-asset-name {
-  background: #1f4e79;
+  background: #2e7d32;
   color: white;
   width: 160px;
   text-align: center;
@@ -470,13 +470,13 @@ onMounted(() => {
 
 /* ── Header: month group (JAN, FEB...) ── */
 .col-month-group {
-  background: #1f4e79;
+  background: #2e7d32;
   color: white;
 }
 
 /* ── Header: sub-columns (L / Amount) ── */
 .col-sub {
-  background: #90caf9;
+  background: #a5d6a7;
   color: #0d2137;
   font-weight: bold;
   width: 48px;
@@ -484,13 +484,13 @@ onMounted(() => {
 
 /* ── Header: TOTAL group ── */
 .col-total-group {
-  background: #1f4e79;
+  background: #2e7d32;
   color: white;
 }
 
 /* ── Header: TOTAL sub-columns ── */
 .col-total-sub {
-  background: #90caf9 !important;
+  background: #a5d6a7 !important;
   color: #0d2137 !important;
 }
 

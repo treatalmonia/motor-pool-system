@@ -502,10 +502,10 @@ onMounted(() => {
 
 /* Header colors */
 .fba-table thead tr:first-child th {
-  background: #1f4e79;
+  background: #013220;
   color: white;
 }
-
+val
 /* Consumption sub-header group */
 .group-consumption {
   background: #1565c0;
@@ -514,8 +514,8 @@ onMounted(() => {
 
 /* Month sub-headers */
 .col-month {
-  background: #90caf9;
-  color: #0d2137;
+  background: #013220;
+  color: white;
   font-weight: bold;
   width: 52px;
 }
@@ -538,7 +538,7 @@ onMounted(() => {
 }
 .col-balance {
   width: 80px;
-  background: #2e7d32;
+  background: #013220;
   color: white;
 }
 
@@ -585,10 +585,10 @@ onMounted(() => {
 
 /* Totals row */
 .totals-row td {
-  background: #1f4e79;
+  background: #013220;
   color: white;
   font-weight: bold;
-  border-color: #1f4e79;
+  border-color: #2e7d32;
 }
 .totals-label {
   text-align: right;

@@ -148,7 +148,7 @@
             </div>
             <div class="signatory-title">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
@@ -229,7 +229,7 @@
             </div>
             <div class="signatory-title">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
@@ -605,10 +605,10 @@ onMounted(async () => {
 }
 
 .pmc-checklist-table th {
-  background: #333;
+  background: #006400;
   color: white;
   padding: 4px 5px;
-  border: 1px solid #333;
+  border: 1px solid #006400;
   text-align: left;
   font-size: 8.5px;
 }
@@ -650,10 +650,10 @@ onMounted(async () => {
 }
 
 .pmc-log-table th {
-  background: #2e7d32;
+  background: #013220;
   color: white;
   padding: 4px 6px;
-  border: 1px solid #2e7d32;
+  border: 1px solid #999;
   text-align: left;
 }
 
@@ -791,10 +791,10 @@ onMounted(async () => {
 }
 
 .pmc-matrix-table th {
-  background: #2e7d32;
+  background: #013220;
   color: white;
   padding: 3px 4px;
-  border: 1px solid #2e7d32;
+  border: 1px solid #999;
   text-align: center;
   font-size: 8px;
 }

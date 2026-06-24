@@ -22,23 +22,13 @@
               item-value="id" — Vuetify will store whatever type "id" is.
               We normalise IDs to strings at fetch time so this is always a string.
             -->
-            <v-select
-              v-model="selectedVehicle"
-              :items="vehicles"
-              item-title="asset_name"
-              item-value="id"
-              label="Select Vehicle"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              clearable
-              @update:modelValue="onVehicleChange"
-            />
+            <v-select v-model="selectedVehicle" :items="vehicles" item-title="asset_name" item-value="id"
+              label="Select Vehicle" variant="outlined" density="comfortable" hide-details clearable
+              @update:modelValue="onVehicleChange" />
           </v-col>
           <v-col cols="12" sm="3">
-            <v-select v-model="selectedYear" :items="yearOptions" label="Year"
-              variant="outlined" density="comfortable" hide-details
-              @update:modelValue="loadData" />
+            <v-select v-model="selectedYear" :items="yearOptions" label="Year" variant="outlined" density="comfortable"
+              hide-details @update:modelValue="loadData" />
           </v-col>
           <v-col cols="12" sm="5" class="d-flex align-center ga-2">
             <v-chip v-if="selectedVehicle && !loading" color="primary" variant="tonal">
@@ -129,11 +119,7 @@
             <tr>
               <!-- WHY: Column renamed from "Performance Task" to "Service Type" per requirements -->
               <th class="matrix-col-stype">Service Type</th>
-              <th
-                v-for="m in matrixMonths"
-                :key="m.value"
-                class="matrix-col-month"
-              >
+              <th v-for="m in matrixMonths" :key="m.value" class="matrix-col-month">
                 {{ m.label }}
               </th>
             </tr>
@@ -141,22 +127,14 @@
           <tbody>
             <tr v-for="(row, idx) in matrixRows" :key="idx">
               <td class="matrix-td-stype">{{ row.service_type }}</td>
-              <td
-                v-for="m in matrixMonths"
-                :key="m.value"
-                class="matrix-td-month"
-              >
+              <td v-for="m in matrixMonths" :key="m.value" class="matrix-td-month">
                 {{ row.monthCells[m.value]?.display || '' }}
               </td>
             </tr>
             <!-- Blank rows if fewer than 5 service types -->
             <tr v-for="n in Math.max(0, 5 - matrixRows.length)" :key="'bm' + n">
               <td class="matrix-td-stype matrix-blank">&nbsp;</td>
-              <td
-                v-for="m in matrixMonths"
-                :key="m.value"
-                class="matrix-td-month matrix-blank"
-              ></td>
+              <td v-for="m in matrixMonths" :key="m.value" class="matrix-td-month matrix-blank"></td>
             </tr>
           </tbody>
         </table>
@@ -169,7 +147,8 @@
               <input v-else v-model="editableInfo.reviewedByName" class="edit-input" />
             </div>
             <div class="signatory-title">
-              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle }}</span>
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle
+                }}</span>
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
@@ -231,7 +210,7 @@
                 <input v-else v-model="reportLogRows[idx].reported_by" class="edit-input" />
               </td>
             </tr>
-            <tr v-for="n in Math.max(0, 20 - reportLogRows.length)" :key="'bl'+n">
+            <tr v-for="n in Math.max(0, 20 - reportLogRows.length)" :key="'bl' + n">
               <td class="log-cell blank-row">&nbsp;</td>
               <td class="log-cell blank-row"></td>
               <td class="log-cell blank-row"></td>
@@ -249,7 +228,8 @@
               <input v-else v-model="editableInfo.reviewedByName" class="edit-input" />
             </div>
             <div class="signatory-title">
-              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle }}</span>
+              <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.reviewedByTitle
+                }}</span>
               <input v-else v-model="editableInfo.reviewedByTitle" class="edit-input" />
             </div>
           </div>
@@ -270,9 +250,8 @@
 
     </div>
 
-    <v-btn v-if="selectedVehicle" class="no-print"
-      :color="editMode ? 'success' : 'primary'" :variant="editMode ? 'flat' : 'outlined'"
-      :prepend-icon="editMode ? 'mdi-check' : 'mdi-pencil'"
+    <v-btn v-if="selectedVehicle" class="no-print" :color="editMode ? 'success' : 'primary'"
+      :variant="editMode ? 'flat' : 'outlined'" :prepend-icon="editMode ? 'mdi-check' : 'mdi-pencil'"
       style="position:fixed;bottom:32px;right:32px;z-index:999;" @click="toggleEdit">
       {{ editMode ? 'Done Editing' : 'Edit Fields' }}
     </v-btn>
@@ -287,20 +266,20 @@ import ReportHeader from '../components/ReportHeader.vue'
 
 const route = useRoute()
 
-const vehicles        = ref([])
+const vehicles = ref([])
 const selectedVehicle = ref(null)
-const selectedYear    = ref(new Date().getFullYear())
-const loading         = ref(false)
-const editMode        = ref(false)
+const selectedYear = ref(new Date().getFullYear())
+const loading = ref(false)
+const editMode = ref(false)
 
 const editableInfo = ref({
-  name:            '',
-  eqfCode:         '',
-  location:        'CARAGA STATE UNIVERSITY, MAIN CAMPUS',
-  reviewedByName:  'ENGR. ENA TIU-IBARRA',
+  name: '',
+  eqfCode: '',
+  location: 'CARAGA STATE UNIVERSITY, MAIN CAMPUS',
+  reviewedByName: 'ENGR. ENA TIU-IBARRA',
   reviewedByTitle: 'AO III, Transportation Unit - General Services',
-  notedByName:     'ENGR. MARIEL M. DELO',
-  notedByTitle:    'Director, General Services',
+  notedByName: 'ENGR. MARIEL M. DELO',
+  notedByTitle: 'Director, General Services',
 })
 
 const objectives = ref([
@@ -335,7 +314,7 @@ const yearOptions = computed(() => {
   return [cur - 2, cur - 1, cur, cur + 1].reverse()
 })
 
-const pmRows        = ref([])
+const pmRows = ref([])
 const reportLogRows = ref([])
 
 // WHAT: Holds the maintenance matrix data for the selected vehicle.
@@ -385,7 +364,7 @@ function fillHeaderFromVehicle(vehicleId) {
   const v = vehicles.value.find(x => sid(x.id) === sid(vehicleId))
   if (!v) return
   const platePart = v.plate_number ? ` (${v.plate_number})` : ''
-  editableInfo.value.name    = `${v.asset_name}${platePart}`
+  editableInfo.value.name = `${v.asset_name}${platePart}`
   editableInfo.value.eqfCode = v.eqf_code || ''
 }
 
@@ -462,12 +441,12 @@ async function loadPMRows() {
     .order('date_performed')
   if (error) { console.error('loadPMRows:', error.message); pmRows.value = []; return }
   pmRows.value = (data || []).map(r => ({
-    service_type:   r.service_type  || '',
+    service_type: r.service_type || '',
     date_performed: formatDate(r.date_performed),
-    next_due_date:  formatDate(r.next_due_date),
-    conducted_by:   r.conducted_by  || '',
-    status:         r.status        || '',
-    remarks:        r.remarks       || '',
+    next_due_date: formatDate(r.next_due_date),
+    conducted_by: r.conducted_by || '',
+    status: r.status || '',
+    remarks: r.remarks || '',
   }))
 }
 
@@ -481,11 +460,11 @@ async function loadReportLog() {
     .order('date_of_request')
   if (error) { console.error('loadReportLog:', error.message); reportLogRows.value = []; return }
   reportLogRows.value = (data || []).map(r => ({
-    date:         formatDate(r.date_of_request),
-    reference_no: r.request_no      || '',
-    remarks:      r.problem_details || '',
-    action_taken: r.work_details    || '',
-    reported_by:  r.conducted_by    || '',
+    date: formatDate(r.date_of_request),
+    reference_no: r.request_no || '',
+    remarks: r.problem_details || '',
+    action_taken: r.work_details || '',
+    reported_by: r.conducted_by || '',
   }))
 }
 
@@ -516,79 +495,392 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.print-area { background: white; font-family: Arial, sans-serif; font-size: 10px; }
-.pmc-page { padding: 20px; max-width: 900px; margin: 0 auto 32px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; }
-.pmc-title-block { text-align: center; margin-bottom: 12px; }
-.pmc-title { font-size: 14px; font-weight: bold; letter-spacing: 1px; }
-.pmc-subtitle, .pmc-section-title { font-size: 11px; font-weight: bold; margin-top: 2px; }
-.pmc-note-small { font-size: 9px; font-style: italic; margin-top: 4px; color: #555; }
-.pmc-info-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10px; }
-.pmc-info-table td { border: 1px solid #333; padding: 4px 6px; }
-.info-label { font-weight: bold; width: 200px; background: #f5f5f5; }
-.pmc-objectives { border: 1px solid #bbb; border-radius: 4px; padding: 10px 14px; margin-bottom: 10px; background: #fafafa; font-size: 9.5px; }
-.objective-group { margin-bottom: 8px; }
-.objective-group:last-child { margin-bottom: 0; }
-.objective-title { font-weight: bold; font-size: 10px; margin-bottom: 3px; }
-.objective-list { margin: 0; padding-left: 18px; line-height: 1.6; }
-.objective-list li { margin-bottom: 1px; }
-.obj-title-input { font-weight: bold; }
-.pmc-note { font-size: 9px; font-style: italic; color: #555; margin-bottom: 6px; }
-.pmc-checklist-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 16px; }
-.pmc-checklist-table th { background: #333; color: white; padding: 4px 5px; border: 1px solid #333; text-align: left; font-size: 8.5px; }
-.pmc-checklist-table td { border: 1px solid #999; vertical-align: top; }
-.col-no { width: 28px; }
-.col-stype { width: 170px; }
-.col-dperf { width: 70px; }
-.col-ddue { width: 70px; }
-.col-conducted { width: 110px; }
-.col-status { width: 70px; }
-.pmc-log-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 16px; }
-.pmc-log-table th { background: #333; color: white; padding: 4px 6px; border: 1px solid #333; text-align: left; }
-.pmc-log-table td { border: 1px solid #bbb; vertical-align: top; }
-.log-date-col { width: 60px; }
-.log-ref-col { width: 80px; }
-.log-remarks-col { width: 200px; }
-.log-action-col { width: 200px; }
-.log-reported-col { width: 120px; }
-.log-cell { padding: 3px 4px; min-height: 22px; }
-.data-cell { padding: 4px 5px; min-height: 24px; }
-.blank-row { height: 24px; }
-.text-center { text-align: center; }
-.editable-field { cursor: pointer; min-height: 14px; display: inline-block; width: 100%; border-radius: 2px; transition: background 0.15s; }
-.editable-field:hover { background: rgba(33,150,243,0.08); outline: 1px dashed #1976d2; }
-.edit-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9.5px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; }
-.cell-input { width: 100%; border: 1px solid #1976d2; border-radius: 3px; padding: 2px 4px; font-size: 9px; font-family: Arial, sans-serif; background: #e3f2fd; outline: none; resize: none; }
-.cell-text { white-space: pre-wrap; word-break: break-word; }
-.pmc-signatory-block { display: flex;
+.print-area {
+  background: white;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+}
+
+.pmc-page {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto 32px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.pmc-title-block {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.pmc-title {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.pmc-subtitle,
+.pmc-section-title {
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.pmc-note-small {
+  font-size: 9px;
+  font-style: italic;
+  margin-top: 4px;
+  color: #555;
+}
+
+.pmc-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+  font-size: 10px;
+}
+
+.pmc-info-table td {
+  border: 1px solid #333;
+  padding: 4px 6px;
+}
+
+.info-label {
+  font-weight: bold;
+  width: 200px;
+  background: #f5f5f5;
+}
+
+.pmc-objectives {
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  font-size: 9.5px;
+}
+
+.objective-group {
+  margin-bottom: 8px;
+}
+
+.objective-group:last-child {
+  margin-bottom: 0;
+}
+
+.objective-title {
+  font-weight: bold;
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+
+.objective-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.objective-list li {
+  margin-bottom: 1px;
+}
+
+.obj-title-input {
+  font-weight: bold;
+}
+
+.pmc-note {
+  font-size: 9px;
+  font-style: italic;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.pmc-checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+  margin-bottom: 16px;
+}
+
+.pmc-checklist-table th {
+  background: #333;
+  color: white;
+  padding: 4px 5px;
+  border: 1px solid #333;
+  text-align: left;
+  font-size: 8.5px;
+}
+
+.pmc-checklist-table td {
+  border: 1px solid #999;
+  vertical-align: top;
+}
+
+.col-no {
+  width: 28px;
+}
+
+.col-stype {
+  width: 170px;
+}
+
+.col-dperf {
+  width: 70px;
+}
+
+.col-ddue {
+  width: 70px;
+}
+
+.col-conducted {
+  width: 110px;
+}
+
+.col-status {
+  width: 70px;
+}
+
+.pmc-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+  margin-bottom: 16px;
+}
+
+.pmc-log-table th {
+  background: #2e7d32;
+  color: white;
+  padding: 4px 6px;
+  border: 1px solid #2e7d32;
+  text-align: left;
+}
+
+.pmc-log-table td {
+  border: 1px solid #bbb;
+  vertical-align: top;
+}
+
+.log-date-col {
+  width: 60px;
+}
+
+.log-ref-col {
+  width: 80px;
+}
+
+.log-remarks-col {
+  width: 200px;
+}
+
+.log-action-col {
+  width: 200px;
+}
+
+.log-reported-col {
+  width: 120px;
+}
+
+.log-cell {
+  padding: 3px 4px;
+  min-height: 22px;
+}
+
+.data-cell {
+  padding: 4px 5px;
+  min-height: 24px;
+}
+
+.blank-row {
+  height: 24px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.editable-field {
+  cursor: pointer;
+  min-height: 14px;
+  display: inline-block;
+  width: 100%;
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+
+.editable-field:hover {
+  background: rgba(33, 150, 243, 0.08);
+  outline: 1px dashed #1976d2;
+}
+
+.edit-input {
+  width: 100%;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 9.5px;
+  font-family: Arial, sans-serif;
+  background: #e3f2fd;
+  outline: none;
+}
+
+.cell-input {
+  width: 100%;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 9px;
+  font-family: Arial, sans-serif;
+  background: #e3f2fd;
+  outline: none;
+  resize: none;
+}
+
+.cell-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pmc-signatory-block {
+  display: flex;
   justify-content: space-between;
   margin-top: 20px;
   margin-bottom: 8px;
-  padding-right: 12%; }
-.signatory-item { min-width: 260px; }
-.signatory-label { font-size: 10px; font-weight: bold; margin-right: 8px; }
-.signatory-name { margin-top: 24px; font-weight: bold; font-size: 10px; padding-top: 2px; min-width: 240px; }
-.signatory-title { font-size: 9.5px; color: #333; margin-top: 2px; }
-.form-code { display: flex; flex-direction: column; font-size: 8px; color: #666; margin-top: 8px; }
+  padding-right: 12%;
+}
+
+.signatory-item {
+  min-width: 260px;
+}
+
+.signatory-label {
+  font-size: 10px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.signatory-name {
+  margin-top: 24px;
+  font-weight: bold;
+  font-size: 10px;
+  padding-top: 2px;
+  min-width: 240px;
+}
+
+.signatory-title {
+  font-size: 9.5px;
+  color: #333;
+  margin-top: 2px;
+}
+
+.form-code {
+  display: flex;
+  flex-direction: column;
+  font-size: 8px;
+  color: #666;
+  margin-top: 8px;
+}
 
 /* ── Maintenance Overview Matrix Table ── */
-.pmc-matrix-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-bottom: 14px; }
-.pmc-matrix-table th { background: #333; color: white; padding: 3px 4px; border: 1px solid #333; text-align: center; font-size: 8px; }
-.pmc-matrix-table td { border: 1px solid #999; padding: 3px 4px; vertical-align: middle; }
-.matrix-col-stype { width: 160px; text-align: left !important; }
-.matrix-col-month { width: 38px; }
-.matrix-td-stype { font-weight: 500; }
-.matrix-td-month { text-align: center; font-size: 7.5px; }
-.matrix-blank { height: 18px; }
+.pmc-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5px;
+  margin-bottom: 14px;
+}
+
+.pmc-matrix-table th {
+  background: #2e7d32;
+  color: white;
+  padding: 3px 4px;
+  border: 1px solid #2e7d32;
+  text-align: center;
+  font-size: 8px;
+}
+
+.pmc-matrix-table td {
+  border: 1px solid #999;
+  padding: 3px 4px;
+  vertical-align: middle;
+}
+
+.matrix-col-stype {
+  width: 160px;
+  text-align: left !important;
+}
+
+.matrix-col-month {
+  width: 38px;
+}
+
+.matrix-td-stype {
+  font-weight: 500;
+}
+
+.matrix-td-month {
+  text-align: center;
+  font-size: 7.5px;
+}
+
+.matrix-blank {
+  height: 18px;
+}
 
 @media print {
-  .no-print { display: none !important; }
-  body, .v-app, .v-main, .v-container { background: white !important; padding: 0 !important; margin: 0 !important; }
-  .pmc-page { padding: 12mm 15mm 10mm 15mm; max-width: 100%; margin: 0; border: none; border-radius: 0; }
-  .page-break-after { page-break-after: always; }
-  .editable-field { cursor: default; background: transparent !important; outline: none !important; }
-  .edit-input, .cell-input { border: none; background: transparent; font-size: 9px; width: 100%; }
-  .pmc-checklist-table, .pmc-log-table, .pmc-info-table { font-size: 8.5px; }
-  .pmc-objectives { font-size: 8.5px; background: white; border-color: #ccc; }
-  .pmc-title { font-size: 13px; }
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  .v-app,
+  .v-main,
+  .v-container {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .pmc-page {
+    padding: 12mm 15mm 10mm 15mm;
+    max-width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .editable-field {
+    cursor: default;
+    background: transparent !important;
+    outline: none !important;
+  }
+
+  .edit-input,
+  .cell-input {
+    border: none;
+    background: transparent;
+    font-size: 9px;
+    width: 100%;
+  }
+
+  .pmc-checklist-table,
+  .pmc-log-table,
+  .pmc-info-table {
+    font-size: 8.5px;
+  }
+
+  .pmc-objectives {
+    font-size: 8.5px;
+    background: white;
+    border-color: #ccc;
+  }
+
+  .pmc-title {
+    font-size: 13px;
+  }
 }
 </style>

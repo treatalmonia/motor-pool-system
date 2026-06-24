@@ -577,10 +577,10 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 .efhr-table th {
-  background: #333;
+  background: #2e7d32;
   color: white;
   padding: 5px 6px;
-  border: 1px solid #333;
+  border: 1px solid #2e7d32;
   text-align: left;
   font-size: 9.5px;
 }

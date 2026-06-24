@@ -10,12 +10,7 @@
               Generate printable fuel summary per billing period
             </p>
           </div>
-          <v-btn
-            variant="outlined"
-            prepend-icon="mdi-printer"
-            :disabled="!pages.length"
-            @click="printReport"
-          >
+          <v-btn variant="outlined" prepend-icon="mdi-printer" :disabled="!pages.length" @click="printReport">
             Print All ({{ pages.length }} page{{ pages.length !== 1 ? 's' : '' }})
           </v-btn>
         </div>
@@ -27,42 +22,17 @@
       <v-card-text>
         <v-row align="center">
           <v-col cols="12" sm="3">
-            <v-select
-              v-model="selectedBillingPeriod"
-              :items="billingPeriodOptions"
-              label="Billing Period"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              clearable
-              @update:modelValue="loadData"
-            />
+            <v-select v-model="selectedBillingPeriod" :items="billingPeriodOptions" label="Billing Period"
+              variant="outlined" density="comfortable" hide-details clearable @update:modelValue="loadData" />
           </v-col>
           <v-col cols="12" sm="3">
-            <v-select
-              v-model="selectedFundCluster"
-              :items="fundClusterOptions"
-              label="Fund Cluster (optional)"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              clearable
-              @update:modelValue="loadData"
-            />
+            <v-select v-model="selectedFundCluster" :items="fundClusterOptions" label="Fund Cluster (optional)"
+              variant="outlined" density="comfortable" hide-details clearable @update:modelValue="loadData" />
           </v-col>
           <v-col cols="12" sm="3">
-            <v-select
-              v-model="selectedContractId"
-              :items="contractOptions"
-              item-title="label"
-              item-value="id"
-              label="Contract / PO (optional)"
-              variant="outlined"
-              density="comfortable"
-              hide-details
-              clearable
-              @update:modelValue="loadData"
-            />
+            <v-select v-model="selectedContractId" :items="contractOptions" item-title="label" item-value="id"
+              label="Contract / PO (optional)" variant="outlined" density="comfortable" hide-details clearable
+              @update:modelValue="loadData" />
           </v-col>
           <v-col cols="12" sm="3" class="d-flex align-center ga-2">
             <v-progress-circular v-if="loading" indeterminate size="24" width="2" />
@@ -89,12 +59,8 @@
          PRINTABLE PAGES — one per fund cluster
     ══════════════════════════════════════════ -->
     <div class="print-area">
-      <div
-        v-for="(page, pIdx) in pages"
-        :key="pIdx"
-        class="fuel-page"
-        :class="{ 'page-break-after': pIdx < pages.length - 1 }"
-      >
+      <div v-for="(page, pIdx) in pages" :key="pIdx" class="fuel-page"
+        :class="{ 'page-break-after': pIdx < pages.length - 1 }">
         <!-- Official CSU Header -->
         <ReportHeader variant="standard" />
 
@@ -142,11 +108,7 @@
           </thead>
 
           <tbody>
-            <tr
-              v-for="(row, rIdx) in page.rows"
-              :key="rIdx"
-              :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'"
-            >
+            <tr v-for="(row, rIdx) in page.rows" :key="rIdx" :class="rIdx % 2 === 0 ? 'row-even' : 'row-odd'">
               <!-- Date -->
               <td class="data-cell">
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
@@ -166,13 +128,7 @@
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.diesel_qty ? formatQty(row.diesel_qty) : '' }}
                 </div>
-                <input
-                  v-else
-                  v-model="row.diesel_qty"
-                  class="edit-input"
-                  type="number"
-                  step="0.01"
-                />
+                <input v-else v-model="row.diesel_qty" class="edit-input" type="number" step="0.01" />
               </td>
               <!-- Diesel: UNIT -->
               <td class="data-cell td-diesel-data">
@@ -186,13 +142,7 @@
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.diesel_qty ? formatCost(row.diesel_unit_price) : '' }}
                 </div>
-                <input
-                  v-else
-                  v-model="row.diesel_unit_price"
-                  class="edit-input"
-                  type="number"
-                  step="0.01"
-                />
+                <input v-else v-model="row.diesel_unit_price" class="edit-input" type="number" step="0.01" />
               </td>
               <!-- Diesel: AMOUNT -->
               <td class="data-cell num-cell td-diesel-data">
@@ -203,13 +153,7 @@
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.gasoline_qty ? formatQty(row.gasoline_qty) : '' }}
                 </div>
-                <input
-                  v-else
-                  v-model="row.gasoline_qty"
-                  class="edit-input"
-                  type="number"
-                  step="0.01"
-                />
+                <input v-else v-model="row.gasoline_qty" class="edit-input" type="number" step="0.01" />
               </td>
               <!-- Gasoline: UNIT -->
               <td class="data-cell td-gasoline-data">
@@ -223,13 +167,7 @@
                 <div v-if="!editMode" class="cell-text editable-field" @click="enableEdit">
                   {{ row.gasoline_qty ? formatCost(row.gasoline_unit_price) : '' }}
                 </div>
-                <input
-                  v-else
-                  v-model="row.gasoline_unit_price"
-                  class="edit-input"
-                  type="number"
-                  step="0.01"
-                />
+                <input v-else v-model="row.gasoline_unit_price" class="edit-input" type="number" step="0.01" />
               </td>
               <!-- Gasoline: AMOUNT -->
               <td class="data-cell num-cell td-gasoline-data">
@@ -388,15 +326,9 @@
     <!-- end print-area -->
 
     <!-- Floating Edit Toggle -->
-    <v-btn
-      v-if="pages.length"
-      class="no-print"
-      :color="editMode ? 'success' : 'primary'"
-      :variant="editMode ? 'flat' : 'outlined'"
-      :prepend-icon="editMode ? 'mdi-check' : 'mdi-pencil'"
-      style="position: fixed; bottom: 32px; right: 32px; z-index: 999"
-      @click="toggleEdit"
-    >
+    <v-btn v-if="pages.length" class="no-print" :color="editMode ? 'success' : 'primary'"
+      :variant="editMode ? 'flat' : 'outlined'" :prepend-icon="editMode ? 'mdi-check' : 'mdi-pencil'"
+      style="position: fixed; bottom: 32px; right: 32px; z-index: 999" @click="toggleEdit">
       {{ editMode ? 'Done Editing' : 'Edit Fields' }}
     </v-btn>
   </v-container>
@@ -665,9 +597,11 @@ onMounted(async () => {
   font-weight: bold;
   margin-bottom: 4px;
 }
+
 .fuel-contractor-label {
   margin-right: 8px;
 }
+
 .fuel-contractor-name {
   font-weight: normal;
 }
@@ -690,13 +624,15 @@ onMounted(async () => {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
+
 .fuel-table th {
-  border: 1px solid #aaa;
+  border: 1px solid #2e7d32;
   padding: 4px 3px;
   text-align: center;
   font-size: 8px;
   font-weight: bold;
 }
+
 .fuel-table td {
   border: 1px solid #aaa;
   vertical-align: middle;
@@ -708,36 +644,43 @@ onMounted(async () => {
   background: #ffffff;
   color: #000;
 }
+
 /* DIESEL group — sky blue; sub-headers — lighter blue */
 .th-diesel {
   background: #1565c0;
   color: white;
 }
+
 .sub-diesel {
   background: #90caf9;
   color: #0d2137;
   font-weight: bold;
 }
+
 /* GASOLINE group — green; sub-headers — lighter green */
 .th-gasoline {
   background: #2e7d32;
   color: white;
 }
+
 .sub-gasoline {
   background: #a5d6a7;
   color: #1b3d1c;
   font-weight: bold;
 }
+
 /* TOTAL AMOUNT DUE — yellow/gold */
 .th-total {
   background: #f9a825;
   color: #000;
 }
+
 /* FUEL CHARGE TO + PO# — white with dark text */
 .th-charge {
   background: #ffffff;
   color: #000;
 }
+
 .th-po {
   background: #ffffff;
   color: #000;
@@ -747,47 +690,79 @@ onMounted(async () => {
 .col-date {
   width: 50px;
 }
+
 .col-or {
   width: 52px;
 }
+
 .sub-col {
   width: 46px;
 }
+
 .col-utilize {
   width: 90px;
 }
+
 .col-vehicle {
   width: 90px;
 }
-.col-total   { width: 70px; text-align: center; }
+
+.col-total {
+  width: 70px;
+  text-align: center;
+}
+
 .col-charge {
   width: 110px;
 }
+
 .col-po {
   width: 80px;
 }
 
-.data-cell { padding: 3px 4px; min-height: 22px; text-align: center; }
-.num-cell  { text-align: center; }
+.data-cell {
+  padding: 3px 4px;
+  min-height: 22px;
+  text-align: center;
+}
+
+.num-cell {
+  text-align: center;
+}
 
 /* ── Data cell column colors ── */
 /* Diesel data cells — light sky blue */
 .td-diesel-data {
   background: #e3f2fd;
 }
+
 /* Gasoline data cells — light green */
 .td-gasoline-data {
   background: #e8f5e9;
 }
+
 /* Total Amount Due — light yellow */
 .td-total-val {
   background: #fff9c4;
   font-weight: bold;
   color: #7b3f00;
 }
+
 /* Fuel Charge To + PO# — plain white, bold */
-.td-charge-val { background: #ffffff; font-weight: bold; font-size: 7.5px; text-align: center; vertical-align: middle; }
-.td-po-val     { background: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; }
+.td-charge-val {
+  background: #ffffff;
+  font-weight: bold;
+  font-size: 7.5px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.td-po-val {
+  background: #ffffff;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+}
 
 /* ── Footer totals ── */
 .fuel-footer-table {
@@ -797,44 +772,56 @@ onMounted(async () => {
   font-size: 9px;
   margin-bottom: 16px;
 }
+
 .fuel-footer-table td {
   border: 1px solid #aaa;
   padding: 5px 10px;
 }
+
 .footer-label {
   font-weight: bold;
   text-align: center;
   padding-right: 0;
 }
-.footer-value { text-align: center; width: 130px; font-weight: bold; }
+
+.footer-value {
+  text-align: center;
+  width: 130px;
+  font-weight: bold;
+}
 
 /* Diesel footer — sky blue */
 .footer-label-diesel {
   background: #1565c0;
   color: #0d2137;
 }
+
 .footer-value-diesel {
   background: #90caf9;
   color: #0d2137;
 }
+
 /* Gasoline footer — light green */
 .footer-label-gasoline {
   background: #2e7d32;
   color: #1b3d1c;
 }
+
 .footer-value-gasoline {
   background: #a5d6a7;
   color: #1b3d1c;
 }
+
 /* Total footer — dark header + yellow value */
 .footer-total-row .footer-label {
-  background:#f9a825 ;
+  background: #f9a825;
   color: #000;
   font-size: 10px;
   font-weight: bold;
 }
+
 .footer-total-val {
-  background: #fff9c4 ;
+  background: #fff9c4;
   color: #000;
   font-weight: bold;
   font-size: 11px;
@@ -846,9 +833,11 @@ onMounted(async () => {
   gap: 40px;
   margin-top: 20px;
 }
+
 .three-col {
   justify-content: space-between;
 }
+
 .two-col {
   justify-content: flex-start;
   gap: 120px;
@@ -857,20 +846,24 @@ onMounted(async () => {
 .sig-col {
   min-width: 180px;
 }
+
 .sig-role {
   font-size: 10px;
   font-weight: bold;
   margin-bottom: 2px;
 }
+
 .sig-spacer {
   height: 28px;
 }
+
 .sig-name {
 
   font-weight: bold;
   font-size: 10px;
   padding-top: 2px;
 }
+
 .sig-title {
   font-size: 9px;
   color: #333;
@@ -886,10 +879,12 @@ onMounted(async () => {
   border-radius: 2px;
   transition: background 0.15s;
 }
+
 .editable-field:hover {
   background: rgba(33, 150, 243, 0.08);
   outline: 1px dashed #1976d2;
 }
+
 .edit-input {
   width: 100%;
   border: 1px solid #1976d2;
@@ -900,15 +895,18 @@ onMounted(async () => {
   background: #e3f2fd;
   outline: none;
 }
+
 .contractor-input {
   font-size: 10px;
   font-weight: bold;
 }
+
 .title-input {
   font-size: 11px;
   font-weight: bold;
   text-align: center;
 }
+
 .cell-text {
   white-space: pre-wrap;
   word-break: break-word;
@@ -957,9 +955,11 @@ onMounted(async () => {
   .fuel-footer-table {
     font-size: 7.5px;
   }
+
   .fuel-table th {
     font-size: 7px;
   }
+
   .fuel-report-title {
     font-size: 10px;
   }
@@ -969,6 +969,7 @@ onMounted(async () => {
     background: transparent !important;
     outline: none !important;
   }
+
   .edit-input {
     border: none;
     background: transparent;

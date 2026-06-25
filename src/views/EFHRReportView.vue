@@ -65,7 +65,7 @@
             <td class="hdr-value" colspan="3">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.name
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.name" class="edit-input" />
             </td>
           </tr>
@@ -74,14 +74,14 @@
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.eqfCode
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.eqfCode" class="edit-input" />
             </td>
             <td class="hdr-label">Model</td>
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.model
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.model" class="edit-input" />
             </td>
           </tr>
@@ -90,14 +90,14 @@
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.plateNo
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.plateNo" class="edit-input" />
             </td>
             <td class="hdr-label">Date Purchased</td>
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.datePurchased
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.datePurchased" class="edit-input" />
             </td>
           </tr>
@@ -106,14 +106,14 @@
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.supplier
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.supplier" class="edit-input" />
             </td>
             <td class="hdr-label">Custodian</td>
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.custodian
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.custodian" class="edit-input" />
             </td>
           </tr>
@@ -122,14 +122,14 @@
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.department
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.department" class="edit-input" />
             </td>
             <td class="hdr-label">Contact No.</td>
             <td class="hdr-value">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.contactNo
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.contactNo" class="edit-input" />
             </td>
           </tr>
@@ -138,7 +138,7 @@
             <td class="hdr-value" colspan="3">
               <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
                 editableInfo.otherInfo
-                }}</span>
+              }}</span>
               <input v-else v-model="editableInfo.otherInfo" class="edit-input" />
             </td>
           </tr>
@@ -238,13 +238,13 @@
           <div class="sig-name">
             <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
               editableInfo.preparedByName
-              }}</span>
+            }}</span>
             <input v-else v-model="editableInfo.preparedByName" class="edit-input" />
           </div>
           <div class="sig-title">
             <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
               editableInfo.preparedByTitle
-              }}</span>
+            }}</span>
             <input v-else v-model="editableInfo.preparedByTitle" class="edit-input" />
           </div>
         </div>
@@ -253,13 +253,13 @@
           <div class="sig-name">
             <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
               editableInfo.notedByName
-              }}</span>
+            }}</span>
             <input v-else v-model="editableInfo.notedByName" class="edit-input" />
           </div>
           <div class="sig-title">
             <span v-if="!editMode" class="editable-field" @click="enableEdit">{{
               editableInfo.notedByTitle
-              }}</span>
+            }}</span>
             <input v-else v-model="editableInfo.notedByTitle" class="edit-input" />
           </div>
         </div>
@@ -467,18 +467,19 @@ async function loadSignatories() {
   const { data, error } = await supabase
     .from('pm_signatories')
     .select('id, prepared_by_name, prepared_by_title, reviewed_by_name, reviewed_by_title, form_code, form_rev')
+    .eq('report_type', 'efhr')
     .limit(1)
     .single()
 
   if (error || !data) return
 
- signatoryId.value = data.id
+  signatoryId.value = data.id
   editableInfo.value.preparedByName = data.prepared_by_name || editableInfo.value.preparedByName
   editableInfo.value.preparedByTitle = data.prepared_by_title || editableInfo.value.preparedByTitle
   editableInfo.value.notedByName = data.reviewed_by_name || editableInfo.value.notedByName
   editableInfo.value.notedByTitle = data.reviewed_by_title || editableInfo.value.notedByTitle
   if (data.form_code) editableInfo.value.formCode = data.form_code
-  if (data.form_rev)  editableInfo.value.formRev  = data.form_rev
+  if (data.form_rev) editableInfo.value.formRev = data.form_rev
 }
 
 function enableEdit() {
@@ -495,7 +496,7 @@ async function toggleEdit() {
         reviewed_by_name: editableInfo.value.notedByName,
         reviewed_by_title: editableInfo.value.notedByTitle,
         form_code: editableInfo.value.formCode,
-        form_rev:  editableInfo.value.formRev,
+        form_rev: editableInfo.value.formRev,
         updated_at: new Date().toISOString(),
       })
       .eq('id', signatoryId.value)

@@ -165,6 +165,14 @@
           </div>
         </div>
 
+        <!-- REPLACE WITH: -->
+        <div class="form-code">
+          <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.formCode }}</span>
+          <input v-else v-model="editableInfo.formCode" class="edit-input form-code-input" />
+          <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.formRev }}</span>
+          <input v-else v-model="editableInfo.formRev" class="edit-input form-code-input" />
+        </div>
+
       </div>
 
       <!-- PAGE 2: REPORT LOG -->
@@ -245,7 +253,12 @@
             </div>
           </div>
         </div>
-        <div class="form-code"><span>F-GEN-PMC-003a</span><span>Rev. 3 10/19/2023</span></div>
+        <div class="form-code">
+          <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.formCode }}</span>
+          <input v-else v-model="editableInfo.formCode" class="edit-input form-code-input" />
+          <span v-if="!editMode" class="editable-field" @click="enableEdit">{{ editableInfo.formRev }}</span>
+          <input v-else v-model="editableInfo.formRev" class="edit-input form-code-input" />
+        </div>
       </div>
 
     </div>
@@ -280,6 +293,8 @@ const editableInfo = ref({
   reviewedByTitle: 'AO III, Transportation Unit - General Services',
   notedByName: 'ENGR. MARIEL M. DELO',
   notedByTitle: 'Director, General Services',
+  formCode: 'F-GEN-PMC-003a',
+  formRev: 'Rev. 3 10/19/2023',
 })
 
 const objectives = ref([
@@ -468,8 +483,45 @@ async function loadReportLog() {
   }))
 }
 
+// ── Signatories ──
+const signatoryId = ref(null)
+
+async function loadSignatories() {
+  const { data, error } = await supabase
+    .from('pm_signatories')
+    .select('id, prepared_by_name, prepared_by_title, reviewed_by_name, reviewed_by_title, form_code, form_rev')
+    .limit(1)
+    .single()
+
+  if (error || !data) return
+  signatoryId.value = data.id
+  editableInfo.value.reviewedByName = data.prepared_by_name || editableInfo.value.reviewedByName
+  editableInfo.value.reviewedByTitle = data.prepared_by_title || editableInfo.value.reviewedByTitle
+  editableInfo.value.notedByName = data.reviewed_by_name || editableInfo.value.notedByName
+  editableInfo.value.notedByTitle = data.reviewed_by_title || editableInfo.value.notedByTitle
+  if (data.form_code) editableInfo.value.formCode = data.form_code
+  if (data.form_rev)  editableInfo.value.formRev  = data.form_rev
+}
+
 function enableEdit() { editMode.value = true }
-function toggleEdit() { editMode.value = !editMode.value }
+
+async function toggleEdit() {
+  if (editMode.value && signatoryId.value) {
+    await supabase
+      .from('pm_signatories')
+      .update({
+        prepared_by_name: editableInfo.value.reviewedByName,
+        prepared_by_title: editableInfo.value.reviewedByTitle,
+        reviewed_by_name: editableInfo.value.notedByName,
+        reviewed_by_title: editableInfo.value.notedByTitle,
+        form_code: editableInfo.value.formCode,
+        form_rev:  editableInfo.value.formRev,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', signatoryId.value)
+  }
+  editMode.value = !editMode.value
+}
 
 function printReport() {
   editMode.value = false
@@ -478,6 +530,7 @@ function printReport() {
 
 onMounted(async () => {
   await fetchVehicles()
+  loadSignatories()
 
   if (route.query.vehicleId) {
     // Store as string — vehicles array already has string ids after normalisation
@@ -780,6 +833,11 @@ onMounted(async () => {
   font-size: 8px;
   color: #666;
   margin-top: 8px;
+}
+.form-code-input {
+  font-size: 8px;
+  padding: 1px 3px;
+  max-width: 180px;
 }
 
 /* ── Maintenance Overview Matrix Table ── */

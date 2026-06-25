@@ -639,6 +639,7 @@ function printReport() {
 // ── Lifecycle ──
 onMounted(async () => {
   await fetchOptions()
+  // loadSignatories()
 })
 </script>
 
